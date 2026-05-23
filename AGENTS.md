@@ -18,6 +18,7 @@ For a persistent V1 implementation run, use `Prompts/3notch-v1-goal.md` as the p
 ## Boundaries
 
 - Do not implement the full V1 plan unless the user asks for that session.
+- When the user presents a product idea or asks "is this the right path?", discuss and pressure-test it before changing specs, plans, or repo files.
 - Treat cross-repo packets as core V1 behavior, not a later export feature.
 - Treat private context seeding as core V1 behavior, not scope creep.
 - No telemetry, cloud sync, hosted service, dashboard, vector database, or SQLite/native DB for V1.
