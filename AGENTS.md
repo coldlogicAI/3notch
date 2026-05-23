@@ -11,6 +11,10 @@
 3. `3notch-project-request.md`
 4. `3notch-branding-review.md`
 
+## Long-Run Goal
+
+For a persistent V1 implementation run, use `Prompts/3notch-v1-goal.md` as the paste-ready `/goal` prompt. During that run, append concise progress entries to `docs/v1-implementation-log.md` after each coherent slice or wave.
+
 ## Boundaries
 
 - Do not implement the full V1 plan unless the user asks for that session.
