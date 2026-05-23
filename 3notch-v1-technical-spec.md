@@ -16,18 +16,20 @@
 
 ## Overview
 
-3Notch V1 is a local-first CLI and MCP server for passing project and private workflow context across repos and AI agents. It stores targeted briefs, session passes, decisions, packets, private seed packets, and status metadata in project-owned `.notch/` folders. The MVP focuses on one job: packaging the right source-linked context from prior work so the next repo, person, or agent can continue correctly without copy-paste, cloud sync, full chat-history ingestion, or broad agent orchestration.
+3Notch V1 is a local-first CLI and MCP server for passing project and private workflow context across repos, Claude Desktop, Claude Code, Codex, and other AI work surfaces. It stores targeted briefs, session passes, decisions, packets, private seed packets, and status metadata in project-owned `.notch/` folders. The MVP focuses on one job: packaging the right source-linked context from prior work or an active AI session so the next repo, person, or agent can continue correctly without copy-paste, cloud sync, full chat-history ingestion, or broad agent orchestration.
 
 ## Product Principles
 
 - Pass continuity, not generic memory.
 - Local files are the source of truth.
 - Cross-repo packets are first-class, not a later export feature.
+- Cross-tool handoff is first-class: Claude Desktop, Claude Code, Codex, Cursor, ChatGPT, and local agents exchange context through explicit packets.
 - Private context seeding is first-class: user preferences and workflow conventions should move into a new repo without being committed by default.
 - Agents write structured, auditable records.
 - Humans can inspect and edit stored context.
 - CLI first; MCP second; no web dashboard in V1.
 - Store only targeted context, not whole private chats.
+- Store context supplied through explicit user/agent action, not hidden scraping.
 - Private seed context requires explicit user review/exposure before MCP tools can return it.
 - Every write is attributable: actor, timestamp, source tool, record type, schema version.
 - Validation should fail loudly with actionable fixes.
@@ -43,10 +45,31 @@ Assumptions:
 - Source-of-truth records should be readable in a text editor.
 - Agents may generate imperfect context, so validation, attribution, and review status matter.
 - V1 should demo new-project seeding from prior work and Claude-to-Codex handoff across two repos quickly.
+- V1 should support Claude Desktop, Claude Code, Codex, and similar tools through the local MCP server. Those clients provide selected context through explicit tool calls; 3Notch does not require privileged access to client internals.
+- Claude Desktop DXT packaging is a likely follow-on distribution layer for the local MCP server, not a blocker for the V1 packet loop.
 
 Recommended architecture: a TypeScript CLI package with a local file store, shared core services, a transfer service for packet create/import/send, a seed service for new-project bootstrap, and an MCP adapter exposing the same capabilities. The CLI owns onboarding, human workflows, private context seeding, packet transfer, status, and doctor checks. The MCP server exposes constrained tools for agents to read/write 3Notch records inside the current project store and to create/import packets when explicitly requested.
 
 3Notch should not be a SaaS, dashboard, vector database, chat archive, or orchestration layer in V1. Those alternatives add trust, setup, and product complexity before the core workflow is proven. V1 should prove local packet transfer and private context seeding first: prior work creates a reviewed seed packet, a new repo imports it privately, source repo creates a project packet, and destination repo imports it. V1 should also avoid a native SQLite dependency: the expected store size is small enough for deterministic file scans, and `npx @3notch/cli onboard` should work without `node-gyp`, prebuilt binary, or platform-specific install failures.
+
+## Cross-Tool Handoff Model
+
+The core product loop is explicit context handoff between AI work surfaces:
+
+1. A user asks an agent in Claude Desktop, Claude Code, Codex, Cursor, ChatGPT, or another MCP-capable client to create or read a 3Notch packet.
+2. The agent calls the local 3Notch MCP server or the user runs the CLI.
+3. For writes, the caller supplies selected or summarized context, source links, decisions, constraints, exclusions, and next steps.
+4. 3Notch validates and stores that content as a human-readable packet, brief, pass, decision, question, stale note, or conflict record.
+5. Another repo or tool imports or reads the packet through CLI or MCP.
+
+This means 3Notch is a handoff recorder and packet exchange layer. It does not need raw Claude Project database access, hidden chat export scraping, or automatic reconstruction of months of history. The agent with the relevant active context is responsible for selecting and summarizing what should move; 3Notch is responsible for storing, validating, exposing, and transferring it safely.
+
+V1 integration posture:
+
+- Implement the local CLI and local stdio MCP server first.
+- Support Claude Desktop and Claude Code through ordinary MCP configuration.
+- Treat a Claude Desktop DXT package as the likely packaging path once the local MCP server is stable.
+- Treat remote MCP connectors as future hosted product work, because they require public reachability, auth, and a different privacy/trust model.
 
 ## V1 Non-Goals
 
@@ -58,7 +81,7 @@ Recommended architecture: a TypeScript CLI package with a local file store, shar
 - Telemetry
 - Vector database
 - Semantic search dependency
-- Automatic chat-history scraping
+- Hidden or automatic chat/project scraping
 - Automatic historical reconstruction
 - Agent orchestration
 - Arbitrary shell execution through MCP
@@ -1283,7 +1306,7 @@ Exit codes:
 - Output format: private seed packet ID/path, source store path, imported private inbox path, and warnings; JSON if requested.
 - Store behavior: never writes seed packets to normal `.notch/inbox/` unless explicitly forced by a future flag. Does not merge user preferences into public project records.
 - MCP behavior: imported seed packets remain hidden from MCP unless the server is started with private context enabled.
-- V1 boundary: no automatic scraping of private chats. V1 should use prior `.notch/` stores and explicit user-selected files.
+- V1 boundary: no hidden scraping of private chats, Claude Projects, or client internals. V1 should use prior `.notch/` stores, explicit user-selected files, and selected/summarized context supplied through a user-invoked CLI or MCP action.
 - Error cases: source store missing, no includable context, review not completed, secret detected, destination private inbox not writable, source path unsafe.
 - Exit codes: `0`, `1`, `2`, `3`, `5`.
 - Example invocation: `notch seed from ../iPSM --include preferences --include workflow --include lessons --review`
@@ -1513,7 +1536,7 @@ All MCP tools are scoped to the resolved `.notch/` store. They must reject path 
 - Input schema: `{ actorName?: string, title: string, purpose?: PacketPurpose, sensitivity?: Sensitivity, toAgent?: string, toPerson?: string, toRepo?: string, task?: string, summary: string, include?: PacketRecordRef[], sourceLinks?: SourceLink[], warnings?: string[], nextActions?: string[], outputPath?: string }`
 - Output schema: `{ id: string, outboxPath: string, outputPath?: string, createdAt: string, warnings: NotchError[] }`
 - Read/write behavior: write.
-- Security boundaries: writes project packets to `.notch/outbox/` and private packets to `.notch/private/outbox/`, plus an explicit `outputPath` when supplied. Included local file links must resolve under the origin project root. `outputPath` must pass safe destination path checks and cannot be a symlink target inside `.notch/`.
+- Security boundaries: writes project packets to `.notch/outbox/` and private packets to `.notch/private/outbox/`, plus an explicit `outputPath` when supplied. Included local file links must resolve under the origin project root. `outputPath` must pass safe destination path checks and cannot be a symlink target inside `.notch/`. When called by Claude Desktop, Claude Code, Codex, or another MCP client, the tool stores context supplied in the tool input; it does not read raw chat/project data from the client.
 - Failure modes: schema invalid, missing recipient, missing summary, include reference not found, path outside project, read-only mode, secret detected, audit write failed.
 
 ### `import_packet`
@@ -1550,7 +1573,7 @@ All MCP tools are scoped to the resolved `.notch/` store. They must reject path 
 - Input schema: `{ actorName?: string, title: string, sourceStorePath?: string, summary: string, userPreferences?: string[], workflowConventions?: string[], lessons?: string[], prompts?: string[], sourceLinks?: SourceLink[], outputPath?: string }`
 - Output schema: `{ id: string, privateOutboxPath: string, outputPath?: string, createdAt: string, warnings: NotchError[] }`
 - Read/write behavior: write.
-- Security boundaries: writes only `.notch/private/outbox/` plus explicit `outputPath`. The tool cannot scan arbitrary source repos; callers must provide selected context or use CLI `notch seed from`.
+- Security boundaries: writes only `.notch/private/outbox/` plus explicit `outputPath`. The tool cannot scan arbitrary source repos or client chat/project databases; callers must provide selected context or use CLI `notch seed from`.
 - Failure modes: private context disabled by config, read-only mode, secret detected, schema invalid, write failed.
 
 ### `import_seed_packet`
@@ -1871,6 +1894,7 @@ Fix: Run notch doctor --fix.
 - `.notch/` records stay on disk unless the user explicitly creates/imports a packet, copies a packet file, or later enables sync.
 - Private seed packets live under `.notch/private/`, which is ignored by Git by default.
 - `notch send` in V1 is a local filesystem copy/import helper, not a network delivery channel.
+- Cross-tool handoff is explicit: an AI client supplies selected/summarized context through CLI or MCP, and 3Notch writes an inspectable artifact. 3Notch does not silently read Claude Project data, raw chat logs, or other client internals.
 - MCP tools are scoped to the configured store.
 - MCP cannot execute shell commands.
 - MCP cannot read arbitrary project files by path; it reads 3Notch records, validates source references, and only `import_packet` may read an explicit packet file for import.
@@ -2028,10 +2052,12 @@ NOTCH_CORRUPT_RECORD
 - `notch mcp serve` exposes the expected V1 tools.
 - MCP write tools record actor, timestamp, source tool, record type, and schema version.
 - MCP tools cannot access files outside `.notch/` except for the explicit packet file supplied to `import_packet`.
+- MCP packet writes from Claude Desktop/Claude Code/Codex accept explicit tool input only; they do not require or imply raw chat-history access.
 - CLI and MCP write tools reject source-link paths outside `config.project.root`.
 - Every successful write produces exactly one entry in `.notch/logs/audit.jsonl`.
 - Secret-blocked writes create no source record and append exactly one `secret-blocked` audit entry.
 - README quickstart completes private context seeding plus a Claude-to-Codex style pass loop from a fresh clone.
+- A cross-tool handoff smoke test proves an MCP caller can create a packet from explicitly supplied session context, another store can import it, and no hidden chat/project scraping is required.
 - README quickstart includes one targeted brief creation/retrieval step.
 - Demo fixtures are included.
 - The Claude-to-Codex demo fixture passes `notch doctor` and proves `get_brief`, `get_recent_passes`, `create_pass`, and `create_brief`.
@@ -2045,6 +2071,8 @@ NOTCH_CORRUPT_RECORD
 - Encrypted private seed packets at rest
 - Team workspaces
 - Managed MCP endpoint
+- Claude Desktop DXT packaging for the local MCP server
+- Remote MCP connector for hosted/team product variants
 - Browser UI
 - Homebrew distribution
 - SQLite FTS or another richer derived index after file-scan V1 proves insufficient

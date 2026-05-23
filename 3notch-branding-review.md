@@ -6,6 +6,8 @@ The product should launch under the working brand **3Notch**, with `notch` as th
 
 The brand should not lead with "memory." That market is already crowded and abstract. The sharp value is portable private context: moving the right source-linked packet from prior work to the next repo, person, or agent.
 
+The product direction should be broader than repo-to-repo files but narrower than generic memory: explicit handoff packets between Claude Desktop, Claude Code, Codex, Cursor, ChatGPT, local agents, and future AI work surfaces.
+
 Recommended public framing:
 
 > 3Notch leaves a trail the next agent can follow.
@@ -17,6 +19,27 @@ Recommended launch tagline:
 Recommended category:
 
 > Local-first private context packets for AI agents.
+
+## Product Direction
+
+3Notch should be positioned around a concrete before/after:
+
+Before:
+
+> Copy and paste between Claude Desktop, Claude Code, Codex, old repos, new repos, notes, plans, and logs.
+
+After:
+
+> Create a reviewed context packet from this project/session, then make it available to the next tool or repo.
+
+The mechanics are part of the brand promise:
+
+- CLI core for local packets: `notch seed`, `notch packet create`, `notch packet import`, `notch send`.
+- Local MCP server so Claude Desktop, Claude Code, Codex, Cursor, and other clients can read/write packets.
+- Claude Desktop DXT as the likely later packaging layer for easier local install.
+- Remote connector only later, for a hosted/team product with a different trust model.
+
+The privacy line should be positive, not defensive: 3Notch is explicit, local, and reviewable. It does not need hidden access to raw chat logs or Claude Project internals because the active agent supplies selected context through a user-invoked tool call.
 
 ## Naming
 
@@ -97,15 +120,15 @@ notch doctor
 
 ### Primary Positioning
 
-3Notch is a local-first tool for sending project and private workflow context marks across repos and AI agents.
+3Notch is a local-first tool for sending project and private workflow context marks across repos, Claude Desktop, Claude Code, Codex, and other AI work surfaces.
 
 ### Short Pitch
 
-Stop copy-pasting context between repos and AI tools. 3Notch packages the right project brief, private workflow preferences, recent passes, decisions, open questions, and stale-context warnings into portable packets.
+Stop copy-pasting context between repos and AI tools. 3Notch packages the right project brief, private workflow preferences, recent passes, decisions, open questions, and stale-context warnings into portable packets the next repo or agent can read.
 
 ### Longer Pitch
 
-3Notch is a local-first CLI and MCP server that lets Claude, Codex, Cursor, ChatGPT, and local agents pass structured project and private workflow context across repos without exposing full private chat histories. A user can seed a new repo from prior work, agents can create a compact packet in one repo, import it into another repo, read a brief before they start, and write a pass before they stop.
+3Notch is a local-first CLI and MCP server that lets Claude Desktop, Claude Code, Codex, Cursor, ChatGPT, and local agents pass structured project and private workflow context across repos and AI work surfaces without exposing full private chat histories. A user can seed a new repo from prior work, ask Claude Desktop to create a reviewed packet from a project/session, import it into another repo, let Codex or Claude Code read it before work, and write a pass before stopping.
 
 3Notch also supports targeted briefs: deliberate, scoped handoff documents for a specific future task or agent.
 
@@ -165,7 +188,8 @@ View the cross-repo Claude to Codex demo
 ### Three Proof Bullets
 
 - Seed a new repo with private workflow context from prior work.
-- Send a scoped packet from one repo to another.
+- Create a reviewed packet from Claude Desktop project/session context.
+- Send a scoped packet from one repo or tool to another.
 - Read the imported packet before work starts.
 - Create targeted briefs for specific tasks.
 - Write a pass before work ends.

@@ -21,7 +21,7 @@ If those relative paths are not available, stop and ask the user for the correct
 
 Do not rely on hard-coded absolute paths; this repo may be checked out under a different folder name.
 
-3Notch is not a SaaS dashboard, generic knowledge base, team collaboration app, or broad agent orchestration platform. 3Notch is a local-first developer tool for creating, storing, validating, and retrieving targeted AI-agent handoffs across LLM tools such as Claude, Codex, Cursor, ChatGPT, and future MCP-compatible agents.
+3Notch is not a SaaS dashboard, generic knowledge base, team collaboration app, or broad agent orchestration platform. 3Notch is a local-first developer tool for creating, storing, validating, and retrieving targeted AI-agent handoffs across repos and AI work surfaces such as Claude Desktop, Claude Code, Codex, Cursor, ChatGPT, and future MCP-compatible agents.
 
 Your first responsibility is to recommend the right technical architecture for this specific product. Do not default to a web app. Consider CLI ergonomics, local file storage, MCP tool exposure, package distribution, privacy, portability, and the need for a polished V1 that can be open-sourced and demoed quickly.
 
@@ -45,6 +45,8 @@ Your first responsibility is to recommend the right technical architecture for t
   - `notch mcp serve`
 - V1 should feel small, sharp, useful, and installable
 - V1 must support targeted briefs, not only automatic session handoffs
+- V1 must support cross-repo packets and explicit cross-tool handoff through MCP from selected/summarized session context
+- V1 must not rely on hidden chat/project scraping
 - V1 must avoid becoming a full project management system
 </product_constraints>
 
@@ -57,10 +59,11 @@ Your first responsibility is to recommend the right technical architecture for t
 - Do not require a database unless there is a clear V1 reason
 - If SQLite is recommended, justify why it is needed and keep source-of-truth files readable
 - Do not require cloud auth, accounts, teams, billing, telemetry, or hosted sync in V1
-- Do not scrape private LLM chat histories in V1
+- Do not secretly or automatically scrape private LLM chat histories, Claude Projects, or client internals in V1
 - Do not attempt automatic semantic reconstruction of months of project context in V1
 - Do not expose arbitrary shell execution through MCP
 - MCP tools must be scoped to the current project’s `.notch/` directory unless explicitly configured otherwise
+- MCP clients can write/read supplied packets, but must not imply access to raw chat histories or client project databases.
 - Every write operation must record actor, timestamp, source tool, record type, and schema version
 - Every command must have explicit error states
 - Every command must be scriptable and useful in CI-like environments
@@ -86,7 +89,7 @@ These instructions are mandatory for the technical specification and any later i
 - Every major component must justify why it exists in V1.
 
 3. Surgical Scope
-- Keep the specification tightly aligned to 3Notch’s stated purpose: agent-to-agent handoff through local passes, targeted briefs, status, doctor, and MCP access.
+- Keep the specification tightly aligned to 3Notch’s stated purpose: cross-tool/cross-repo handoff through local packets, passes, targeted briefs, status, doctor, and MCP access.
 - Do not expand 3Notch into a general project management tool, RAG system, memory database, workflow engine, or LLM chat archive.
 - If the project files suggest future possibilities, separate them into “Future Considerations” rather than including them in V1.
 - Every V1 feature must trace directly to the project request, branding review, or explicit V1 scope in this prompt.

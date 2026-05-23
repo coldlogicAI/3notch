@@ -18,15 +18,15 @@ Alternate names:
 
 ## One-Line Summary
 
-A local-first tool that lets Claude, Codex, Cursor, ChatGPT, Gemini, and local agents pass project and private workflow context across repos without copy-paste or full chat-history sharing.
+A local-first tool that lets Claude Desktop, Claude Code, Codex, Cursor, ChatGPT, Gemini, and local agents pass project and private workflow context across repos and AI work surfaces without copy-paste or full chat-history sharing.
 
 ## Short Description
 
-Build an open-source context-passing system for multi-agent workflows. The system should let users package the right context from one repo, workspace, or prior project and import it into another repo or agent session. Different AI tools should get access to shared project briefs, recent passes, active decisions, open questions, stale assumptions, personal build preferences, workflow conventions, and source links through a local-first store, portable packets, CLI, and Model Context Protocol (MCP) server.
+Build an open-source context-passing system for multi-agent workflows. The system should let users package the right context from one repo, workspace, AI chat/project, or prior project and import it into another repo or agent session. Different AI tools should get access to shared project briefs, recent passes, active decisions, open questions, stale assumptions, personal build preferences, workflow conventions, and source links through a local-first store, portable packets, CLI, and Model Context Protocol (MCP) server.
 
 The system should not try to make agents directly chat with each other. Instead, agents should publish and query structured context packets owned by the user. Each context packet should be timestamped, source-linked, scoped, searchable, and reviewable.
 
-The first release should be a small, useful developer tool: install it, run onboarding, seed a new repo from one or more prior projects, create a packet from one project, import it into another project, connect the MCP server, and use it to move work from Claude to Codex without copy-paste. A commercial hosted product can later add encrypted sync, team workspaces, integrations, admin controls, managed MCP endpoints, and collaboration features.
+The first release should be a small, useful developer tool: install it, run onboarding, seed a new repo from one or more prior projects, create a packet from one project or active AI session, import it into another project, connect the MCP server, and use it to move work from Claude Desktop to Claude Code or Codex without copy-paste. A commercial hosted product can later add encrypted sync, team workspaces, integrations, admin controls, managed MCP endpoints, and collaboration features.
 
 The v1 product should support two related but distinct continuation artifacts:
 
@@ -84,6 +84,27 @@ The user should own the shared memory. Agents should interact with it through ex
 - link context back to source files or external references.
 
 The system should make agent continuity portable across tools.
+
+## Product Direction: Explicit Cross-Tool Handoff
+
+The real product is private, portable working context between AI work surfaces.
+
+3Notch should move the workflow from:
+
+> Let me copy and paste between Claude Desktop, Claude Code, Codex, old repos, new repos, notes, plans, and logs.
+
+to:
+
+> Create a reviewed context packet from this project/session, then make it available to the next tool or repo.
+
+The direction should be:
+
+1. **CLI core:** `notch packet create`, `notch packet import`, `notch send`, and `notch seed` operate on local, inspectable files.
+2. **Local MCP server:** Claude Desktop, Claude Code, Codex, Cursor, and other MCP-compatible tools can call 3Notch tools directly.
+3. **Claude Desktop DXT later:** once the local MCP server is stable, package it as a Claude Desktop extension for easier local installation.
+4. **Remote connector later:** only if the product intentionally adds hosted, account-based, or team behavior.
+
+The consent model is central. 3Notch should not silently read private chats or Claude Projects. A user should explicitly ask an agent to create a packet, the agent should pass selected or summarized context to a local 3Notch tool, and 3Notch should write a reviewable local artifact. This makes 3Notch a handoff recorder and packet exchange layer, not a hidden database reader.
 
 ## Steinberger-Style Product Constraint
 
@@ -302,7 +323,7 @@ These are either crowded, risky, or too abstract for the first wedge.
 
 ### Non-Goals
 
-1. Do not scrape private chat histories as the primary mechanism.
+1. Do not secretly or automatically scrape private chat histories, Claude Projects, or project data. User-invoked agents may write selected or summarized context into reviewable 3Notch packets.
 2. Do not require every agent to use the same model provider.
 3. Do not store secrets or credentials in ordinary project context.
 4. Do not make agents automatically trust unreviewed notes.
@@ -335,6 +356,8 @@ They should share structured, user-owned context artifacts:
 - conflict records.
 
 This keeps the system inspectable and reduces privacy risk.
+
+For Claude Desktop and similar chat/project surfaces, 3Notch should assume the model supplies selected context through an explicit MCP tool call. The local tool stores what it is given; it does not require privileged access to the client's private project database or raw conversation logs.
 
 ## Target Users
 
@@ -436,6 +459,21 @@ Workflow:
 5. Codex reads the imported packet through CLI or MCP.
 6. Codex implements the work without requiring the user to paste the whole Claude conversation.
 7. Codex writes an implementation summary into the destination repo's 3Notch store.
+
+### Use Case 1.1: Claude Desktop Project To Claude Code Or Codex
+
+A user has been planning in a Claude Desktop Project and wants Claude Code or Codex to build without copy-pasting the whole conversation back and forth.
+
+Workflow:
+
+1. The user asks Claude Desktop to create a 3Notch handoff packet for a specific repo, agent, or task.
+2. Claude Desktop calls the local 3Notch MCP server and supplies selected/summarized project context, decisions, constraints, source links, and explicit exclusions.
+3. 3Notch writes a packet into `.notch/outbox/` or `.notch/private/outbox/` depending on sensitivity.
+4. The user reviews the packet.
+5. Claude Code, Codex, or another repo imports the packet through CLI or MCP.
+6. The building agent reads the packet before implementation and writes a pass when done.
+
+This solves the copy-paste problem without requiring 3Notch to scrape Claude Desktop internals.
 
 ### Use Case 2: Multi-Session Project Continuity
 
@@ -1657,7 +1695,7 @@ Mitigation:
 7. Should semantic search be included in MVP or deferred?
 8. What is the best short product name?
 9. Should hosted sync be announced at launch or after OSS traction?
-10. How should Claude Projects imports work without brittle scraping?
+10. What exact Claude Desktop prompt and MCP tool UX makes explicit packet creation feel natural?
 11. What exact "context health" score or summary should be shown in MVP?
 12. Should `pass` be the primary quickstart command after `init`?
 13. Should every write tool ask agents to classify packet type explicitly?
@@ -1683,18 +1721,22 @@ The first useful release is complete when:
 12. `notch seed from <repo-or-store-path>` creates or imports a private seed packet into a new repo.
 13. Private seed packets are ignored by Git by default.
 14. MCP does not expose private seed packets unless the user explicitly enables private context for that server/session.
-15. The system records who or what wrote each packet.
-16. The system can mark records stale.
-17. The system can list unresolved questions.
-18. The user can inspect all stored context as plain files.
-19. The system can create and list basic conflict records.
-20. The system can produce a context health summary covering inbox/outbox packets, private seed packets, stale notes, open questions, recent passes, targeted briefs, and conflicts.
-21. The README includes a working new-project seed demo and Claude-to-Codex cross-repo packet demo.
-22. The quickstart demonstrates private context seeding, packet transfer, a complete pass loop, and one targeted brief, not just memory storage.
+15. An MCP-compatible client can create a packet from explicitly supplied session/project context without hidden chat or project scraping.
+16. The system records who or what wrote each packet.
+17. The system can mark records stale.
+18. The system can list unresolved questions.
+19. The user can inspect all stored context as plain files.
+20. The system can create and list basic conflict records.
+21. The system can produce a context health summary covering inbox/outbox packets, private seed packets, stale notes, open questions, recent passes, targeted briefs, and conflicts.
+22. The README includes a working new-project seed demo and Claude-to-Codex cross-repo packet demo.
+23. The quickstart demonstrates private context seeding, packet transfer, a complete pass loop, and one targeted brief, not just memory storage.
 
 ## References
 
 - Anthropic Model Context Protocol documentation: https://docs.anthropic.com/en/docs/mcp
+- Claude Desktop local MCP servers and DXT: https://support.anthropic.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop
+- Claude Code MCP documentation: https://docs.anthropic.com/en/docs/claude-code/mcp
+- Claude custom connectors via remote MCP: https://support.anthropic.com/en/articles/11175166-getting-started-with-custom-integrations-using-remote-mcp
 - Claude connectors overview: https://claude.com/docs/connectors/overview
 - OpenAI Agents SDK MCP documentation: https://openai.github.io/openai-agents-python/mcp/
 - Model Context Protocol specification: https://modelcontextprotocol.io/

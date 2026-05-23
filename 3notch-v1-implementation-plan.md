@@ -6,7 +6,9 @@
 - `3notch-v1-technical-spec.md` is authoritative where it conflicts with older request language: V1 uses `.notch/config.json`, Markdown/YAML records, and regenerable JSON manifest/index files, with no SQLite.
 - Cross-repo packet transfer is a core V1 requirement, not a later export feature. The minimum proof is repo A creates a packet, repo B imports it, and CLI/MCP can read the imported packet.
 - Private context seeding is a core V1 requirement. The minimum proof is an old repo/store seeds a new repo's ignored `.notch/private/inbox/`, and MCP hides that seed unless explicitly started with private context enabled.
+- Cross-tool handoff is the core product direction. The minimum V1 proof is that an MCP caller such as Claude Desktop, Claude Code, or Codex can create/read packets from explicitly supplied context without hidden chat/project scraping.
 - V1 implements the required CLI and MCP surfaces only; `notch search`, assumption-specific commands, hosted sync, semantic search, dashboards, telemetry, and provider-specific deep config mutation are deferred.
+- Claude Desktop DXT packaging and remote MCP connectors are future distribution/integration layers; V1 builds the local CLI plus local MCP server that those layers would wrap.
 - The package uses Node.js 20+, TypeScript, Commander, Ajv, Vitest, tsup, and `@modelcontextprotocol/sdk`.
 
 ### Wave 1: Package and Foundation
@@ -527,6 +529,7 @@
   - **Implementation:**
     - Register `create_packet`, `import_packet`, `list_packets`, `get_packet`, `create_seed_packet`, and `import_seed_packet`.
     - Keep MCP import scoped to the current store; CLI owns cross-repo destination transfer.
+    - Allow MCP clients to create packets from selected/summarized session context supplied in tool input, while forbidding hidden reads of chat/project internals.
     - Enforce read-only mode for packet creates/imports, preserve origin source links during import, and gate private packet reads behind `--include-private`.
   - **Dependencies:** Steps 3.10, 5.1
   - **Verification:** Run `npm test -- packet-tools`; MCP can create outbox packets, import a supplied packet into inbox/private inbox, hide private packets by default, and read list/show results without arbitrary filesystem access.
@@ -617,8 +620,8 @@
   - **Dependencies:** Steps 3.2, 3.5, 3.6, 3.10, 3.11, 4.2 through 4.7
   - **Verification:** Run `npm test -- corrupt-store path-traversal audit-integration secret-scan`.
 
-- [ ] **Step 6.3: Add private seed and cross-repo Claude-to-Codex demo fixtures**
-  - **Task:** Include realistic local `.notch/` fixtures for new-project seeding and packet transfer.
+- [ ] **Step 6.3: Add private seed, cross-repo, and cross-tool handoff demo fixtures**
+  - **Task:** Include realistic local `.notch/` fixtures for new-project seeding, packet transfer, and Claude Desktop to Claude Code/Codex handoff.
   - **Files:**
     - `fixtures/cross-repo-demo/source-app/.notch/config.json` - NEW
     - `fixtures/cross-repo-demo/source-app/.notch/.gitignore` - NEW
@@ -634,24 +637,29 @@
     - `fixtures/context-seed-demo/old-project/.notch/brief.md` - NEW
     - `fixtures/context-seed-demo/new-project/.notch/config.json` - NEW
     - `fixtures/context-seed-demo/new-project/.notch/private/inbox/20260523T173000Z-user-workflow-seed-from-old-project.md` - NEW
+    - `fixtures/cross-tool-handoff-demo/claude-desktop-session-packet.md` - NEW
   - **Implementation:**
     - Model private user/workflow context seeding into a fresh repo, plus Claude planning in one repo, a portable packet, and Codex reading the imported packet in a second repo.
+    - Model a packet created from explicitly supplied Claude Desktop session context; the fixture should show the selected summary, exclusions, and source links rather than raw chat logs.
     - Keep `index/` and `logs/` absent or regenerable to prove source files are authoritative.
   - **Dependencies:** Steps 2.3, 2.4, 2.5, 2.6, 3.10, 3.11
   - **Verification:** Run `notch doctor --cwd fixtures/context-seed-demo/new-project --fix --yes`, `notch doctor --cwd fixtures/cross-repo-demo/source-app --fix --yes`, and `notch doctor --cwd fixtures/cross-repo-demo/destination-api --fix --yes`; fixtures become healthy, private seed is ignored, and destination packet list works.
 
 - [ ] **Step 6.4: Add README and workflow docs**
-  - **Task:** Document quickstart, private context seeding, cross-repo packets, first-pass workflow, targeted briefs, MCP setup, and local-first privacy.
+  - **Task:** Document quickstart, private context seeding, cross-repo packets, cross-tool handoff, first-pass workflow, targeted briefs, MCP setup, and local-first privacy.
   - **Files:**
     - `README.md` - NEW
     - `docs/private-context-seeding.md` - NEW
     - `docs/first-pass-workflow.md` - NEW
     - `docs/cross-repo-packets.md` - NEW
+    - `docs/cross-tool-handoff.md` - NEW
     - `docs/targeted-brief-workflow.md` - NEW
     - `docs/mcp-setup.md` - NEW
     - `docs/privacy.md` - NEW
   - **Implementation:**
     - Use 3Notch positioning: local-first private context seeding and packet passing, not generic memory.
+    - Explain the consent model: a user asks an AI client to create a packet, the client supplies selected/summarized context through MCP, and 3Notch writes a reviewable artifact.
+    - Explain integration posture: local MCP first, Claude Desktop DXT package later, remote connector later.
     - Include `npx @3notch/cli onboard`, `notch seed from`, `notch packet create`, `notch packet import`, `notch send --to`, `notch brief`, `notch brief create`, `notch pass`, `notch status`, `notch doctor`, and `notch mcp serve --include-private`.
   - **Dependencies:** Steps 4.2 through 4.7, 5.1 through 5.8, 6.1
   - **Verification:** Manually run every README quickstart command in a temp project and confirm outputs match the documented flow.
@@ -667,6 +675,7 @@
   - **Implementation:**
     - Reference MCP tools by V1 names such as `get_brief`, `get_recent_passes`, `create_brief`, `create_pass`, `create_packet`, `import_packet`, `create_seed_packet`, `import_seed_packet`, `list_packets`, and `get_packet`.
     - Keep prompts focused on source-linked context, open questions, stale assumptions, and conflicts.
+    - Include Claude Desktop to Claude Code/Codex wording that asks for a scoped packet, explicit exclusions, and review before import.
   - **Dependencies:** Steps 5.2 through 5.8, 6.3
   - **Verification:** Review prompt files for no claims about chat-history scraping, telemetry, cloud sync, semantic search, or autonomous orchestration.
 
@@ -685,22 +694,24 @@
 
 ### Final Step: End-to-End Smoke Test
 
-- [ ] **Step 7.1: Verify private seed, cross-repo packet loop, and Claude-to-Codex workflow**
-  - **Task:** Add and run an end-to-end smoke test covering the complete V1 loop from onboarding through private context seed, packet transfer, and MCP retrieval.
+- [ ] **Step 7.1: Verify private seed, cross-repo packet loop, cross-tool handoff, and Claude-to-Codex workflow**
+  - **Task:** Add and run an end-to-end smoke test covering the complete V1 loop from onboarding through private context seed, packet transfer, explicit MCP packet creation, and MCP retrieval.
   - **Files:**
     - `tests/e2e/claude-to-codex-smoke.test.ts` - NEW
     - `tests/e2e/private-context-seed-smoke.test.ts` - NEW
     - `tests/e2e/cross-repo-packet-smoke.test.ts` - NEW
+    - `tests/e2e/cross-tool-handoff-smoke.test.ts` - NEW
     - `tests/e2e/local-privacy.test.ts` - NEW
     - `tests/helpers/mcp-harness.ts` - MODIFIED
     - `package.json` - MODIFIED
   - **Implementation:**
     - Create an old temp project and a new temp project, seed private context from old into new, verify private seed is ignored and hidden from MCP by default, then enable private context and read it.
     - Create two temp projects, run `notch onboard --yes` in both, create a pass and targeted brief in repo A, create a packet, import/send it to repo B, list/show the packet from repo B, run status/doctor, start MCP harness, and call `tools/list`.
+    - Use the MCP harness to create a packet from explicitly supplied "Claude Desktop session" content, import it into another temp store, and verify no arbitrary chat/project read tool exists.
     - Assert all required MCP tools are listed, private seeds and imported packets are readable only under the right exposure rules, and no telemetry, cloud, login, hosted endpoint, or arbitrary shell capability exists.
   - **Dependencies:** Steps 1.1 through 6.6
   - **Verification:** Run `npm run lint && npm run type-check && npm run build && npm test && npm run test:e2e`; the smoke test verifies onboarding, private context seeding, packet create/import/send, pass creation/retrieval, targeted brief creation/retrieval, status, doctor, MCP tool listing, and local-only/no-telemetry posture.
 
 ### Future Considerations
 
-- Hosted encrypted sync, teams, managed MCP endpoints, browser UI, Homebrew distribution, SQLite/FTS, semantic search, auto conflict detection, chat importers, review workflows, assumption-specific records, and 3Notch repo dogfooding files such as root `AGENTS.md` or a committed `.notch/` example remain outside V1.
+- Hosted encrypted sync, teams, managed MCP endpoints, Claude Desktop DXT packaging, remote MCP connectors, browser UI, Homebrew distribution, SQLite/FTS, semantic search, auto conflict detection, chat importers, review workflows, assumption-specific records, and 3Notch repo dogfooding files such as root `AGENTS.md` or a committed `.notch/` example remain outside V1.

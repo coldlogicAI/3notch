@@ -24,7 +24,7 @@ Do not rely on hard-coded absolute paths; this repo may be checked out under a d
 
 Do not ask the user to paste the project request, branding review, or technical specification. Use the local files above as the source of truth.
 
-3Notch is not a SaaS dashboard, generic knowledge base, team collaboration app, RAG system, broad memory platform, or agent orchestration framework. 3Notch is a local-first developer tool for creating, storing, validating, and retrieving targeted AI-agent handoffs across LLM tools such as Claude, Codex, Cursor, ChatGPT, and future MCP-compatible agents.
+3Notch is not a SaaS dashboard, generic knowledge base, team collaboration app, RAG system, broad memory platform, or agent orchestration framework. 3Notch is a local-first developer tool for creating, storing, validating, and retrieving targeted AI-agent handoffs across repos and AI work surfaces such as Claude Desktop, Claude Code, Codex, Cursor, ChatGPT, and future MCP-compatible agents.
 
 Your job is implementation planning only. Do not write code. Do not edit files. Do not create project artifacts. Produce the implementation plan as Markdown in the chat.
 
@@ -38,6 +38,7 @@ Your job is implementation planning only. Do not write code. Do not edit files. 
 - Source-of-truth records: human-readable local files
 - V1 derived index: file-scan / JSON manifest only; no native SQLite dependency
 - Schema validation: JSON Schema or equivalent for all persisted records and MCP tool inputs
+- Required product loop: explicit cross-tool handoff through reviewable packets, not hidden chat/project scraping
 - Required hero commands:
   - `notch onboard`
   - `notch brief`
@@ -85,6 +86,7 @@ Your job is implementation planning only. Do not write code. Do not edit files. 
 - Every command must support scriptable non-interactive behavior where reasonable.
 - MCP tools must be scoped to the current project’s `.notch/` store.
 - MCP must not expose arbitrary shell execution or broad filesystem access.
+- MCP clients can write/read supplied packets, but must not imply access to raw chat histories or client project databases.
 - File references must be project-relative and must resolve under the configured project root.
 - Secret scanning, path traversal protection, symlink rejection, and audit logging are V1 requirements.
 - Keep the plan small enough that a coding agent can complete each step cleanly and verify it.

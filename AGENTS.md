@@ -2,7 +2,7 @@
 
 ## Purpose
 
-3Notch is a local-first CLI and MCP server for passing project and private workflow context across repos and AI agents. V1 should prove the useful loops first: seed a new repo privately from prior work, create a packet in repo A, import/read it in repo B, then support project brief, targeted briefs, passes, decisions, open questions, stale assumptions, conflicts, status, and doctor checks.
+3Notch is a local-first CLI and MCP server for passing project and private workflow context across repos, Claude Desktop, Claude Code, Codex, and other AI work surfaces. V1 should prove the useful loops first: seed a new repo privately from prior work, create a reviewed packet from an active tool/session, import/read it in another repo or tool, then support project brief, targeted briefs, passes, decisions, open questions, stale assumptions, conflicts, status, and doctor checks.
 
 ## Read First
 
@@ -21,7 +21,9 @@ For a persistent V1 implementation run, use `Prompts/3notch-v1-goal.md` as the p
 - When the user presents a product idea or asks "is this the right path?", discuss and pressure-test it before changing specs, plans, or repo files.
 - Treat cross-repo packets as core V1 behavior, not a later export feature.
 - Treat private context seeding as core V1 behavior, not scope creep.
+- Treat cross-tool handoff as the product direction: Claude Desktop/Claude Code/Codex should exchange context through explicit 3Notch packets, not copy-paste.
 - No telemetry, cloud sync, hosted service, dashboard, vector database, or SQLite/native DB for V1.
+- Do not build hidden chat/project scraping. MCP tools may write selected or summarized context that the user/agent explicitly supplies during a session.
 - Preserve human-readable `.notch/` source files as the source of truth.
 - Use `.notch/outbox/` for created packets and `.notch/inbox/` for imported packets.
 - Use ignored `.notch/private/` for user preferences, workflow conventions, and seed packets.

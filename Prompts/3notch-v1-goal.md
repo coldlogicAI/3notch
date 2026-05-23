@@ -17,6 +17,7 @@ Read first:
 
 Primary product requirements:
 - 3Notch is a local-first CLI and MCP server for private context seeding and cross-repo context packets.
+- The product direction is explicit cross-tool handoff between Claude Desktop, Claude Code, Codex, Cursor, ChatGPT, and local agents through reviewable packets.
 - Private context seeding is core V1, not scope creep.
 - Cross-repo packet transfer is core V1, not a later export feature.
 - Source records are human-readable Markdown/YAML files under `.notch/`.
@@ -25,7 +26,7 @@ Primary product requirements:
 - Derived `.notch/index/` and `.notch/logs/` output must be rebuildable.
 
 Hard boundaries:
-- Do not add telemetry, analytics, hosted sync, cloud dependencies, login, billing, dashboards, vector databases, semantic search dependencies, SQLite/native DB bindings, broad orchestration, arbitrary MCP shell execution, or automatic private chat scraping.
+- Do not add telemetry, analytics, hosted sync, cloud dependencies, login, billing, dashboards, vector databases, semantic search dependencies, SQLite/native DB bindings, broad orchestration, arbitrary MCP shell execution, hidden chat/project scraping, DXT packaging, or remote connectors.
 - Do not create or push GitHub remotes without explicit approval.
 - Do not run destructive Git operations without explicit approval.
 - Do not silently merge imported packet contents into destination source records.
@@ -60,6 +61,7 @@ Required final verification:
 - Fresh temp project smoke test for `notch onboard`
 - Private seed smoke test: old repo/store seeds new repo `.notch/private/inbox/`, private seed is Git-ignored, MCP hides it by default, MCP reads it only with private context enabled.
 - Cross-repo packet smoke test: repo A creates packet, repo B imports packet into `.notch/inbox/`, CLI and MCP can read it, and destination source records are not silently merged.
+- Cross-tool handoff smoke test: an MCP caller can create a packet from explicitly supplied session context, another store can import it, and no tool needs raw chat-history access.
 - Doctor/status smoke test on healthy and intentionally corrupted stores.
 
 Completion criteria:
