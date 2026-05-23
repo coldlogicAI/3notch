@@ -1,7 +1,7 @@
 {
   "name": "@3notch/cli",
   "version": "0.0.0",
-  "description": "Local-first context passing for AI agents.",
+  "description": "Local-first context packets across repos and AI agents.",
   "type": "module",
   "license": "MIT",
   "author": "",
@@ -11,6 +11,7 @@
     "cli",
     "context",
     "handoff",
+    "packets",
     "mcp"
   ],
   "engines": {

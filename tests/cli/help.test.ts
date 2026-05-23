@@ -58,6 +58,7 @@ describe('CLI skeleton', () => {
     expect(result.stdout).toContain('Usage: notch [options]');
     expect(result.stdout).toContain('--cwd <path>');
     expect(result.stdout).toContain('--store <path>');
+    expect(result.stdout).toContain('packet');
     expect(result.stdout).toContain('mcp serve');
   });
 

@@ -4,6 +4,7 @@
 
 - The current repo is documentation-only, so all package/runtime files are new unless explicitly marked modified later.
 - `3notch-v1-technical-spec.md` is authoritative where it conflicts with older request language: V1 uses `.notch/config.json`, Markdown/YAML records, and regenerable JSON manifest/index files, with no SQLite.
+- Cross-repo packet transfer is a core V1 requirement, not a later export feature. The minimum proof is repo A creates a packet, repo B imports it, and CLI/MCP can read the imported packet.
 - V1 implements the required CLI and MCP surfaces only; `notch search`, assumption-specific commands, hosted sync, semantic search, dashboards, telemetry, and provider-specific deep config mutation are deferred.
 - The package uses Node.js 20+, TypeScript, Commander, Ajv, Vitest, tsup, and `@modelcontextprotocol/sdk`.
 
@@ -135,7 +136,22 @@
   - **Dependencies:** Step 2.2
   - **Verification:** Run `npm test -- targeted-brief-schema`; valid fixture passes and missing goal fails.
 
-- [ ] **Step 2.6: Add decision, question, and conflict schemas**
+- [ ] **Step 2.6: Add packet schema and fixtures**
+  - **Task:** Define and test the portable transfer packet format used by `.notch/outbox/`, `.notch/inbox/`, and standalone packet files.
+  - **Files:**
+    - `src/schemas/packet.schema.json` - NEW
+    - `src/templates/packet.md` - NEW
+    - `tests/fixtures/valid-packet.md` - NEW
+    - `tests/fixtures/invalid-packet-missing-origin.md` - NEW
+    - `tests/schema/packet-schema.test.ts` - NEW
+  - **Implementation:**
+    - Require origin repo metadata, recipient metadata, summary, included record refs, transfer status, and required body sections.
+    - Allow origin file/source links to point at the source repo while keeping destination import paths separately validated.
+    - Validate `recordType: packet`, quoted semver-compatible `schemaVersion`, and inbox/outbox/import metadata.
+  - **Dependencies:** Step 2.2
+  - **Verification:** Run `npm test -- packet-schema`; valid packet passes and malformed origin/import metadata fails.
+
+- [ ] **Step 2.7: Add decision, question, and conflict schemas**
   - **Task:** Define and test the remaining source-of-truth context record schemas.
   - **Files:**
     - `src/schemas/decision.schema.json` - NEW
@@ -149,7 +165,7 @@
   - **Dependencies:** Step 2.2
   - **Verification:** Run `npm test -- context-record-schemas`; invalid statuses and missing required fields fail.
 
-- [ ] **Step 2.7: Add decision, question, and conflict templates**
+- [ ] **Step 2.8: Add decision, question, and conflict templates**
   - **Task:** Add human-readable Markdown templates for secondary record creation.
   - **Files:**
     - `src/templates/decision.md` - NEW
@@ -159,10 +175,10 @@
   - **Implementation:**
     - Match template frontmatter and headings to the schemas.
     - Keep templates readable and editable without 3Notch.
-  - **Dependencies:** Step 2.6
+  - **Dependencies:** Step 2.7
   - **Verification:** Run `npm test -- templates`; generated template frontmatter validates against each schema.
 
-- [ ] **Step 2.8: Add Markdown/YAML record parser**
+- [ ] **Step 2.9: Add Markdown/YAML record parser**
   - **Task:** Parse persisted Markdown records, validate YAML frontmatter, and enforce required body headings.
   - **Files:**
     - `src/core/markdown-service.ts` - NEW
@@ -173,10 +189,10 @@
   - **Implementation:**
     - Coerce scalar `schemaVersion` values to strings before schema validation.
     - Return parsed metadata, Markdown body, and structured errors without throwing raw parser errors.
-  - **Dependencies:** Steps 2.2, 2.3, 2.4, 2.5, 2.6
+  - **Dependencies:** Steps 2.2 through 2.7
   - **Verification:** Run `npm test -- record-parser`; bad YAML returns `NOTCH_CORRUPT_RECORD` and missing headings return `NOTCH_RECORD_INVALID`.
 
-- [ ] **Step 2.9: Add status and MCP input schemas**
+- [ ] **Step 2.10: Add status and MCP input schemas**
   - **Task:** Add schema coverage for status output and all required MCP tool input schemas.
   - **Files:**
     - `src/schemas/status.schema.json` - NEW
@@ -187,7 +203,7 @@
   - **Implementation:**
     - Treat `src/schemas/mcp-tools.schema.json` as the canonical MCP input-schema source.
     - Make `src/mcp/tool-schemas.ts` load and export schemas from the packaged JSON file instead of redefining schemas in TypeScript.
-    - Define input schemas for every required MCP tool, including read-only-safe status and doctor inputs.
+    - Define input schemas for every required MCP tool, including packet tools plus read-only-safe status and doctor inputs.
     - Enforce limits such as recent pass limit `1..10` and valid confidence/status enums.
   - **Dependencies:** Step 2.2
   - **Verification:** Run `npm test -- mcp-tool-schemas status-schema`; all required MCP tool names have concrete JSON Schemas and runtime tool schemas are loaded from `src/schemas/mcp-tools.schema.json`.
@@ -204,8 +220,9 @@
     - `tests/fixtures/config-invalid.json` - NEW
   - **Implementation:**
     - Support `--cwd` and `--store`, default `.notch/`, and Git-root detection.
+    - Create and validate source folders including `passes/`, `briefs/`, `decisions/`, `questions/`, `conflicts/`, `inbox/`, and `outbox/`.
     - Validate config with `config.schema.json` and warn on unknown top-level fields.
-  - **Dependencies:** Steps 2.2, 2.8
+  - **Dependencies:** Steps 2.2, 2.9
   - **Verification:** Run `npm test -- config-service`; missing store maps to exit code `2`.
 
 - [ ] **Step 3.2: Add path safety and symlink rejection**
@@ -215,6 +232,7 @@
     - `tests/unit/path-safety.test.ts` - NEW
   - **Implementation:**
     - Reject absolute paths, `~`, sibling traversal, paths resolving outside `config.project.root`, and symlinks inside `.notch/`.
+    - Provide separate helpers for origin source links inside packets versus local destination write paths, so imported packets can preserve source repo references without allowing unsafe writes.
     - Expose helpers for CLI, MCP, doctor, and store services.
   - **Dependencies:** Step 3.1
   - **Verification:** Run `npm test -- path-safety`; traversal attempts fail with `NOTCH_PATH_OUTSIDE_PROJECT`, relative backslash-separated paths normalize safely, and drive-letter absolute paths plus backslash traversal are rejected.
@@ -240,8 +258,8 @@
     - `tests/unit/store-service.test.ts` - NEW
   - **Implementation:**
     - Write to temp files and rename into place.
-    - Scan only allowed `.notch/` source directories and ignore invalid records unless requested by doctor.
-  - **Dependencies:** Steps 3.1, 3.2, 2.8
+    - Scan only allowed `.notch/` source directories, including `inbox/` and `outbox/`, and ignore invalid records unless requested by doctor.
+  - **Dependencies:** Steps 3.1, 3.2, 2.9
   - **Verification:** Run `npm test -- store-service`; explicit slug collisions fail while auto-generated ID and filename collisions suffix safely with `-2`, `-3`, and so on.
 
 - [ ] **Step 3.5: Add audit logging**
@@ -307,7 +325,24 @@
   - **Dependencies:** Steps 3.2, 3.3, 3.4, 3.5, 3.6, 3.7
   - **Verification:** Run `npm test -- context-services`; stale and conflict resolve operations rewrite only allowed 3Notch source records, default project brief stale marking is rejected, and stale/superseded records return no-op warnings.
 
-- [ ] **Step 3.10: Add status and doctor services**
+- [ ] **Step 3.10: Add packet and transfer services**
+  - **Task:** Implement portable packet creation, import, listing, lookup, and local filesystem transfer.
+  - **Files:**
+    - `src/core/packet-service.ts` - NEW
+    - `src/core/transfer-service.ts` - NEW
+    - `tests/unit/packet-service.test.ts` - NEW
+    - `tests/unit/transfer-service.test.ts` - NEW
+    - `tests/fixtures/packet-source-store/` - NEW
+    - `tests/fixtures/packet-destination-store/` - NEW
+  - **Implementation:**
+    - Create packet Markdown/YAML from selected passes, briefs, decisions, questions, conflicts, and source links.
+    - Always write created packets to `.notch/outbox/`; optionally write a standalone packet file.
+    - Import validates a packet and writes only to `.notch/inbox/`, preserving origin repo metadata and avoiding silent merge/overwrite of destination records.
+    - `send` support creates an outbox packet, then imports/copies it to a local destination repo root, `.notch/` path, or file path.
+  - **Dependencies:** Steps 2.6, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9
+  - **Verification:** Run `npm test -- packet-service transfer-service`; repo A outbox packets import into repo B inbox and are listable without merging source records.
+
+- [ ] **Step 3.11: Add status and doctor services**
   - **Task:** Compute project status summaries and full store diagnostics with safe derived fixes.
   - **Files:**
     - `src/core/status-service.ts` - NEW
@@ -316,9 +351,10 @@
     - `tests/unit/doctor-service.test.ts` - NEW
     - `tests/fixtures/corrupt-store.md` - NEW
   - **Implementation:**
-    - Report latest pass, open briefs, active decisions, open questions, conflicts, stale records, validation counts, and warnings.
-    - Validate store structure, schemas, IDs, source links, audit log, symlinks, secrets, MCP write config, and `.notch/.gitignore`.
-  - **Dependencies:** Steps 3.1 through 3.9
+    - Report latest pass, inbox/outbox packets, open briefs, active decisions, open questions, conflicts, stale records, validation counts, and warnings.
+    - Validate store structure, packet schemas, record schemas, IDs, source links, audit log, symlinks, secrets, MCP write config, and `.notch/.gitignore`.
+    - Warn on broken origin references in imported packets without treating those origin paths as destination path traversal.
+  - **Dependencies:** Steps 3.1 through 3.10
   - **Verification:** Run `npm test -- status-service doctor-service`; corrupt YAML is reported as corruption and `doctor --fix` behavior is limited to derived state.
 
 ### Wave 4: CLI Commands
@@ -408,6 +444,22 @@
   - **Dependencies:** Steps 3.9, 4.1
   - **Verification:** Run `npm test -- stale conflict`; stale records remain inspectable, resolved conflicts become archived, and duplicate conflict record IDs are rejected.
 
+- [ ] **Step 4.7: Add packet and send commands**
+  - **Task:** Implement the cross-repo transfer command family.
+  - **Files:**
+    - `src/cli/commands/packet.ts` - NEW
+    - `src/cli/commands/send.ts` - NEW
+    - `src/cli/formatters/packet-formatters.ts` - NEW
+    - `src/cli/program.ts` - MODIFIED
+    - `tests/cli/packet.test.ts` - NEW
+    - `tests/cli/send.test.ts` - NEW
+  - **Implementation:**
+    - Implement `notch packet create`, `notch packet import <file>`, `notch packet list`, `notch packet show <id>`, and `notch send --to <repo-or-store-path>`.
+    - Support selected record/file includes, JSON output, editor/stdin input, collision handling, local repo/store destination resolution, and file-path destinations.
+    - Keep targeting metadata explicit: `--to-agent`, `--to-person`, and `--to-repo` route context but do not imply secrecy or access control in V1.
+  - **Dependencies:** Steps 3.10, 4.1
+  - **Verification:** Run `npm test -- packet send`; two temp repos prove source outbox creation, destination inbox import, list/show, and no silent merge into destination source records.
+
 ### Wave 5: MCP Server
 
 - [ ] **Step 5.1: Add stdio MCP server foundation**
@@ -421,7 +473,7 @@
   - **Implementation:**
     - Support `--store`, `--read-only`, `--default-actor`, and `--log-file`.
     - Keep protocol output on stdio and diagnostics on stderr or the configured log file.
-  - **Dependencies:** Steps 2.9, 3.1, 4.1
+  - **Dependencies:** Steps 2.10, 3.1, 4.1
   - **Verification:** Run `npm test -- server-start`; MCP initialize succeeds and startup failures map to exit code `4`.
 
 - [ ] **Step 5.2: Add MCP brief and pass read tools**
@@ -452,7 +504,23 @@
   - **Dependencies:** Steps 3.8, 5.1
   - **Verification:** Run `npm test -- brief-tools`; out-of-project scope files are rejected and valid writes audit exactly once.
 
-- [ ] **Step 5.4: Add MCP pass and decision tools**
+- [ ] **Step 5.4: Add MCP packet tools**
+  - **Task:** Implement packet create/import/list/get MCP tools for the scoped store.
+  - **Files:**
+    - `src/mcp/tools/create-packet.ts` - NEW
+    - `src/mcp/tools/import-packet.ts` - NEW
+    - `src/mcp/tools/list-packets.ts` - NEW
+    - `src/mcp/tools/get-packet.ts` - NEW
+    - `src/mcp/tools/index.ts` - MODIFIED
+    - `tests/mcp/packet-tools.test.ts` - NEW
+  - **Implementation:**
+    - Register `create_packet`, `import_packet`, `list_packets`, and `get_packet`.
+    - Keep MCP import scoped to the current store; CLI owns cross-repo destination transfer.
+    - Enforce read-only mode for packet creates/imports and preserve origin source links during import.
+  - **Dependencies:** Steps 3.10, 5.1
+  - **Verification:** Run `npm test -- packet-tools`; MCP can create outbox packets, import a supplied packet into inbox, and read list/show results without arbitrary filesystem access.
+
+- [ ] **Step 5.5: Add MCP pass and decision tools**
   - **Task:** Implement pass creation and decision create/list MCP tools.
   - **Files:**
     - `src/mcp/tools/create-pass.ts` - NEW
@@ -466,7 +534,7 @@
   - **Dependencies:** Steps 3.8, 3.9, 5.1
   - **Verification:** Run `npm test -- pass-decision-tools`; created records include source tool `notch-mcp`.
 
-- [ ] **Step 5.5: Add MCP question and stale tools**
+- [ ] **Step 5.6: Add MCP question and stale tools**
   - **Task:** Implement open-question and stale-marking MCP tools.
   - **Files:**
     - `src/mcp/tools/add-open-question.ts` - NEW
@@ -480,7 +548,7 @@
   - **Dependencies:** Steps 3.9, 5.1
   - **Verification:** Run `npm test -- question-stale-tools`; stale writes preserve `createdAt` and set `updatedAt`.
 
-- [ ] **Step 5.6: Add MCP conflict tools**
+- [ ] **Step 5.7: Add MCP conflict tools**
   - **Task:** Implement conflict create/list/resolve MCP tools.
   - **Files:**
     - `src/mcp/tools/create-conflict.ts` - NEW
@@ -494,7 +562,7 @@
   - **Dependencies:** Steps 3.9, 5.1
   - **Verification:** Run `npm test -- conflict-tools`; resolution archives conflict, records resolver metadata, and duplicate `conflictingRecords` IDs are rejected.
 
-- [ ] **Step 5.7: Add MCP status, doctor, and read-only enforcement**
+- [ ] **Step 5.8: Add MCP status, doctor, and read-only enforcement**
   - **Task:** Implement status/doctor MCP tools and prove read-only mode disables all writes.
   - **Files:**
     - `src/mcp/tools/get-status.ts` - NEW
@@ -506,7 +574,7 @@
     - Register `get_status` and `run_doctor`.
     - In read-only mode, reject every write tool and reject `run_doctor({ fixDerivedState: true })`.
     - Treat an empty `config.defaults.allowedMcpWriteTools` list as effective MCP read-only mode for write tools while keeping read tools available.
-  - **Dependencies:** Steps 3.10, 5.1
+  - **Dependencies:** Steps 3.11, 5.1
   - **Verification:** Run `npm test -- status-doctor-tools read-only-mode`; write tools fail with `NOTCH_MCP_READ_ONLY` under `--read-only` and under an empty `allowedMcpWriteTools` config.
 
 ### Wave 6: Status, Doctor, Fixtures, and Documentation
@@ -522,7 +590,7 @@
   - **Implementation:**
     - Support `--json`, `--stale-after-days`, `doctor --fix`, `--yes`, and `--strict`.
     - Ensure `doctor --fix` rebuilds only derived state and missing derived folders.
-  - **Dependencies:** Steps 3.10, 4.1
+  - **Dependencies:** Steps 3.11, 4.1
   - **Verification:** Run `npm test -- status doctor`; strict warnings exit `6` and fresh stores report healthy.
 
 - [ ] **Step 6.2: Add security and corrupt-store integration tests**
@@ -535,35 +603,41 @@
   - **Implementation:**
     - Test bad YAML, duplicate IDs, broken audit JSONL, absolute paths, sibling traversal, symlink rejection, and secret-like input.
     - Prove blocked secret writes append `secret-blocked` audit entries without source records.
-  - **Dependencies:** Steps 3.2, 3.5, 3.6, 3.10, 4.2 through 4.6
+  - **Dependencies:** Steps 3.2, 3.5, 3.6, 3.10, 3.11, 4.2 through 4.7
   - **Verification:** Run `npm test -- corrupt-store path-traversal audit-integration secret-scan`.
 
-- [ ] **Step 6.3: Add Claude-to-Codex demo fixture**
-  - **Task:** Include a realistic local `.notch/` fixture for the primary handoff demo.
+- [ ] **Step 6.3: Add cross-repo Claude-to-Codex demo fixture**
+  - **Task:** Include two realistic local `.notch/` fixtures for the primary packet-transfer demo.
   - **Files:**
-    - `fixtures/claude-to-codex-demo/.notch/config.json` - NEW
-    - `fixtures/claude-to-codex-demo/.notch/.gitignore` - NEW
-    - `fixtures/claude-to-codex-demo/.notch/brief.md` - NEW
-    - `fixtures/claude-to-codex-demo/.notch/passes/20260523T170000Z-claude-planning.md` - NEW
-    - `fixtures/claude-to-codex-demo/.notch/briefs/20260523T171500Z-route-guard-for-codex.md` - NEW
+    - `fixtures/cross-repo-demo/source-app/.notch/config.json` - NEW
+    - `fixtures/cross-repo-demo/source-app/.notch/.gitignore` - NEW
+    - `fixtures/cross-repo-demo/source-app/.notch/brief.md` - NEW
+    - `fixtures/cross-repo-demo/source-app/.notch/passes/20260523T170000Z-claude-planning.md` - NEW
+    - `fixtures/cross-repo-demo/source-app/.notch/briefs/20260523T171500Z-route-guard-for-codex.md` - NEW
+    - `fixtures/cross-repo-demo/source-app/.notch/outbox/20260523T172000Z-route-guard-to-api.md` - NEW
+    - `fixtures/cross-repo-demo/destination-api/.notch/config.json` - NEW
+    - `fixtures/cross-repo-demo/destination-api/.notch/.gitignore` - NEW
+    - `fixtures/cross-repo-demo/destination-api/.notch/brief.md` - NEW
+    - `fixtures/cross-repo-demo/destination-api/.notch/inbox/20260523T172000Z-route-guard-from-source-app.md` - NEW
   - **Implementation:**
-    - Model Claude planning, Codex-targeted brief, local-only config, and valid source-linked records.
+    - Model Claude planning in one repo, a portable packet, and Codex reading the imported packet in a second repo.
     - Keep `index/` and `logs/` absent or regenerable to prove source files are authoritative.
-  - **Dependencies:** Steps 2.3, 2.4, 2.5, 3.10
-  - **Verification:** Run `notch doctor --cwd fixtures/claude-to-codex-demo --fix --yes`; fixture becomes healthy and index is regenerated.
+  - **Dependencies:** Steps 2.3, 2.4, 2.5, 2.6, 3.10, 3.11
+  - **Verification:** Run `notch doctor --cwd fixtures/cross-repo-demo/source-app --fix --yes` and `notch doctor --cwd fixtures/cross-repo-demo/destination-api --fix --yes`; both fixtures become healthy and destination packet list works.
 
 - [ ] **Step 6.4: Add README and workflow docs**
-  - **Task:** Document quickstart, first-pass workflow, targeted briefs, MCP setup, and local-first privacy.
+  - **Task:** Document quickstart, cross-repo packets, first-pass workflow, targeted briefs, MCP setup, and local-first privacy.
   - **Files:**
     - `README.md` - NEW
     - `docs/first-pass-workflow.md` - NEW
+    - `docs/cross-repo-packets.md` - NEW
     - `docs/targeted-brief-workflow.md` - NEW
     - `docs/mcp-setup.md` - NEW
     - `docs/privacy.md` - NEW
   - **Implementation:**
     - Use 3Notch positioning: local-first context passing, not generic memory.
-    - Include `npx @3notch/cli onboard`, `notch brief`, `notch brief create`, `notch pass`, `notch status`, `notch doctor`, and `notch mcp serve`.
-  - **Dependencies:** Steps 4.2 through 4.6, 5.1 through 5.7, 6.1
+    - Include `npx @3notch/cli onboard`, `notch packet create`, `notch packet import`, `notch send --to`, `notch brief`, `notch brief create`, `notch pass`, `notch status`, `notch doctor`, and `notch mcp serve`.
+  - **Dependencies:** Steps 4.2 through 4.7, 5.1 through 5.8, 6.1
   - **Verification:** Manually run every README quickstart command in a temp project and confirm outputs match the documented flow.
 
 - [ ] **Step 6.5: Add agent workflow prompts and demo notes**
@@ -573,11 +647,11 @@
     - `docs/prompts/codex-implementation.md` - NEW
     - `docs/prompts/review-agent.md` - NEW
     - `docs/prompts/end-of-session-pass.md` - NEW
-    - `fixtures/claude-to-codex-demo/README.md` - NEW
+    - `fixtures/cross-repo-demo/README.md` - NEW
   - **Implementation:**
-    - Reference MCP tools by V1 names such as `get_brief`, `get_recent_passes`, `create_brief`, and `create_pass`.
+    - Reference MCP tools by V1 names such as `get_brief`, `get_recent_passes`, `create_brief`, `create_pass`, `create_packet`, `import_packet`, `list_packets`, and `get_packet`.
     - Keep prompts focused on source-linked context, open questions, stale assumptions, and conflicts.
-  - **Dependencies:** Steps 5.2 through 5.7, 6.3
+  - **Dependencies:** Steps 5.2 through 5.8, 6.3
   - **Verification:** Review prompt files for no claims about chat-history scraping, telemetry, cloud sync, semantic search, or autonomous orchestration.
 
 - [ ] **Step 6.6: Add CI and telemetry regression guard**
@@ -595,18 +669,19 @@
 
 ### Final Step: End-to-End Smoke Test
 
-- [ ] **Step 7.1: Verify Claude-to-Codex pass loop and targeted brief workflow**
-  - **Task:** Add and run an end-to-end smoke test covering the complete V1 loop from onboarding through MCP retrieval.
+- [ ] **Step 7.1: Verify cross-repo packet loop and Claude-to-Codex workflow**
+  - **Task:** Add and run an end-to-end smoke test covering the complete V1 loop from onboarding through packet transfer and MCP retrieval.
   - **Files:**
     - `tests/e2e/claude-to-codex-smoke.test.ts` - NEW
+    - `tests/e2e/cross-repo-packet-smoke.test.ts` - NEW
     - `tests/e2e/local-privacy.test.ts` - NEW
     - `tests/helpers/mcp-harness.ts` - MODIFIED
     - `package.json` - MODIFIED
   - **Implementation:**
-    - Create a temp project, run `notch onboard --yes`, create a pass, retrieve latest/recent passes, create/list/show a targeted brief, run status, run doctor, start MCP harness, and call `tools/list`.
-    - Assert all required MCP tools are listed and no telemetry, cloud, login, hosted endpoint, or arbitrary shell capability exists.
+    - Create two temp projects, run `notch onboard --yes` in both, create a pass and targeted brief in repo A, create a packet, import/send it to repo B, list/show the packet from repo B, run status/doctor, start MCP harness, and call `tools/list`.
+    - Assert all required MCP tools are listed, imported packets are readable in repo B, and no telemetry, cloud, login, hosted endpoint, or arbitrary shell capability exists.
   - **Dependencies:** Steps 1.1 through 6.6
-  - **Verification:** Run `npm run lint && npm run type-check && npm run build && npm test && npm run test:e2e`; the smoke test verifies onboarding, pass creation/retrieval, targeted brief creation/retrieval, status, doctor, MCP tool listing, and local-only/no-telemetry posture.
+  - **Verification:** Run `npm run lint && npm run type-check && npm run build && npm test && npm run test:e2e`; the smoke test verifies onboarding, packet create/import/send, pass creation/retrieval, targeted brief creation/retrieval, status, doctor, MCP tool listing, and local-only/no-telemetry posture.
 
 ### Future Considerations
 

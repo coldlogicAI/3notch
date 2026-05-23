@@ -16,12 +16,13 @@
 
 ## Overview
 
-3Notch V1 is a local-first CLI and MCP server for passing project context between AI agents. It stores targeted briefs, session passes, decisions, and status metadata in a project-owned `.notch/` folder. The MVP focuses on one job: helping the next agent continue correctly without copy-paste, cloud sync, full chat-history ingestion, or broad agent orchestration.
+3Notch V1 is a local-first CLI and MCP server for passing project context across repos and AI agents. It stores targeted briefs, session passes, decisions, packets, and status metadata in project-owned `.notch/` folders. The MVP focuses on one job: packaging the right source-linked context from one repo or workspace so the next repo, person, or agent can continue correctly without copy-paste, cloud sync, full chat-history ingestion, or broad agent orchestration.
 
 ## Product Principles
 
 - Pass continuity, not generic memory.
 - Local files are the source of truth.
+- Cross-repo packets are first-class, not a later export feature.
 - Agents write structured, auditable records.
 - Humans can inspect and edit stored context.
 - CLI first; MCP second; no web dashboard in V1.
@@ -35,15 +36,15 @@
 
 Assumptions:
 
-- 3Notch runs inside one project repository by default.
-- The default store is `<project>/.notch/`.
+- 3Notch runs inside one project repository by default, but V1 must support moving scoped packets between two local repos/stores.
+- The default store is `<project>/.notch/`; a destination can be another Git repo root, another `.notch/` path, or a packet file imported later.
 - Source-of-truth records should be readable in a text editor.
 - Agents may generate imperfect context, so validation, attribution, and review status matter.
-- V1 should demo Claude-to-Codex handoff quickly.
+- V1 should demo Claude-to-Codex handoff across two repos quickly.
 
-Recommended architecture: a TypeScript CLI package with a local file store, shared core services, and an MCP adapter exposing the same capabilities. The CLI owns onboarding, human workflows, status, and doctor checks. The MCP server exposes constrained tools for agents to read/write 3Notch records inside the current project store.
+Recommended architecture: a TypeScript CLI package with a local file store, shared core services, a transfer service for packet create/import/send, and an MCP adapter exposing the same capabilities. The CLI owns onboarding, human workflows, packet transfer, status, and doctor checks. The MCP server exposes constrained tools for agents to read/write 3Notch records inside the current project store and to create/import packets when explicitly requested.
 
-3Notch should not be a SaaS, dashboard, vector database, chat archive, or orchestration layer in V1. Those alternatives add trust, setup, and product complexity before the core workflow is proven. V1 should also avoid a native SQLite dependency: the expected store size is small enough for deterministic file scans, and `npx @3notch/cli onboard` should work without `node-gyp`, prebuilt binary, or platform-specific install failures.
+3Notch should not be a SaaS, dashboard, vector database, chat archive, or orchestration layer in V1. Those alternatives add trust, setup, and product complexity before the core workflow is proven. V1 should prove local packet transfer first: source repo creates a packet, destination repo imports it. V1 should also avoid a native SQLite dependency: the expected store size is small enough for deterministic file scans, and `npx @3notch/cli onboard` should work without `node-gyp`, prebuilt binary, or platform-specific install failures.
 
 ## V1 Non-Goals
 
@@ -81,6 +82,8 @@ Recommended architecture: a TypeScript CLI package with a local file store, shar
         question.ts
         stale.ts
         conflict.ts
+        packet.ts
+        send.ts
         status.ts
         doctor.ts
         mcp.ts
@@ -97,6 +100,8 @@ Recommended architecture: a TypeScript CLI package with a local file store, shar
       status-service.ts
       doctor-service.ts
       index-service.ts
+      packet-service.ts
+      transfer-service.ts
       audit-service.ts
       secret-scan-service.ts
     mcp/
@@ -117,6 +122,10 @@ Recommended architecture: a TypeScript CLI package with a local file store, shar
         create-conflict.ts
         list-conflicts.ts
         resolve-conflict.ts
+        create-packet.ts
+        import-packet.ts
+        list-packets.ts
+        get-packet.ts
         get-status.ts
         run-doctor.ts
     schemas/
@@ -127,6 +136,7 @@ Recommended architecture: a TypeScript CLI package with a local file store, shar
       decision.schema.json
       question.schema.json
       conflict.schema.json
+      packet.schema.json
       audit.schema.json
       status.schema.json
       mcp-tools.schema.json
@@ -137,6 +147,7 @@ Recommended architecture: a TypeScript CLI package with a local file store, shar
       decision.md
       question.md
       conflict.md
+      packet.md
     types/
       records.ts
       errors.ts
@@ -158,6 +169,8 @@ Recommended architecture: a TypeScript CLI package with a local file store, shar
   brief.md
   passes/
   briefs/
+  inbox/
+  outbox/
   decisions/
   questions/
   conflicts/
@@ -207,6 +220,22 @@ Records are intended to be project-owned and Git-friendly by default: `config.js
 - Source of truth: yes.
 - Manual edits: yes.
 - Validation: each `.md` file must satisfy `brief.schema.json`.
+
+### `inbox/`
+
+- Purpose: imported packets from other repos, people, or agent sessions.
+- Source of truth: yes.
+- Manual edits: yes, but edits must keep packet schema valid.
+- Validation: each `.md` file must satisfy `packet.schema.json`.
+- V1 behavior: importing a packet copies it here and indexes it. Import does not silently merge decisions or overwrite local source records.
+
+### `outbox/`
+
+- Purpose: packets created from this repo for transfer elsewhere.
+- Source of truth: yes.
+- Manual edits: yes, but edits must keep packet schema valid.
+- Validation: each `.md` file must satisfy `packet.schema.json`.
+- V1 behavior: `notch packet create` writes a copy here and can also write/copy a packet file to a requested destination.
 
 ### `decisions/`
 
@@ -287,6 +316,7 @@ type RecordType =
   | "project_brief"
   | "pass"
   | "brief"
+  | "packet"
   | "decision"
   | "question"
   | "conflict";
@@ -325,11 +355,13 @@ interface SourceTool {
 }
 
 interface SourceLink {
-  kind: "file" | "url" | "commit" | "issue" | "record" | "command";
+  kind: "file" | "url" | "commit" | "issue" | "record" | "command" | "repo";
   path?: string;
   url?: string;
   recordId?: string;
   commit?: string;
+  repoRoot?: string;
+  repoName?: string;
   label?: string;
   lastVerifiedAt?: string;
 }
@@ -432,6 +464,46 @@ interface NotchBrief extends RecordMeta {
 }
 ```
 
+### Transfer Packet
+
+```ts
+interface PacketRecordRef {
+  id: string;
+  recordType: Exclude<RecordType, "config" | "packet">;
+  title: string;
+  path: string;
+  summary?: string;
+}
+
+interface NotchPacket extends RecordMeta {
+  recordType: "packet";
+  title: string;
+  transferStatus: "draft" | "outbox" | "imported" | "archived";
+  origin: {
+    projectName: string;
+    storePath: string;
+    repoRoot?: string;
+    repoRemote?: string;
+    commit?: string;
+    branch?: string;
+  };
+  recipient: {
+    targetAgent?: string;
+    targetPerson?: string;
+    targetRepo?: string;
+    targetStore?: string;
+  };
+  summary: string;
+  includedRecords: PacketRecordRef[];
+  includedSourceLinks: SourceLink[];
+  importNotes?: string;
+  importedFrom?: string;
+  importedAt?: string;
+}
+```
+
+A packet is the V1 transfer unit. It is not a network message and does not imply secrecy. It is a portable, inspectable Markdown/YAML artifact that can be copied, attached, committed, or directly imported into another `.notch/` store.
+
 ### Project Brief
 
 ```ts
@@ -511,6 +583,8 @@ interface ProjectStatusSummary {
   counts: {
     passes: number;
     briefs: number;
+    inboxPackets: number;
+    outboxPackets: number;
     activeDecisions: number;
     openQuestions: number;
     activeConflicts: number;
@@ -767,6 +841,83 @@ Use the existing module structure. Do not introduce a parallel training model.
 - Add focused tests before refactoring.
 ```
 
+### A Transfer Packet
+
+- File extension: `.md`
+- Naming convention, outbox: `.notch/outbox/YYYYMMDDTHHMMSSZ-<slug>-to-<recipient>.md`
+- Naming convention, inbox: `.notch/inbox/YYYYMMDDTHHMMSSZ-<slug>-from-<project>.md`
+- Portable filename convention: `YYYYMMDDTHHMMSSZ-<slug>.notch.md`
+- Required fields: `RecordMeta`, `title`, `transferStatus`, `origin`, `recipient`, `summary`, `includedRecords`
+- Optional fields: `includedSourceLinks`, `importNotes`, `importedFrom`, `importedAt`
+- Required body headings: `## Summary`, `## Recipient`, `## Origin`, `## Included Context`, `## Source Links`, `## Import Notes`
+- Example path: `.notch/outbox/20260523T192000Z-auth-refactor-to-codex.md`
+
+```md
+---
+id: packet_20260523T192000Z_auth_refactor
+schemaVersion: "1.0.0"
+recordType: packet
+status: active
+title: Auth refactor handoff for implementation repo
+transferStatus: outbox
+createdAt: 2026-05-23T19:20:00Z
+createdBy:
+  actorType: human
+  name: Alex
+sourceTool:
+  name: notch-cli
+tags: [auth, cross-repo]
+sourceLinks:
+  - kind: repo
+    repoName: planning-repo
+    repoRoot: /Users/example/planning-repo
+  - kind: file
+    path: docs/auth-plan.md
+reviewStatus: reviewed
+origin:
+  projectName: planning-repo
+  storePath: /Users/example/planning-repo/.notch
+  repoRoot: /Users/example/planning-repo
+  branch: main
+recipient:
+  targetAgent: codex
+  targetRepo: /Users/example/app-repo
+summary: Carry the auth refactor plan from planning-repo into app-repo.
+includedRecords:
+  - id: brief_20260523T184000Z_auth_refactor
+    recordType: brief
+    title: Auth refactor implementation basis
+    path: .notch/briefs/20260523T184000Z-auth-refactor-for-codex.md
+includedSourceLinks:
+  - kind: file
+    path: docs/auth-plan.md
+---
+
+## Summary
+
+Carry the auth refactor plan from planning-repo into app-repo.
+
+## Recipient
+
+Codex in `/Users/example/app-repo`.
+
+## Origin
+
+Created from planning-repo on `main`.
+
+## Included Context
+
+- `brief_20260523T184000Z_auth_refactor`
+
+## Source Links
+
+- `docs/auth-plan.md`
+
+## Import Notes
+
+Import into app-repo before implementation. Do not assume source paths exist in the destination repo.
+```
+
 ### A Decision Record
 
 - File extension: `.md`
@@ -1002,6 +1153,86 @@ Exit codes:
 - Exit codes: `0`, `1`, `2`, `3`.
 - Example invocation: `notch brief show march-training-feature`
 
+### `notch packet create`
+
+- Purpose: package selected source-linked context from the current repo into a portable transfer packet.
+- Usage: `notch packet create [options]`
+- Flags/options:
+  - `--title <title>`
+  - `--to-agent <agent>`
+  - `--to-person <name>`
+  - `--to-repo <path-or-name>`
+  - `--task <text>`
+  - `--summary <text>`
+  - `--include <record-ref>` repeatable, such as `brief:<id>`, `pass:latest`, `decision:<id>`, `question:<id>`, or `file:<relative-path>`
+  - `--file <path>` repeatable, shorthand for `--include file:<path>`
+  - `--out <path>` write an additional portable packet file outside `.notch/outbox/`
+  - `--stdin` read structured packet input
+  - `--editor` edit the packet body before validation
+  - `--json`
+- Interactive behavior: prompts for recipient, destination repo if known, task, summary, included records, included files, warnings, and next steps.
+- Non-interactive behavior: required title/recipient/summary can be supplied by flags or stdin. At least one included record, file, or body section is required.
+- Output format: created packet ID, `.notch/outbox/` path, optional external output path, and warnings; JSON if requested.
+- Store behavior: always writes a validated copy to `.notch/outbox/`. If `--out` is supplied, writes a second portable copy to that exact path after validation.
+- Error cases: missing recipient, missing summary/content, invalid include reference, file path outside origin project root, destination path unsafe, secret detected, schema invalid, write denied.
+- Exit codes: `0`, `1`, `2`, `3`, `5`.
+- Example invocation: `notch packet create --title "Auth handoff" --to-agent codex --to-repo ../api --include pass:latest --file src/auth.ts --summary "Carry auth context into the API repo"`
+
+### `notch packet import <file>`
+
+- Purpose: validate a portable packet and copy it into a destination `.notch/inbox/`.
+- Usage: `notch packet import <file> [--into <repo-or-store-path>] [--as-reviewed] [--json]`
+- Flags/options:
+  - `--into <repo-or-store-path>` imports into another local repo/store path instead of the current repo
+  - `--as-reviewed` marks import review status as reviewed by the importing actor
+  - `--json`
+- Interactive behavior: confirms destination store if importing outside the current repo and warns before importing a packet with schema warnings.
+- Non-interactive behavior: validates input file, resolves destination store, copies the packet to `inbox/`, writes audit entry, and rebuilds derived index.
+- Output format: imported packet ID/path, origin project metadata, destination store, and warnings; JSON if requested.
+- Store behavior: import does not merge decisions, overwrite existing records, or rewrite origin source links. If a packet ID or filename collides, create a suffixed inbox filename and preserve the original packet ID plus import metadata.
+- Error cases: file missing, packet schema invalid, destination store missing, destination not writable, duplicate explicit import with `--strict` in future, secret detected, symlink/traversal issue.
+- Exit codes: `0`, `1`, `2`, `3`, `5`.
+- Example invocation: `notch packet import ../source/.notch/outbox/20260523T192000Z-auth-handoff-to-codex.md`
+
+### `notch packet list`
+
+- Purpose: list inbox and outbox packets.
+- Usage: `notch packet list [--inbox] [--outbox] [--to <recipient>] [--from <project>] [--since <date>] [--json]`
+- Flags/options: `--inbox`, `--outbox`, `--to`, `--from`, `--since`, `--limit`, `--json`
+- Interactive behavior: none.
+- Non-interactive behavior: scans valid packet records in `.notch/inbox/` and `.notch/outbox/`. Defaults to both directions unless one direction flag is supplied.
+- Output format: ID, title, direction, origin project, recipient, created/imported date, and summary.
+- Error cases: store missing, corrupted packet skipped with warning unless strict mode is added later.
+- Exit codes: `0`, `2`, `3`.
+- Example invocation: `notch packet list --inbox --from web-app`
+
+### `notch packet show <id>`
+
+- Purpose: show an imported or outbox packet by ID, slug, or filename stem.
+- Usage: `notch packet show <id> [--inbox] [--outbox] [--json] [--metadata]`
+- Flags/options: `--inbox`, `--outbox`, `--json`, `--metadata`
+- Interactive behavior: none.
+- Non-interactive behavior: deterministic lookup across packet directories; direction flags narrow the search.
+- Output format: Markdown by default; JSON if requested. `--metadata` includes packet frontmatter and import metadata before the body.
+- Error cases: not found, ambiguous ID across inbox/outbox, invalid packet.
+- Exit codes: `0`, `1`, `2`, `3`.
+- Example invocation: `notch packet show packet_20260523T192000Z_auth_handoff`
+
+### `notch send`
+
+- Purpose: shortcut for creating a packet from the current repo and importing or copying it into another local repo/store.
+- Usage: `notch send --to <repo-or-store-path> [packet-create-options]`
+- Flags/options:
+  - `--to <repo-or-store-path>` destination Git repo root, `.notch/` path, or packet file path
+  - accepts packet creation flags such as `--title`, `--to-agent`, `--to-person`, `--task`, `--summary`, `--include`, `--file`, `--stdin`, `--editor`, and `--json`
+- Interactive behavior: prompts for packet fields and confirms destination.
+- Non-interactive behavior: creates a packet in the current repo's `.notch/outbox/`. If `--to` resolves to a repo/store, imports a copy into destination `.notch/inbox/`. If `--to` resolves to a file path or ends in `.md`, writes the portable file there.
+- Output format: outbox packet path, destination inbox/file path, and warnings; JSON if requested.
+- V1 boundary: local filesystem only. No hosted delivery, accounts, private inbox service, remote push, or encryption.
+- Error cases: missing destination, destination store missing, destination not writable, destination outside allowed path policy, source schema invalid, secret detected, import failed after outbox write.
+- Exit codes: `0`, `1`, `2`, `3`, `5`.
+- Example invocation: `notch send --to ../api --to-agent codex --include pass:latest --summary "Continue API work with the frontend auth context"`
+
 ### `notch decision add`
 
 - Purpose: create a decision record that future agents should treat as project context.
@@ -1114,7 +1345,7 @@ Exit codes:
 - Flags/options: `--json`, `--stale-after-days`
 - Interactive behavior: none.
 - Non-interactive behavior: CI-safe summary.
-- Output format: human summary or `ProjectStatusSummary`.
+- Output format: human summary or `ProjectStatusSummary`, including inbox/outbox packet counts and most recent imported packet.
 - Error cases: store missing, config invalid, validation issues.
 - Exit codes: `0` if usable, `6` if validation warnings in strict CI mode, `2`, `3`.
 - Example invocation: `notch status --json`
@@ -1131,7 +1362,9 @@ Exit codes:
 - Interactive behavior: asks before safe fixes unless `--fix --yes`.
 - Non-interactive behavior: returns structured diagnostics.
 - Output format: checks, severity, affected path, suggested fix.
-- Error cases: config invalid, corrupted records, index rebuild failed, permission denied.
+- Validation scope: validates `.notch/inbox/` and `.notch/outbox/` packet schemas, packet ID collisions, import metadata, destination store layout, and derived packet index state.
+- Path-link distinction: origin source links inside imported packets may reference files outside the destination repo. Doctor should warn on missing origin references when useful, but must not treat origin references as destination path traversal. Local write paths and destination import paths still use strict traversal and symlink checks.
+- Error cases: config invalid, corrupted records, corrupted packets, index rebuild failed, permission denied.
 - Exit codes: `0` healthy, `6` warnings in strict mode, `1` unhealthy, `2` missing store, `3` corrupted store, `5` permission.
 - Example invocation: `notch doctor --fix`
 
@@ -1152,7 +1385,7 @@ Exit codes:
 
 ## MCP Tool Specification
 
-All MCP tools are scoped to the resolved `.notch/` store. They must reject path traversal, arbitrary filesystem access, broad project file reads, and shell execution. Tool `inputSchema` values must be real JSON Schemas, not free-text descriptions. MCP writes follow the actor trust rules in Security and Privacy, and write tools are disabled when `notch mcp serve --read-only` is active. If `config.defaults.allowedMcpWriteTools` is empty, the MCP server still starts and read tools work, but all write tools behave as disabled and return `NOTCH_MCP_READ_ONLY`.
+All MCP tools are scoped to the resolved `.notch/` store. They must reject path traversal, arbitrary filesystem access, broad project file reads, and shell execution. The only V1 exception is `import_packet`, which may read exactly the user-supplied packet file path after path-safety validation so it can copy the packet into the current store's inbox. Tool `inputSchema` values must be real JSON Schemas, not free-text descriptions. MCP writes follow the actor trust rules in Security and Privacy, and write tools are disabled when `notch mcp serve --read-only` is active. If `config.defaults.allowedMcpWriteTools` is empty, the MCP server still starts and read tools work, but all write tools behave as disabled and return `NOTCH_MCP_READ_ONLY`.
 
 ### `get_brief`
 
@@ -1217,6 +1450,43 @@ All MCP tools are scoped to the resolved `.notch/` store. They must reject path 
 - Read/write behavior: read.
 - Security boundaries: no arbitrary path input; ID/slug lookup only.
 - Failure modes: not found, invalid record.
+
+### `create_packet`
+
+- Purpose: package scoped context from the current store into a portable packet.
+- Input schema: `{ actorName?: string, title: string, toAgent?: string, toPerson?: string, toRepo?: string, task?: string, summary: string, include?: PacketRecordRef[], sourceLinks?: SourceLink[], warnings?: string[], nextActions?: string[], outputPath?: string }`
+- Output schema: `{ id: string, outboxPath: string, outputPath?: string, createdAt: string, warnings: NotchError[] }`
+- Read/write behavior: write.
+- Security boundaries: writes only `.notch/outbox/` plus an explicit `outputPath` when supplied. Included local file links must resolve under the origin project root. `outputPath` must pass safe destination path checks and cannot be a symlink target inside `.notch/`.
+- Failure modes: schema invalid, missing recipient, missing summary, include reference not found, path outside project, read-only mode, secret detected, audit write failed.
+
+### `import_packet`
+
+- Purpose: validate a portable packet and copy it into the current store's inbox.
+- Input schema: `{ actorName?: string, packetPath: string, asReviewed?: boolean }`
+- Output schema: `{ id: string, inboxPath: string, importedAt: string, originProject?: string, warnings: NotchError[] }`
+- Read/write behavior: write.
+- Security boundaries: reads exactly the supplied packet file and writes only `.notch/inbox/`, audit log, and derived index files. V1 MCP import does not accept arbitrary destination repo paths; cross-store sends should be performed by the CLI.
+- Failure modes: file missing, path traversal, schema invalid, read-only mode, secret detected, write failed, audit write failed.
+
+### `list_packets`
+
+- Purpose: list imported and outbox packets visible to the current store.
+- Input schema: `{ direction?: "inbox" | "outbox" | "both", to?: string, fromProject?: string, since?: string, limit?: number }`
+- Output schema: `{ packets: Array<{ id: string, title: string, direction: "inbox" | "outbox", originProject?: string, recipient?: string, createdAt: string, importedAt?: string, summary: string }>, warnings: NotchError[] }`
+- Read/write behavior: read.
+- Security boundaries: reads only `.notch/inbox/`, `.notch/outbox/`, and derived indexes.
+- Failure modes: store missing, invalid packet skipped with warning.
+- Defaults: `direction` defaults to `"both"` and `limit` defaults to `10` with max `50`.
+
+### `get_packet`
+
+- Purpose: read an imported or outbox packet by ID or slug.
+- Input schema: `{ id: string, direction?: "inbox" | "outbox" | "both", includeMarkdown?: boolean }`
+- Output schema: `{ packet: NotchPacket, markdown?: string, warnings: NotchError[] }`
+- Read/write behavior: read.
+- Security boundaries: no arbitrary path input; ID/slug lookup only across packet directories.
+- Failure modes: not found, ambiguous ID, invalid packet.
 
 ### `record_decision`
 
@@ -1297,7 +1567,7 @@ All MCP tools are scoped to the resolved `.notch/` store. They must reject path 
 - Input schema: `{ includeWarnings?: boolean }`
 - Output schema: `ProjectStatusSummary`
 - Read/write behavior: read.
-- Security boundaries: reads only store files.
+- Security boundaries: reads only store files, including packet counts from `.notch/inbox/` and `.notch/outbox/`.
 - Failure modes: store missing, config invalid, corrupted records.
 
 ### `run_doctor`
@@ -1306,7 +1576,7 @@ All MCP tools are scoped to the resolved `.notch/` store. They must reject path 
 - Input schema: `{ strict?: boolean, fixDerivedState?: boolean }`
 - Output schema: `{ healthy: boolean, checks: DoctorCheck[], errors: NotchError[] }`
 - Read/write behavior: read by default; may rebuild `index/` only when `fixDerivedState` is true and the server is not in read-only mode.
-- Security boundaries: cannot modify source records.
+- Security boundaries: cannot modify source records. Imported packet origin links are validated as metadata, not as local destination paths.
 - Failure modes: permission denied, corrupted files, schema mismatch, read-only mode with `fixDerivedState: true`.
 
 ## Core Services
@@ -1318,6 +1588,8 @@ All MCP tools are scoped to the resolved `.notch/` store. They must reject path 
 | Schema validation service | `src/core/schema-service.ts` | object/schema ID | validated data | load schemas, validate records, format errors | `SCHEMA_INVALID`, `UNSUPPORTED_SCHEMA_VERSION` |
 | Pass service | `src/core/pass-service.ts` | pass input | `NotchPass` | create pass, list passes, get latest pass | validation/security errors |
 | Brief service | `src/core/brief-service.ts` | brief input/filter | `NotchBrief` records | create/list/get targeted briefs | not found, ambiguous ID |
+| Packet service | `src/core/packet-service.ts` | packet input/filter | `NotchPacket` records | create packet, list inbox/outbox packets, get packet, validate packet body | invalid includes, ambiguous ID |
+| Transfer service | `src/core/transfer-service.ts` | packet files, destination paths | imported/copied packets | import packet, send packet to local repo/store/file path, preserve origin metadata | destination missing, unsafe path, partial transfer warning |
 | Decision service | `src/core/decision-service.ts` | decision input/filter | decisions/status refs | create decisions, parse decisions, list active decisions, detect supersession | invalid records |
 | Question service | `src/core/question-service.ts` | question input/filter | open question records | create/list open questions | invalid records |
 | Conflict service | `src/core/conflict-service.ts` | conflict input/filter | conflict records | create/list/resolve conflicts | invalid records, missing related records |
@@ -1470,6 +1742,8 @@ Conflict records:
 
 - Project name and store path
 - Latest pass
+- Inbox packets from other repos
+- Outbox packets created by this repo
 - Open targeted briefs
 - Active and unresolved decisions
 - Open questions
@@ -1484,6 +1758,7 @@ Conflict records:
 - Required folders exist
 - `config.json` is valid
 - Markdown/YAML records parse
+- Packet records in `inbox/` and `outbox/` parse
 - Schemas pass
 - IDs are unique
 - Source file references resolve where possible
@@ -1493,6 +1768,7 @@ Conflict records:
 - MCP write tools match config
 - Symlinks inside `.notch/` are rejected
 - Source-link paths are relative and resolve under project root
+- Imported packet origin links are preserved as origin metadata, not treated as local file writes
 - `.notch/.gitignore` ignores `index/` and `logs/`
 
 Store states:
@@ -1516,10 +1792,11 @@ Fix: Run notch doctor --fix.
 ## Security and Privacy Considerations
 
 - 3Notch is local-first and uses no telemetry by default.
-- `.notch/` records stay on disk unless the user exports or syncs them manually.
+- `.notch/` records stay on disk unless the user explicitly creates/imports a packet, copies a packet file, or later enables sync.
+- `notch send` in V1 is a local filesystem copy/import helper, not a network delivery channel.
 - MCP tools are scoped to the configured store.
 - MCP cannot execute shell commands.
-- MCP cannot read arbitrary files by path; it reads 3Notch records and validates source references.
+- MCP cannot read arbitrary project files by path; it reads 3Notch records, validates source references, and only `import_packet` may read an explicit packet file for import.
 - Writes are auditable through `.notch/logs/audit.jsonl`.
 - Secret scanning runs before writes using configured redaction patterns.
 - Suspected secrets should block writes by default unless an explicit future override is designed.
@@ -1629,6 +1906,9 @@ NOTCH_CORRUPT_RECORD
 - Snapshot/golden tests for `status`, `doctor`, `brief list`, and error output.
 - Cross-platform path tests for Windows-style paths, spaces, symlink rejection, and path traversal attempts.
 - Source-link path tests proving absolute paths and sibling-directory traversal are rejected.
+- Cross-repo packet tests with two temp Git repos: create in repo A, import into repo B, list/show in repo B.
+- `notch send --to <repo>` tests proving the shortcut writes source outbox and destination inbox.
+- MCP packet tests proving `create_packet`, `import_packet`, `list_packets`, and `get_packet` work in one scoped store.
 - Secret-scan tests for configured redaction patterns.
 - Tests proving every successful write appends exactly one audit entry.
 - Tests proving blocked secret writes append a `secret-blocked` audit entry without creating the source record.
@@ -1648,17 +1928,23 @@ NOTCH_CORRUPT_RECORD
 - `notch brief create`, `notch brief list`, and `notch brief show <id>` work.
 - Targeted briefs can be filtered by title, tag, and target agent.
 - MCP `create_brief`, `list_briefs`, and `get_targeted_brief` work.
+- `notch packet create` writes a valid packet to `.notch/outbox/` and can write a portable file.
+- `notch packet import <file>` validates a packet and copies it into another repo's `.notch/inbox/`.
+- `notch packet list` and `notch packet show <id>` read imported and outbox packets.
+- `notch send --to <repo-or-store-path>` creates a source outbox packet and imports/copies it to the destination.
+- MCP `create_packet`, `import_packet`, `list_packets`, and `get_packet` work inside the scoped store.
+- Imported packets are readable by CLI and MCP before any source records are merged into the destination repo.
 - `notch decision add` and `notch decision list` create and list valid decision records.
 - MCP `record_decision` and `get_decisions` work.
 - `notch question add` and `notch question list` create and list unresolved open questions.
 - `notch stale mark <id>` marks records stale without deleting them.
 - `notch conflict add`, `notch conflict list`, and `notch conflict resolve` work for basic conflict records.
 - Decision, question, stale, and conflict records are validated and included in status.
-- `notch status` shows latest pass, open briefs, open questions, active conflicts, unresolved decisions, stale records, and validation issues.
-- `notch doctor` catches invalid records and can rebuild derived index state.
+- `notch status` shows latest pass, inbox/outbox packets, open briefs, open questions, active conflicts, unresolved decisions, stale records, and validation issues.
+- `notch doctor` catches invalid records, invalid packets, unsafe local paths, and can rebuild derived index state.
 - `notch mcp serve` exposes the expected V1 tools.
 - MCP write tools record actor, timestamp, source tool, record type, and schema version.
-- MCP tools cannot access files outside `.notch/`.
+- MCP tools cannot access files outside `.notch/` except for the explicit packet file supplied to `import_packet`.
 - CLI and MCP write tools reject source-link paths outside `config.project.root`.
 - Every successful write produces exactly one entry in `.notch/logs/audit.jsonl`.
 - Secret-blocked writes create no source record and append exactly one `secret-blocked` audit entry.

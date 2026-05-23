@@ -2,7 +2,7 @@
 
 ## Purpose
 
-3Notch is a local-first CLI and MCP server for passing project context between AI agents. V1 should make handoffs practical: project brief, targeted briefs, passes, decisions, open questions, stale assumptions, conflicts, status, and doctor checks.
+3Notch is a local-first CLI and MCP server for passing project context across repos and AI agents. V1 should prove the packet loop first: create a packet in repo A, import/read it in repo B, then support project brief, targeted briefs, passes, decisions, open questions, stale assumptions, conflicts, status, and doctor checks.
 
 ## Read First
 
@@ -14,8 +14,10 @@
 ## Boundaries
 
 - Do not implement the full V1 plan unless the user asks for that session.
+- Treat cross-repo packets as core V1 behavior, not a later export feature.
 - No telemetry, cloud sync, hosted service, dashboard, vector database, or SQLite/native DB for V1.
 - Preserve human-readable `.notch/` source files as the source of truth.
+- Use `.notch/outbox/` for created packets and `.notch/inbox/` for imported packets.
 - Treat `.notch/index/` and `.notch/logs/` as derived/noisy output.
 - Do not run destructive Git commands or create/push remotes without approval.
 
