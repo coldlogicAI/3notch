@@ -19,6 +19,7 @@ node dist/cli/index.js --version
 - No SQLite/native DB, vector database, or semantic search dependency in V1.
 - Cross-repo packet behavior uses `.notch/outbox/` for created packets and `.notch/inbox/` for imported packets.
 - Imported packets remain inspectable and are not silently merged into destination records.
+- Private seed packets use ignored `.notch/private/` storage and are not exposed through MCP without explicit private-context enablement.
 - `.notch/` source records remain human-readable.
 - Generated `dist/`, coverage, `.notch/index/`, and `.notch/logs/` output are ignored.
 - Path handling changes reject traversal and out-of-project references.

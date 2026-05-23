@@ -18,21 +18,22 @@ Alternate names:
 
 ## One-Line Summary
 
-A local-first tool that lets Claude, Codex, Cursor, ChatGPT, Gemini, and local agents pass project context across repos without copy-paste or full chat-history sharing.
+A local-first tool that lets Claude, Codex, Cursor, ChatGPT, Gemini, and local agents pass project and private workflow context across repos without copy-paste or full chat-history sharing.
 
 ## Short Description
 
-Build an open-source context-passing system for multi-agent workflows. The system should let users package the right context from one repo or workspace and import it into another repo or agent session. Different AI tools should get access to shared project briefs, recent passes, active decisions, open questions, stale assumptions, and source links through a local-first store, portable packets, CLI, and Model Context Protocol (MCP) server.
+Build an open-source context-passing system for multi-agent workflows. The system should let users package the right context from one repo, workspace, or prior project and import it into another repo or agent session. Different AI tools should get access to shared project briefs, recent passes, active decisions, open questions, stale assumptions, personal build preferences, workflow conventions, and source links through a local-first store, portable packets, CLI, and Model Context Protocol (MCP) server.
 
 The system should not try to make agents directly chat with each other. Instead, agents should publish and query structured context packets owned by the user. Each context packet should be timestamped, source-linked, scoped, searchable, and reviewable.
 
-The first release should be a small, useful developer tool: install it, run onboarding, create a packet from one project, import it into another project, connect the MCP server, and use it to move work from Claude to Codex without copy-paste. A commercial hosted product can later add encrypted sync, team workspaces, integrations, admin controls, managed MCP endpoints, and collaboration features.
+The first release should be a small, useful developer tool: install it, run onboarding, seed a new repo from one or more prior projects, create a packet from one project, import it into another project, connect the MCP server, and use it to move work from Claude to Codex without copy-paste. A commercial hosted product can later add encrypted sync, team workspaces, integrations, admin controls, managed MCP endpoints, and collaboration features.
 
 The v1 product should support two related but distinct continuation artifacts:
 
 - **Pass:** lightweight end-of-session continuity: what just happened, what changed, and what the next agent should know.
 - **Brief:** targeted task context: a deliberately scoped handoff document for a specific agent, task, timeframe, feature, or problem.
 - **Packet:** portable transfer envelope: selected passes, briefs, decisions, questions, source links, and summary context that can move from one repo/store to another.
+- **Seed Packet:** private bootstrap context for a new repo: user preferences, working style, conventions, recurring decisions, lessons from prior projects, and workflow expectations that should follow the user without being committed to the new project by default.
 
 ## Core Problem
 
@@ -60,6 +61,7 @@ The result is repeated context rebuilding:
 - stale assumptions persisting without visibility;
 - handoff notes living in inconsistent formats;
 - no simple way to move a scoped context packet from one repo or workspace into another.
+- no private, controlled way to bring forward "how I build" context when starting a new repo after months of work elsewhere.
 
 This is not only annoying. It reduces the quality of AI-assisted work. Agents that lack project continuity repeat mistakes, miss prior decisions, and waste human attention.
 
@@ -71,6 +73,7 @@ The user should own the shared memory. Agents should interact with it through ex
 
 - read project context;
 - create a portable packet for another repo, person, or agent;
+- create a private seed packet from prior work for a new repo;
 - import a packet into the current repo;
 - list and filter decisions;
 - record a decision;
@@ -88,12 +91,13 @@ The v1 should behave like a small tool that is immediately useful, not a framewo
 
 Design constraints:
 
-- one obvious job: move scoped context from one agent/repo to the next agent/repo;
+- one obvious job: move scoped context from prior work to the next agent/repo;
 - one memorable demo: Claude plans, Codex implements, Claude reviews;
 - one fast install path: `npx @3notch/cli onboard`;
 - one first command after setup: `notch brief`;
 - one targeted context command: `notch brief create`;
 - one transfer command: `notch packet create` or `notch send`;
+- one new-project bootstrap command: `notch seed from <repo-or-store-path>`;
 - one end-of-session ritual: `notch pass`;
 - CLI and MCP should expose the same core capabilities;
 - local-first by default;
@@ -119,7 +123,7 @@ Sharper launch tagline:
 
 Suggested positioning statement:
 
-> 3Notch is a local-first tool for passing project context between repos and AI agents. It packages source-linked project decisions, recent passes, open questions, stale assumptions, and conflict records into portable packets without exposing full private chat histories.
+> 3Notch is a local-first tool for carrying project and personal workflow context between repos and AI agents. It packages source-linked project decisions, recent passes, open questions, stale assumptions, user preferences, and workflow conventions into portable packets without exposing full private chat histories.
 
 Alternative positioning:
 
@@ -193,6 +197,7 @@ Most adjacent tools appear to emphasize one or more of:
 This means the product should prioritize:
 
 - portable context packets;
+- private context seed packets;
 - import/export between `.notch/` stores;
 - explicit pass records;
 - active project context;
@@ -215,37 +220,43 @@ Semantic memory can be added later, but it should not define the first version.
 
 Packets should be explicit, inspectable, and source-linked. Sending a packet means writing a portable artifact or directly importing that artifact into a destination `.notch/` store. V1 does not need hosted delivery, accounts, or private inboxes.
 
-#### 2. Pass-First
+#### 2. Private Context Seeding
+
+3Notch should help a user start a new repo without starting from zero. A seed packet carries durable private context from prior work: how the user likes to build, review expectations, coding standards, repo conventions, tool preferences, lessons learned, and recurring project decisions.
+
+Seed packets are not generic personality memory and should not contain raw private chats. They are explicit, reviewable, and narrow. By default they should import into an ignored private area of the destination store so a public repo does not accidentally commit personal context.
+
+#### 3. Pass-First
 
 Every agent session should end by writing a pass. The pass should capture what changed, what was learned, what remains open, which files or sources matter, and what the next agent should know.
 
 Most memory systems optimize retrieval. This project should optimize continuation.
 
-#### 3. Decision-Centric
+#### 4. Decision-Centric
 
 The system should make decisions first-class. A decision is not just a note. It has a title, rationale, author, timestamp, status, source links, affected scope, and supersession history.
 
 Agents should be instructed to treat active decisions as constraints unless the user overrides them.
 
-#### 4. Stale Context Management
+#### 5. Stale Context Management
 
 Long-term memory becomes dangerous when it silently ages. The system should surface stale assumptions and old decisions instead of blindly injecting them.
 
 This is a stronger value proposition than "remembers everything."
 
-#### 4. Conflict Detection
+#### 6. Conflict Detection
 
 When different agents record conflicting assumptions or decisions, the system should flag the conflict for human resolution. Even simple conflict records are valuable because they make disagreement visible.
 
-#### 5. Source-Linked Packets
+#### 7. Source-Linked Packets
 
 Important context should link to local files, URLs, commits, issues, documents, or prior packets. This makes the context inspectable and helps future agents verify it.
 
-#### 6. Human-Owned, Human-Readable Memory
+#### 8. Human-Owned, Human-Readable Memory
 
 The memory store should be readable and editable without the tool. Markdown/YAML source records plus regenerable JSON indexes are a strategic choice, not just an implementation detail.
 
-#### 7. Workflow Prompts Included
+#### 9. Workflow Prompts Included
 
 The project should ship not only tools but usage patterns:
 
@@ -347,7 +358,22 @@ This keeps the system inspectable and reduces privacy risk.
 
 ## Key Use Cases
 
-### Use Case 0: Move Context Across Repos
+### Use Case 0: Seed A New Project From Prior Work
+
+This is the stronger core product loop. 3Notch must be useful when a user starts a new repo after months of intense work elsewhere and does not want to re-explain themselves, their workflows, or their hard-won conventions to the next agent.
+
+Workflow:
+
+1. A user points 3Notch at one or more prior repos or stores.
+2. 3Notch creates a private seed packet with selected context: user preferences, coding standards, recurring workflow rules, trusted patterns, prior decisions, useful prompts, and lessons learned.
+3. The user reviews the packet before import.
+4. 3Notch imports the seed packet into the new repo's ignored private inbox.
+5. When MCP is started with private context enabled, Codex or another agent can read the seed packet before work starts.
+6. The new project starts fresh in code, but not from zero in working context.
+
+V1 should support local filesystem seeding first. Hosted encrypted profile sync can come later, but the local/private version is already valuable.
+
+### Use Case 0.1: Move Context Across Repos
 
 This is the core product loop. 3Notch must be useful when the next agent is not working in the same repository as the previous agent.
 
@@ -361,7 +387,7 @@ Workflow:
 
 V1 can support local filesystem transfer first. Hosted delivery, accounts, permissions, encryption, and cloud inboxes can come later.
 
-### Use Case 0.1: End Every Agent Session By Writing A Pass
+### Use Case 0.2: End Every Agent Session By Writing A Pass
 
 This is the core product loop.
 
@@ -374,7 +400,7 @@ Workflow:
 
 This should be the default behavior promoted in docs, examples, and prompts.
 
-### Use Case 0.2: Create A Targeted Brief For A Specific Agent Or Destination
+### Use Case 0.3: Create A Targeted Brief For A Specific Agent Or Destination
 
 This is the deliberate deep-context workflow.
 
@@ -508,6 +534,7 @@ notch packet import <file>
 notch packet list
 notch packet show <id>
 notch send
+notch seed from <repo-or-store-path>
 notch status
 notch doctor
 notch mcp serve
@@ -535,6 +562,7 @@ The first commands should be enough for a user to understand the product:
 - `packet create`: package scoped context into a portable transfer artifact.
 - `packet import`: import a packet file into the current repo's `.notch/inbox/`.
 - `send`: shortcut for creating a packet and importing it into another local repo/store path.
+- `seed from`: create or import a private context seed from prior work into the current repo.
 - `status`: summarize recent passes, open questions, stale assumptions, and conflicts.
 - `doctor`: check configuration, permissions, MCP setup, broken links, stale context, and conflicts.
 
@@ -566,9 +594,10 @@ Store: .notch/
 MCP: configured for Claude Desktop
 
 Try:
+  notch seed from ../old-project --include preferences --include workflow --review
   notch brief
   notch pass
-  notch mcp serve
+  notch mcp serve --include-private
 
 Agent prompt:
   Before starting, call get_brief. Before stopping, call write_pass.
@@ -629,12 +658,16 @@ The first implementation should work as a plain local folder:
     2026-05-23-auth-handoff-from-web-app.md
   outbox/
     2026-05-23-auth-handoff-to-api.md
+  private/
+    inbox/
+      2026-05-23-user-workflow-seed-from-ipsm.md
+    outbox/
   index/
     records.json
     manifest.json
 ```
 
-The folder should be human-readable and Git-friendly. The JSON index can be regenerated from source files.
+The folder should be human-readable and Git-friendly where appropriate. Project records can be committed by choice; `private/`, `index/`, and `logs/` should be ignored by default. The JSON index can be regenerated from source files.
 
 ## Context Packet Model
 
@@ -647,6 +680,8 @@ id: packet_20260523T143000Z_api_handoff
 recordType: packet
 schemaVersion: "1.0.0"
 title: API handoff for Codex
+purpose: handoff
+sensitivity: project
 transferStatus: outbox
 createdAt: 2026-05-23T14:30:00-04:00
 origin:
@@ -669,6 +704,8 @@ includedSourceLinks:
 summary: |
   Carry the auth planning context from web-app into the API repo.
 ```
+
+Seed packets use the same packet shape but set `purpose: seed` and `sensitivity: private`. They should import into `.notch/private/inbox/` by default and require explicit user action before an MCP server exposes them to an agent.
 
 ## Context Record Types
 
@@ -761,6 +798,8 @@ get_status
 create_brief
 create_packet
 import_packet
+create_seed_packet
+import_seed_packet
 create_pass
 record_decision
 add_open_question
@@ -1013,6 +1052,7 @@ Initial importers:
 - markdown files;
 - AGENTS.md;
 - CLAUDE.md;
+- prior `.notch/` stores;
 - README.md;
 - local project notes;
 - chat export markdown;
@@ -1170,9 +1210,11 @@ Pragmatic recommendation:
 - `notch brief list`
 - `notch status`
 - `notch doctor`
+- `notch seed from <repo-or-store-path>`
 - project config file
 - packet schema
 - create/import/list/show packets
+- private seed packet import
 - markdown/YAML storage
 - regenerable JSON index
 - packet list/filter behavior
@@ -1188,6 +1230,7 @@ Pragmatic recommendation:
 ### MVP 2: MCP Server
 
 - `notch mcp serve`
+- private context exposure is disabled by default and enabled explicitly when the user wants an agent to read seed packets
 - `get_brief`
 - `create_brief`
 - `get_targeted_brief`
@@ -1334,13 +1377,14 @@ Search 3Notch for prior research before browsing. Record new findings as source-
 ```text
 # 3Notch
 
-Local-first context packets across repos and AI agents.
+Local-first private context packets across repos and AI agents.
 
 ## Why
 Stop copy-pasting context between repos, Claude, Codex, Cursor, ChatGPT, and local agents.
 
 ## What It Does
 - passes context between agents
+- seeds new repos from private prior-work context
 - builds the brief every agent reads first
 - creates targeted briefs for specific tasks
 - records decisions
@@ -1351,8 +1395,9 @@ Stop copy-pasting context between repos, Claude, Codex, Cursor, ChatGPT, and loc
 
 ## Quickstart
 npx @3notch/cli onboard
+notch seed from ../old-project --include preferences --include workflow --review
 notch brief
-notch mcp serve
+notch mcp serve --include-private
 
 ## How Agents Use It
 ...
@@ -1490,11 +1535,12 @@ The demo should use the exact v1 commands:
 
 ```bash
 npx @3notch/cli onboard
+notch seed from ../old-project --include preferences --include workflow --review
 notch brief
 notch brief create --title "March training feature" --to codex
 notch pass
 notch status
-notch mcp serve
+notch mcp serve --include-private
 ```
 
 This demo is easy to understand and highly marketable.
@@ -1604,8 +1650,8 @@ Mitigation:
 
 1. Should the first implementation be TypeScript or Python?
 2. Should packet storage be markdown-first or JSON-first?
-3. Should the default store live in the repo or in a global user directory?
-4. How should multiple projects share global user preferences?
+3. Should the default private seed store live inside `.notch/private/`, in a global user directory, or support both?
+4. What exact review step should be required before exposing private seed context through MCP?
 5. Should decisions require human review by default?
 6. How much write access should agents get initially?
 7. Should semantic search be included in MVP or deferred?
@@ -1634,14 +1680,17 @@ The first useful release is complete when:
 9. A user can create a portable packet from repo A and import it into repo B.
 10. An MCP-compatible agent can read imported packets from `.notch/inbox/`.
 11. `notch send --to <repo-or-store-path>` creates a source outbox packet and imports/copies it into a destination.
-12. The system records who or what wrote each packet.
-13. The system can mark records stale.
-14. The system can list unresolved questions.
-15. The user can inspect all stored context as plain files.
-16. The system can create and list basic conflict records.
-17. The system can produce a context health summary covering inbox/outbox packets, stale notes, open questions, recent passes, targeted briefs, and conflicts.
-18. The README includes a working Claude-to-Codex cross-repo packet demo.
-19. The quickstart demonstrates packet transfer plus a complete pass loop and one targeted brief, not just memory storage.
+12. `notch seed from <repo-or-store-path>` creates or imports a private seed packet into a new repo.
+13. Private seed packets are ignored by Git by default.
+14. MCP does not expose private seed packets unless the user explicitly enables private context for that server/session.
+15. The system records who or what wrote each packet.
+16. The system can mark records stale.
+17. The system can list unresolved questions.
+18. The user can inspect all stored context as plain files.
+19. The system can create and list basic conflict records.
+20. The system can produce a context health summary covering inbox/outbox packets, private seed packets, stale notes, open questions, recent passes, targeted briefs, and conflicts.
+21. The README includes a working new-project seed demo and Claude-to-Codex cross-repo packet demo.
+22. The quickstart demonstrates private context seeding, packet transfer, a complete pass loop, and one targeted brief, not just memory storage.
 
 ## References
 

@@ -5,6 +5,7 @@
 - The current repo is documentation-only, so all package/runtime files are new unless explicitly marked modified later.
 - `3notch-v1-technical-spec.md` is authoritative where it conflicts with older request language: V1 uses `.notch/config.json`, Markdown/YAML records, and regenerable JSON manifest/index files, with no SQLite.
 - Cross-repo packet transfer is a core V1 requirement, not a later export feature. The minimum proof is repo A creates a packet, repo B imports it, and CLI/MCP can read the imported packet.
+- Private context seeding is a core V1 requirement. The minimum proof is an old repo/store seeds a new repo's ignored `.notch/private/inbox/`, and MCP hides that seed unless explicitly started with private context enabled.
 - V1 implements the required CLI and MCP surfaces only; `notch search`, assumption-specific commands, hosted sync, semantic search, dashboards, telemetry, and provider-specific deep config mutation are deferred.
 - The package uses Node.js 20+, TypeScript, Commander, Ajv, Vitest, tsup, and `@modelcontextprotocol/sdk`.
 
@@ -145,7 +146,8 @@
     - `tests/fixtures/invalid-packet-missing-origin.md` - NEW
     - `tests/schema/packet-schema.test.ts` - NEW
   - **Implementation:**
-    - Require origin repo metadata, recipient metadata, summary, included record refs, transfer status, and required body sections.
+    - Require origin repo metadata, recipient metadata, summary, included record refs, purpose, sensitivity, transfer status, and required body sections.
+    - Support seed packets with `purpose: seed`, `sensitivity: private`, and user/workflow context sections.
     - Allow origin file/source links to point at the source repo while keeping destination import paths separately validated.
     - Validate `recordType: packet`, quoted semver-compatible `schemaVersion`, and inbox/outbox/import metadata.
   - **Dependencies:** Step 2.2
@@ -220,7 +222,7 @@
     - `tests/fixtures/config-invalid.json` - NEW
   - **Implementation:**
     - Support `--cwd` and `--store`, default `.notch/`, and Git-root detection.
-    - Create and validate source folders including `passes/`, `briefs/`, `decisions/`, `questions/`, `conflicts/`, `inbox/`, and `outbox/`.
+    - Create and validate source folders including `passes/`, `briefs/`, `decisions/`, `questions/`, `conflicts/`, `inbox/`, `outbox/`, and ignored `private/inbox` plus `private/outbox`.
     - Validate config with `config.schema.json` and warn on unknown top-level fields.
   - **Dependencies:** Steps 2.2, 2.9
   - **Verification:** Run `npm test -- config-service`; missing store maps to exit code `2`.
@@ -258,7 +260,7 @@
     - `tests/unit/store-service.test.ts` - NEW
   - **Implementation:**
     - Write to temp files and rename into place.
-    - Scan only allowed `.notch/` source directories, including `inbox/` and `outbox/`, and ignore invalid records unless requested by doctor.
+    - Scan only allowed `.notch/` source directories, including `inbox/`, `outbox/`, and `private/` when explicitly requested, and ignore invalid records unless requested by doctor.
   - **Dependencies:** Steps 3.1, 3.2, 2.9
   - **Verification:** Run `npm test -- store-service`; explicit slug collisions fail while auto-generated ID and filename collisions suffix safely with `-2`, `-3`, and so on.
 
@@ -330,17 +332,20 @@
   - **Files:**
     - `src/core/packet-service.ts` - NEW
     - `src/core/transfer-service.ts` - NEW
+    - `src/core/seed-service.ts` - NEW
     - `tests/unit/packet-service.test.ts` - NEW
     - `tests/unit/transfer-service.test.ts` - NEW
+    - `tests/unit/seed-service.test.ts` - NEW
     - `tests/fixtures/packet-source-store/` - NEW
     - `tests/fixtures/packet-destination-store/` - NEW
   - **Implementation:**
     - Create packet Markdown/YAML from selected passes, briefs, decisions, questions, conflicts, and source links.
     - Always write created packets to `.notch/outbox/`; optionally write a standalone packet file.
     - Import validates a packet and writes only to `.notch/inbox/`, preserving origin repo metadata and avoiding silent merge/overwrite of destination records.
+    - Create/import seed packets with `purpose: seed` and `sensitivity: private` under `.notch/private/`.
     - `send` support creates an outbox packet, then imports/copies it to a local destination repo root, `.notch/` path, or file path.
   - **Dependencies:** Steps 2.6, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9
-  - **Verification:** Run `npm test -- packet-service transfer-service`; repo A outbox packets import into repo B inbox and are listable without merging source records.
+  - **Verification:** Run `npm test -- packet-service transfer-service seed-service`; repo A outbox packets import into repo B inbox, old repo seed packets import into new repo private inbox, and no import silently merges source records.
 
 - [ ] **Step 3.11: Add status and doctor services**
   - **Task:** Compute project status summaries and full store diagnostics with safe derived fixes.
@@ -351,8 +356,8 @@
     - `tests/unit/doctor-service.test.ts` - NEW
     - `tests/fixtures/corrupt-store.md` - NEW
   - **Implementation:**
-    - Report latest pass, inbox/outbox packets, open briefs, active decisions, open questions, conflicts, stale records, validation counts, and warnings.
-    - Validate store structure, packet schemas, record schemas, IDs, source links, audit log, symlinks, secrets, MCP write config, and `.notch/.gitignore`.
+    - Report latest pass, inbox/outbox packets, private seed packets, open briefs, active decisions, open questions, conflicts, stale records, validation counts, and warnings.
+    - Validate store structure, packet schemas, private seed schemas, record schemas, IDs, source links, audit log, symlinks, secrets, MCP write config, and `.notch/.gitignore`.
     - Warn on broken origin references in imported packets without treating those origin paths as destination path traversal.
   - **Dependencies:** Steps 3.1 through 3.10
   - **Verification:** Run `npm test -- status-service doctor-service`; corrupt YAML is reported as corruption and `doctor --fix` behavior is limited to derived state.
@@ -444,21 +449,24 @@
   - **Dependencies:** Steps 3.9, 4.1
   - **Verification:** Run `npm test -- stale conflict`; stale records remain inspectable, resolved conflicts become archived, and duplicate conflict record IDs are rejected.
 
-- [ ] **Step 4.7: Add packet and send commands**
-  - **Task:** Implement the cross-repo transfer command family.
+- [ ] **Step 4.7: Add packet, send, and seed commands**
+  - **Task:** Implement the cross-repo transfer and private seed command family.
   - **Files:**
     - `src/cli/commands/packet.ts` - NEW
     - `src/cli/commands/send.ts` - NEW
+    - `src/cli/commands/seed.ts` - NEW
     - `src/cli/formatters/packet-formatters.ts` - NEW
     - `src/cli/program.ts` - MODIFIED
     - `tests/cli/packet.test.ts` - NEW
     - `tests/cli/send.test.ts` - NEW
+    - `tests/cli/seed.test.ts` - NEW
   - **Implementation:**
-    - Implement `notch packet create`, `notch packet import <file>`, `notch packet list`, `notch packet show <id>`, and `notch send --to <repo-or-store-path>`.
+    - Implement `notch packet create`, `notch packet import <file>`, `notch packet list`, `notch packet show <id>`, `notch send --to <repo-or-store-path>`, and `notch seed from <repo-or-store-path>`.
     - Support selected record/file includes, JSON output, editor/stdin input, collision handling, local repo/store destination resolution, and file-path destinations.
+    - Ensure seed imports default to `.notch/private/inbox/` and are ignored by Git.
     - Keep targeting metadata explicit: `--to-agent`, `--to-person`, and `--to-repo` route context but do not imply secrecy or access control in V1.
   - **Dependencies:** Steps 3.10, 4.1
-  - **Verification:** Run `npm test -- packet send`; two temp repos prove source outbox creation, destination inbox import, list/show, and no silent merge into destination source records.
+  - **Verification:** Run `npm test -- packet send seed`; two temp repos prove source outbox creation, destination inbox import, seed import into private inbox, list/show, and no silent merge into destination source records.
 
 ### Wave 5: MCP Server
 
@@ -471,7 +479,8 @@
     - `src/cli/program.ts` - MODIFIED
     - `tests/mcp/server-start.test.ts` - NEW
   - **Implementation:**
-    - Support `--store`, `--read-only`, `--default-actor`, and `--log-file`.
+    - Support `--store`, `--read-only`, `--include-private`, `--default-actor`, and `--log-file`.
+    - Hide `.notch/private/` seed packets unless `--include-private` is present.
     - Keep protocol output on stdio and diagnostics on stderr or the configured log file.
   - **Dependencies:** Steps 2.10, 3.1, 4.1
   - **Verification:** Run `npm test -- server-start`; MCP initialize succeeds and startup failures map to exit code `4`.
@@ -511,14 +520,16 @@
     - `src/mcp/tools/import-packet.ts` - NEW
     - `src/mcp/tools/list-packets.ts` - NEW
     - `src/mcp/tools/get-packet.ts` - NEW
+    - `src/mcp/tools/create-seed-packet.ts` - NEW
+    - `src/mcp/tools/import-seed-packet.ts` - NEW
     - `src/mcp/tools/index.ts` - MODIFIED
     - `tests/mcp/packet-tools.test.ts` - NEW
   - **Implementation:**
-    - Register `create_packet`, `import_packet`, `list_packets`, and `get_packet`.
+    - Register `create_packet`, `import_packet`, `list_packets`, `get_packet`, `create_seed_packet`, and `import_seed_packet`.
     - Keep MCP import scoped to the current store; CLI owns cross-repo destination transfer.
-    - Enforce read-only mode for packet creates/imports and preserve origin source links during import.
+    - Enforce read-only mode for packet creates/imports, preserve origin source links during import, and gate private packet reads behind `--include-private`.
   - **Dependencies:** Steps 3.10, 5.1
-  - **Verification:** Run `npm test -- packet-tools`; MCP can create outbox packets, import a supplied packet into inbox, and read list/show results without arbitrary filesystem access.
+  - **Verification:** Run `npm test -- packet-tools`; MCP can create outbox packets, import a supplied packet into inbox/private inbox, hide private packets by default, and read list/show results without arbitrary filesystem access.
 
 - [ ] **Step 5.5: Add MCP pass and decision tools**
   - **Task:** Implement pass creation and decision create/list MCP tools.
@@ -606,8 +617,8 @@
   - **Dependencies:** Steps 3.2, 3.5, 3.6, 3.10, 3.11, 4.2 through 4.7
   - **Verification:** Run `npm test -- corrupt-store path-traversal audit-integration secret-scan`.
 
-- [ ] **Step 6.3: Add cross-repo Claude-to-Codex demo fixture**
-  - **Task:** Include two realistic local `.notch/` fixtures for the primary packet-transfer demo.
+- [ ] **Step 6.3: Add private seed and cross-repo Claude-to-Codex demo fixtures**
+  - **Task:** Include realistic local `.notch/` fixtures for new-project seeding and packet transfer.
   - **Files:**
     - `fixtures/cross-repo-demo/source-app/.notch/config.json` - NEW
     - `fixtures/cross-repo-demo/source-app/.notch/.gitignore` - NEW
@@ -619,24 +630,29 @@
     - `fixtures/cross-repo-demo/destination-api/.notch/.gitignore` - NEW
     - `fixtures/cross-repo-demo/destination-api/.notch/brief.md` - NEW
     - `fixtures/cross-repo-demo/destination-api/.notch/inbox/20260523T172000Z-route-guard-from-source-app.md` - NEW
+    - `fixtures/context-seed-demo/old-project/.notch/config.json` - NEW
+    - `fixtures/context-seed-demo/old-project/.notch/brief.md` - NEW
+    - `fixtures/context-seed-demo/new-project/.notch/config.json` - NEW
+    - `fixtures/context-seed-demo/new-project/.notch/private/inbox/20260523T173000Z-user-workflow-seed-from-old-project.md` - NEW
   - **Implementation:**
-    - Model Claude planning in one repo, a portable packet, and Codex reading the imported packet in a second repo.
+    - Model private user/workflow context seeding into a fresh repo, plus Claude planning in one repo, a portable packet, and Codex reading the imported packet in a second repo.
     - Keep `index/` and `logs/` absent or regenerable to prove source files are authoritative.
   - **Dependencies:** Steps 2.3, 2.4, 2.5, 2.6, 3.10, 3.11
-  - **Verification:** Run `notch doctor --cwd fixtures/cross-repo-demo/source-app --fix --yes` and `notch doctor --cwd fixtures/cross-repo-demo/destination-api --fix --yes`; both fixtures become healthy and destination packet list works.
+  - **Verification:** Run `notch doctor --cwd fixtures/context-seed-demo/new-project --fix --yes`, `notch doctor --cwd fixtures/cross-repo-demo/source-app --fix --yes`, and `notch doctor --cwd fixtures/cross-repo-demo/destination-api --fix --yes`; fixtures become healthy, private seed is ignored, and destination packet list works.
 
 - [ ] **Step 6.4: Add README and workflow docs**
-  - **Task:** Document quickstart, cross-repo packets, first-pass workflow, targeted briefs, MCP setup, and local-first privacy.
+  - **Task:** Document quickstart, private context seeding, cross-repo packets, first-pass workflow, targeted briefs, MCP setup, and local-first privacy.
   - **Files:**
     - `README.md` - NEW
+    - `docs/private-context-seeding.md` - NEW
     - `docs/first-pass-workflow.md` - NEW
     - `docs/cross-repo-packets.md` - NEW
     - `docs/targeted-brief-workflow.md` - NEW
     - `docs/mcp-setup.md` - NEW
     - `docs/privacy.md` - NEW
   - **Implementation:**
-    - Use 3Notch positioning: local-first context passing, not generic memory.
-    - Include `npx @3notch/cli onboard`, `notch packet create`, `notch packet import`, `notch send --to`, `notch brief`, `notch brief create`, `notch pass`, `notch status`, `notch doctor`, and `notch mcp serve`.
+    - Use 3Notch positioning: local-first private context seeding and packet passing, not generic memory.
+    - Include `npx @3notch/cli onboard`, `notch seed from`, `notch packet create`, `notch packet import`, `notch send --to`, `notch brief`, `notch brief create`, `notch pass`, `notch status`, `notch doctor`, and `notch mcp serve --include-private`.
   - **Dependencies:** Steps 4.2 through 4.7, 5.1 through 5.8, 6.1
   - **Verification:** Manually run every README quickstart command in a temp project and confirm outputs match the documented flow.
 
@@ -649,7 +665,7 @@
     - `docs/prompts/end-of-session-pass.md` - NEW
     - `fixtures/cross-repo-demo/README.md` - NEW
   - **Implementation:**
-    - Reference MCP tools by V1 names such as `get_brief`, `get_recent_passes`, `create_brief`, `create_pass`, `create_packet`, `import_packet`, `list_packets`, and `get_packet`.
+    - Reference MCP tools by V1 names such as `get_brief`, `get_recent_passes`, `create_brief`, `create_pass`, `create_packet`, `import_packet`, `create_seed_packet`, `import_seed_packet`, `list_packets`, and `get_packet`.
     - Keep prompts focused on source-linked context, open questions, stale assumptions, and conflicts.
   - **Dependencies:** Steps 5.2 through 5.8, 6.3
   - **Verification:** Review prompt files for no claims about chat-history scraping, telemetry, cloud sync, semantic search, or autonomous orchestration.
@@ -669,19 +685,21 @@
 
 ### Final Step: End-to-End Smoke Test
 
-- [ ] **Step 7.1: Verify cross-repo packet loop and Claude-to-Codex workflow**
-  - **Task:** Add and run an end-to-end smoke test covering the complete V1 loop from onboarding through packet transfer and MCP retrieval.
+- [ ] **Step 7.1: Verify private seed, cross-repo packet loop, and Claude-to-Codex workflow**
+  - **Task:** Add and run an end-to-end smoke test covering the complete V1 loop from onboarding through private context seed, packet transfer, and MCP retrieval.
   - **Files:**
     - `tests/e2e/claude-to-codex-smoke.test.ts` - NEW
+    - `tests/e2e/private-context-seed-smoke.test.ts` - NEW
     - `tests/e2e/cross-repo-packet-smoke.test.ts` - NEW
     - `tests/e2e/local-privacy.test.ts` - NEW
     - `tests/helpers/mcp-harness.ts` - MODIFIED
     - `package.json` - MODIFIED
   - **Implementation:**
+    - Create an old temp project and a new temp project, seed private context from old into new, verify private seed is ignored and hidden from MCP by default, then enable private context and read it.
     - Create two temp projects, run `notch onboard --yes` in both, create a pass and targeted brief in repo A, create a packet, import/send it to repo B, list/show the packet from repo B, run status/doctor, start MCP harness, and call `tools/list`.
-    - Assert all required MCP tools are listed, imported packets are readable in repo B, and no telemetry, cloud, login, hosted endpoint, or arbitrary shell capability exists.
+    - Assert all required MCP tools are listed, private seeds and imported packets are readable only under the right exposure rules, and no telemetry, cloud, login, hosted endpoint, or arbitrary shell capability exists.
   - **Dependencies:** Steps 1.1 through 6.6
-  - **Verification:** Run `npm run lint && npm run type-check && npm run build && npm test && npm run test:e2e`; the smoke test verifies onboarding, packet create/import/send, pass creation/retrieval, targeted brief creation/retrieval, status, doctor, MCP tool listing, and local-only/no-telemetry posture.
+  - **Verification:** Run `npm run lint && npm run type-check && npm run build && npm test && npm run test:e2e`; the smoke test verifies onboarding, private context seeding, packet create/import/send, pass creation/retrieval, targeted brief creation/retrieval, status, doctor, MCP tool listing, and local-only/no-telemetry posture.
 
 ### Future Considerations
 

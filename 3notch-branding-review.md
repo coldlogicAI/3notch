@@ -4,7 +4,7 @@
 
 The product should launch under the working brand **3Notch**, with `notch` as the CLI command, `@3notch/cli` as the intended npm package, and `.notch/` as the local project store.
 
-The brand should not lead with "memory." That market is already crowded and abstract. The sharp value is portable context: moving the right source-linked packet from one repo, person, or agent to the next.
+The brand should not lead with "memory." That market is already crowded and abstract. The sharp value is portable private context: moving the right source-linked packet from prior work to the next repo, person, or agent.
 
 Recommended public framing:
 
@@ -16,7 +16,7 @@ Recommended launch tagline:
 
 Recommended category:
 
-> Local-first context packets for AI agents.
+> Local-first private context packets for AI agents.
 
 ## Naming
 
@@ -78,6 +78,7 @@ Use:
 - npm package: `@3notch/cli`
 - Local folder: `.notch/`
 - Core object: pass
+- Bootstrap object: seed packet
 - Startup object: brief
 - Health object: status
 
@@ -86,6 +87,7 @@ Example:
 ```bash
 npx @3notch/cli onboard
 notch brief
+notch seed from ../old-project
 notch pass
 notch status
 notch doctor
@@ -95,15 +97,15 @@ notch doctor
 
 ### Primary Positioning
 
-3Notch is a local-first tool for sending project context marks across repos and AI agents.
+3Notch is a local-first tool for sending project and private workflow context marks across repos and AI agents.
 
 ### Short Pitch
 
-Stop copy-pasting context between repos and AI tools. 3Notch packages the right project brief, recent passes, decisions, open questions, and stale-context warnings into portable packets.
+Stop copy-pasting context between repos and AI tools. 3Notch packages the right project brief, private workflow preferences, recent passes, decisions, open questions, and stale-context warnings into portable packets.
 
 ### Longer Pitch
 
-3Notch is a local-first CLI and MCP server that lets Claude, Codex, Cursor, ChatGPT, and local agents pass structured project context across repos without exposing full private chat histories. Agents can create a compact packet in one repo, import it into another repo, read a brief before they start, and write a pass before they stop.
+3Notch is a local-first CLI and MCP server that lets Claude, Codex, Cursor, ChatGPT, and local agents pass structured project and private workflow context across repos without exposing full private chat histories. A user can seed a new repo from prior work, agents can create a compact packet in one repo, import it into another repo, read a brief before they start, and write a pass before they stop.
 
 3Notch also supports targeted briefs: deliberate, scoped handoff documents for a specific future task or agent.
 
@@ -148,7 +150,7 @@ When work moves repos, the right context moves with it.
 
 ### Subhead
 
-3Notch is a local-first CLI and MCP server for passing project briefs, targeted task context, decisions, open questions, and implementation summaries across repos and AI agents.
+3Notch is a local-first CLI and MCP server for passing project briefs, private workflow context, targeted task context, decisions, open questions, and implementation summaries across repos and AI agents.
 
 ### Primary CTA
 
@@ -162,6 +164,7 @@ View the cross-repo Claude to Codex demo
 
 ### Three Proof Bullets
 
+- Seed a new repo with private workflow context from prior work.
 - Send a scoped packet from one repo to another.
 - Read the imported packet before work starts.
 - Create targeted briefs for specific tasks.
@@ -177,22 +180,23 @@ Recommended top of README:
 
 When work moves repos, the right context moves with it.
 
-3Notch is a local-first CLI and MCP server for passing project context across repos and AI agents. It packages selected project context into inspectable packets without sharing full chat histories.
+3Notch is a local-first CLI and MCP server for passing project and private workflow context across repos and AI agents. It packages selected context into inspectable packets without sharing full chat histories.
 
 ```bash
 npx @3notch/cli onboard
+notch seed from ../old-project --include preferences --include workflow --review
 notch packet create --to-agent codex --to-repo ../api
 notch send --to ../api
 notch packet list --inbox
 notch brief
 notch brief create --title "March training feature" --to codex
 notch pass
-notch mcp serve
+notch mcp serve --include-private
 ```
 
 ## Why
 
-AI work now happens across repos, Claude, Codex, Cursor, ChatGPT, and local agents. Each tool and repo remembers different things. 3Notch creates local context packets that can move with the work while keeping the source files human-readable.
+AI work now happens across repos, Claude, Codex, Cursor, ChatGPT, and local agents. Each tool and repo remembers different things. 3Notch creates local context packets that can move with the work while keeping source files human-readable and private seed context ignored by Git.
 ```
 
 ## Product Personality
@@ -291,11 +295,12 @@ Configure MCP for Claude Desktop? yes
 Ready.
 
 Next:
+  notch seed from ../old-project
   notch packet create
   notch send --to ../other-repo
   notch brief
   notch pass
-  notch mcp serve
+  notch mcp serve --include-private
 ```
 
 ### Daily Use Loop
@@ -303,6 +308,7 @@ Next:
 The product should teach this loop:
 
 ```text
+When starting fresh: seed private context from prior work
 When work moves repos: create/import packet
 Before work: agent reads imported packet and brief
 For deep context: agent creates or reads a targeted brief
@@ -428,6 +434,7 @@ Recommended structure:
    - demo link
 
 2. Demo:
+   - New repo seeds private workflow context from prior work
    - Claude plans in repo A
    - 3Notch creates a packet
    - Repo B imports the packet
@@ -436,7 +443,7 @@ Recommended structure:
 
 3. Why Not Memory:
    - memory is broad;
-   - packet transfer is the job;
+   - context seeding and packet transfer are the job;
    - full chat history is unnecessary.
 
 4. What Gets Stored:
@@ -475,6 +482,14 @@ npx @3notch/cli onboard
 
 ### Scene 2
 
+Seed the new repo from prior work:
+
+```bash
+notch seed from ../old-project --include preferences --include workflow --review
+```
+
+### Scene 3
+
 Claude writes planning pass or targeted brief in repo A:
 
 ```text
@@ -482,7 +497,7 @@ write_pass(...)
 create_brief(...)
 ```
 
-### Scene 3
+### Scene 4
 
 Terminal:
 
@@ -493,7 +508,7 @@ notch send --to ../api
 
 Shows a source outbox packet and destination inbox import.
 
-### Scene 4
+### Scene 5
 
 Codex in repo B reads the imported packet:
 
@@ -502,11 +517,11 @@ notch packet list --inbox
 notch packet show <id>
 ```
 
-### Scene 5
+### Scene 6
 
 Codex implements and writes a pass.
 
-### Scene 6
+### Scene 7
 
 Terminal:
 
@@ -584,10 +599,10 @@ If not, defer it.
 
 ## Recommended Edits To Main Project Request
 
-The main request should keep packet transfer as the core job. Remaining possible edits:
+The main request should keep private context seeding and packet transfer as the core job. Remaining possible edits:
 
-1. Replace remaining generic "memory" language in public-facing sections with "packet," "pass," or "brief."
-2. Add `notch packet create`, `notch send --to`, and `notch packet import` to hero demos.
+1. Replace remaining generic "memory" language in public-facing sections with "seed," "packet," "pass," or "brief."
+2. Add `notch seed from`, `notch packet create`, `notch send --to`, and `notch packet import` to hero demos.
 3. Keep `notch brief` and `notch pass` as supporting daily-loop commands.
 4. Keep "memory" mostly in technical sections.
 5. Make "doctor" and "status" part of the MVP, not nice-to-have.
@@ -598,11 +613,11 @@ This should be marketed as a pragmatic developer tool, not an AI platform.
 
 The emotional hook:
 
-> I should not have to re-explain repo A when the work moves to repo B.
+> I should not have to re-explain myself or repo A when the work moves to repo B.
 
 The functional hook:
 
-> Create a packet in one repo, import it in another, then let every agent read the brief before work and write a pass after work.
+> Seed a new repo from prior work, create a packet in one repo, import it in another, then let every agent read the brief before work and write a pass after work.
 
 The trust hook:
 
