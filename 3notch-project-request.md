@@ -1,12 +1,12 @@
-# Project Request: Baton
+# Project Request: 3Notch
 
 ## Working Title
 
-Baton
+3Notch
 
 Alternate names:
 
-- baton
+- notch
 - Pass
 - Agent Brief
 - Context Pass
@@ -71,7 +71,7 @@ The user should own the shared memory. Agents should interact with it through ex
 - read project context;
 - search decisions;
 - record a decision;
-- pass the baton;
+- write a pass;
 - mark an assumption stale;
 - list open questions;
 - resolve conflicting notes;
@@ -87,10 +87,10 @@ Design constraints:
 
 - one obvious job: hand off work between agents;
 - one memorable demo: Claude plans, Codex implements, Claude reviews;
-- one fast install path: `npx baton onboard`;
-- one first command after setup: `baton brief`;
-- one targeted context command: `baton brief create`;
-- one end-of-session ritual: `baton pass`;
+- one fast install path: `npx @3notch/cli onboard`;
+- one first command after setup: `notch brief`;
+- one targeted context command: `notch brief create`;
+- one end-of-session ritual: `notch pass`;
 - CLI and MCP should expose the same core capabilities;
 - local-first by default;
 - no semantic search or hosted sync required for v1;
@@ -99,11 +99,11 @@ Design constraints:
 
 The internal architecture can support broader context exchange, but the public product should initially feel like:
 
-> Pass the baton between AI agents.
+> Leave a trail the next agent can follow.
 
 ## Public Positioning
 
-See also: [baton-branding-review.md](baton-branding-review.md) for naming, product design, launch messaging, README hero copy, CLI voice, and visual direction.
+See also: [3notch-branding-review.md](3notch-branding-review.md) for naming, product design, launch messaging, README hero copy, CLI voice, and visual direction.
 
 Suggested tagline:
 
@@ -115,7 +115,7 @@ Sharper launch tagline:
 
 Suggested positioning statement:
 
-> Baton is a local-first tool for passing project context between AI agents. It gives Claude, Codex, Cursor, ChatGPT, and local agents the same source-linked project decisions, recent passes, open questions, stale assumptions, and conflict records without exposing full private chat histories.
+> 3Notch is a local-first tool for passing project context between AI agents. It gives Claude, Codex, Cursor, ChatGPT, and local agents the same source-linked project decisions, recent passes, open questions, stale assumptions, and conflict records without exposing full private chat histories.
 
 Alternative positioning:
 
@@ -129,8 +129,8 @@ Launch positioning should prefer "pass" and "brief" over "memory." Memory is the
 
 Use "brief" carefully:
 
-- `baton brief`: the default compact project brief every agent reads before work.
-- `baton brief create`: a targeted, scoped brief for a specific agent/task, usually created intentionally from deeper project context.
+- `notch brief`: the default compact project brief every agent reads before work.
+- `notch brief create`: a targeted, scoped brief for a specific agent/task, usually created intentionally from deeper project context.
 
 Avoid positioning the project as merely:
 
@@ -158,7 +158,7 @@ This creates a timely opportunity for a useful open-source project:
 
 The generic "MCP memory server" category is already active. Existing and emerging projects include local-first memory daemons, semantic memory stores, knowledge graph memory backends, MCP memory servers, and hosted/self-hosted long-term memory products. Examples include Dory, memd, Truenex Memory, MentisDB, Engram, and other open-source MCP memory projects.
 
-This is useful validation: the pain is real, the integration surface is timely, and developers are already looking for a solution. It also means Baton should not compete as another undifferentiated memory database.
+This is useful validation: the pain is real, the integration surface is timely, and developers are already looking for a solution. It also means 3Notch should not compete as another undifferentiated memory database.
 
 The differentiator should be workflow semantics:
 
@@ -182,7 +182,7 @@ Most adjacent tools appear to emphasize one or more of:
 - coding-agent project context;
 - MCP access.
 
-Baton should emphasize a narrower and more operational promise:
+3Notch should emphasize a narrower and more operational promise:
 
 > When one agent finishes, the next agent can pick up the work correctly.
 
@@ -203,9 +203,9 @@ Semantic memory can be added later, but it should not define the first version.
 
 ### Primary Differentiators
 
-#### 1. Baton-First
+#### 1. Pass-First
 
-Every agent session should end by passing the baton. The pass should capture what changed, what was learned, what remains open, which files or sources matter, and what the next agent should know.
+Every agent session should end by writing a pass. The pass should capture what changed, what was learned, what remains open, which files or sources matter, and what the next agent should know.
 
 Most memory systems optimize retrieval. This project should optimize continuation.
 
@@ -335,7 +335,7 @@ This keeps the system inspectable and reduces privacy risk.
 
 ## Key Use Cases
 
-### Use Case 0: End Every Agent Session By Passing The Baton
+### Use Case 0: End Every Agent Session By Writing A Pass
 
 This is the core product loop.
 
@@ -365,10 +365,10 @@ Workflow:
 
 1. User asks Claude to create a targeted brief.
 2. Claude uses relevant current context, project memory, and user-specified scope.
-3. Claude writes the brief into Baton with title, goal, target agent, scope, relevant files, key decisions, design basis, pitfalls, open questions, and recommended next steps.
+3. Claude writes the brief into 3Notch with title, goal, target agent, scope, relevant files, key decisions, design basis, pitfalls, open questions, and recommended next steps.
 4. Codex or another agent retrieves that targeted brief before acting.
 
-V1 does not need to automatically discover the full historical context. The agent creating the brief is responsible for supplying the content. Baton is responsible for storing, indexing, retrieving, and exposing the brief cleanly.
+V1 does not need to automatically discover the full historical context. The agent creating the brief is responsible for supplying the content. 3Notch is responsible for storing, indexing, retrieving, and exposing the brief cleanly.
 
 ### Use Case 1: Claude To Codex
 
@@ -376,7 +376,7 @@ A user plans a feature in Claude, then wants Codex to implement it.
 
 Workflow:
 
-1. Claude writes a structured pass into Baton.
+1. Claude writes a structured pass into 3Notch.
 2. The pass includes decisions, constraints, files discussed, and open questions.
 3. Codex queries the project context through MCP.
 4. Codex implements the work without requiring the user to paste the whole Claude conversation.
@@ -389,7 +389,7 @@ A user returns to a project after several days.
 Workflow:
 
 1. The agent asks for current project context.
-2. Baton returns the project overview, recent decisions, active tasks, and unresolved questions.
+2. 3Notch returns the project overview, recent decisions, active tasks, and unresolved questions.
 3. The agent can continue without the user reconstructing the history.
 
 ### Use Case 3: Conflict Detection
@@ -441,7 +441,7 @@ The system maintains readable passes:
 
 ```text
 +------------------------------------------------------+
-|                       Baton                  |
+|                       3Notch                  |
 |------------------------------------------------------|
 | Local Context Store                                  |
 | Project Registry                                     |
@@ -468,27 +468,27 @@ V1 should expose a small command set with strong names.
 Primary commands:
 
 ```text
-baton onboard
-baton brief
-baton brief create
-baton brief list
-baton brief show <id>
-baton pass
-baton status
-baton doctor
-baton mcp serve
+notch onboard
+notch brief
+notch brief create
+notch brief list
+notch brief show <id>
+notch pass
+notch status
+notch doctor
+notch mcp serve
 ```
 
 Secondary commands:
 
 ```text
-baton decision add
-baton question add
-baton question list
-baton assumption add
-baton stale mark
-baton conflict list
-baton search
+notch decision add
+notch question add
+notch question list
+notch assumption add
+notch stale mark
+notch conflict list
+notch search
 ```
 
 The first five commands should be enough for a user to understand the product:
@@ -506,13 +506,13 @@ The first five commands should be enough for a user to understand the product:
 The onboarding command should guide setup rather than assume users know where files go.
 
 ```bash
-npx baton onboard
+npx @3notch/cli onboard
 ```
 
 The flow should:
 
 1. Detect the current Git repository.
-2. Ask whether to create `.baton/` in the repo.
+2. Ask whether to create `.notch/` in the repo.
 3. Create starter files.
 4. Detect known agent config locations where possible.
 5. Offer to add an MCP server entry for Claude/Codex/Cursor-compatible clients.
@@ -522,16 +522,16 @@ The flow should:
 Example final output:
 
 ```text
-Baton is ready.
+3Notch is ready.
 
 Project: my-app
-Store: .baton/
+Store: .notch/
 MCP: configured for Claude Desktop
 
 Try:
-  baton brief
-  baton pass
-  baton mcp serve
+  notch brief
+  notch pass
+  notch mcp serve
 
 Agent prompt:
   Before starting, call get_brief. Before stopping, call write_pass.
@@ -571,7 +571,7 @@ Last pass: codex, 18 minutes ago
 The first implementation should work as a plain local folder:
 
 ```text
-.baton/
+.notch/
   config.yaml
   project.md
   brief.md
@@ -759,25 +759,25 @@ import_context_packet
 The CLI should mirror the MCP tools, but the first-class command path should stay short.
 
 ```text
-baton onboard
-baton brief
-baton brief create
-baton brief list
-baton pass
-baton status
-baton doctor
-baton mcp serve
-baton search <query>
-baton decision add
-baton question add
-baton question list
-baton assumption add
-baton stale mark <packet-id>
-baton conflict list
-baton conflict resolve <conflict-id>
-baton index rebuild
-baton export
-baton import <file>
+notch onboard
+notch brief
+notch brief create
+notch brief list
+notch pass
+notch status
+notch doctor
+notch mcp serve
+notch search <query>
+notch decision add
+notch question add
+notch question list
+notch assumption add
+notch stale mark <packet-id>
+notch conflict list
+notch conflict resolve <conflict-id>
+notch index rebuild
+notch export
+notch import <file>
 ```
 
 Potential aliases:
@@ -835,10 +835,10 @@ A targeted brief is a scoped handoff document for a specific future task or agen
 Examples:
 
 ```bash
-baton brief create --title "March training feature" --to codex
-baton brief create --title "Skill files package" --to claude
-baton brief list
-baton brief show march-training-feature
+notch brief create --title "March training feature" --to codex
+notch brief create --title "Skill files package" --to claude
+notch brief list
+notch brief show march-training-feature
 ```
 
 MCP equivalent:
@@ -860,7 +860,7 @@ create_brief({
 Recommended brief structure:
 
 ```md
-# Baton Brief: March Training Feature
+# 3Notch Brief: March Training Feature
 
 ## Goal For Codex
 
@@ -1128,19 +1128,19 @@ Python advantages:
 Pragmatic recommendation:
 
 - TypeScript for first public release.
-- Use `npx baton onboard` as the primary install-free path.
+- Use `npx @3notch/cli onboard` as the primary install-free path.
 - Keep the file formats language-neutral.
 
 ## MVP Deliverables
 
 ### MVP 1: Local Core
 
-- `baton onboard`
-- `baton brief`
-- `baton brief create`
-- `baton brief list`
-- `baton status`
-- `baton doctor`
+- `notch onboard`
+- `notch brief`
+- `notch brief create`
+- `notch brief list`
+- `notch status`
+- `notch doctor`
 - project config file
 - packet schema
 - create/read/update packets
@@ -1159,7 +1159,7 @@ Pragmatic recommendation:
 
 ### MVP 2: MCP Server
 
-- `baton mcp serve`
+- `notch mcp serve`
 - `get_brief`
 - `create_brief`
 - `get_targeted_brief`
@@ -1274,31 +1274,31 @@ Pragmatic recommendation:
 ### Prompt For Claude
 
 ```text
-Use the Baton MCP server before starting. Read the project overview, active context, recent decisions, and open questions. When you finish, pass the baton summarizing what you changed, what decisions you made, what remains open, and which files or sources matter.
+Use the 3Notch MCP server before starting. Read the project overview, active context, recent decisions, and open questions. When you finish, write a pass summarizing what you changed, what decisions you made, what remains open, and which files or sources matter.
 ```
 
 ### Prompt For Claude To Create A Targeted Brief
 
 ```text
-Create a targeted Baton brief for Codex. Do not include the full project history. Include only the context needed for the requested task: goal, relevant background, design basis, active decisions, relevant files/sources, known pitfalls, open questions, and recommended next steps. Save it with create_brief.
+Create a targeted 3Notch brief for Codex. Do not include the full project history. Include only the context needed for the requested task: goal, relevant background, design basis, active decisions, relevant files/sources, known pitfalls, open questions, and recommended next steps. Save it with create_brief.
 ```
 
 ### Prompt For Codex
 
 ```text
-Before editing code, query Baton for active project context and recent passes. Treat active decisions as project constraints unless the user says otherwise. After implementation, pass the baton and mark any stale assumptions you discovered.
+Before editing code, query 3Notch for active project context and recent passes. Treat active decisions as project constraints unless the user says otherwise. After implementation, write a pass and mark any stale assumptions you discovered.
 ```
 
 ### Prompt For Research Agent
 
 ```text
-Search Baton for prior research before browsing. Record new findings as source-linked research_summary packets. Do not overwrite existing decisions. If findings contradict active context, create a conflict record.
+Search 3Notch for prior research before browsing. Record new findings as source-linked research_summary packets. Do not overwrite existing decisions. If findings contradict active context, create a conflict record.
 ```
 
 ## README Outline
 
 ```text
-# Baton
+# 3Notch
 
 Local-first context passing for AI agents.
 
@@ -1316,9 +1316,9 @@ Stop copy-pasting context between Claude, Codex, Cursor, ChatGPT, and local agen
 - runs as CLI and MCP server
 
 ## Quickstart
-npx baton onboard
-baton brief
-baton mcp serve
+npx @3notch/cli onboard
+notch brief
+notch mcp serve
 
 ## How Agents Use It
 ...
@@ -1356,7 +1356,7 @@ This means the first public release must avoid sounding like "yet another MCP me
 
 Differentiation:
 
-- pass-the-baton workflow, not passive memory;
+- notch-first workflow, not passive memory;
 - decision-centric records, not generic notes;
 - stale-context and conflict visibility, not blind recall;
 - source-linked packets, not opaque embeddings;
@@ -1446,7 +1446,7 @@ Launch assets:
 ### Demo Scenario
 
 1. Plan a feature in Claude.
-2. Claude writes pass to Baton.
+2. Claude writes pass to 3Notch.
 3. Codex reads pass and implements feature.
 4. Codex writes implementation summary.
 5. Claude reads summary and reviews.
@@ -1455,12 +1455,12 @@ Launch assets:
 The demo should use the exact v1 commands:
 
 ```bash
-npx baton onboard
-baton brief
-baton brief create --title "March training feature" --to codex
-baton pass
-baton status
-baton mcp serve
+npx @3notch/cli onboard
+notch brief
+notch brief create --title "March training feature" --to codex
+notch pass
+notch status
+notch mcp serve
 ```
 
 This demo is easy to understand and highly marketable.
@@ -1476,7 +1476,7 @@ OSS metrics:
 - number of passes written;
 - number of targeted briefs created;
 - number of targeted briefs retrieved by agents;
-- ratio of baton pass packets to generic notes;
+- ratio of pass records to generic notes;
 - number of decisions recorded;
 - number of stale packets marked;
 - number of conflicts created/resolved;
@@ -1583,7 +1583,7 @@ Mitigation:
 13. Should every write tool ask agents to classify packet type explicitly?
 14. Which competitor claims should be acknowledged directly in launch materials, if any?
 15. Should targeted briefs be stored as standalone markdown files, packet YAML, or both?
-16. Should `baton brief` show only the default project brief while targeted briefs require `baton brief show <id>`?
+16. Should `notch brief` show only the default project brief while targeted briefs require `notch brief show <id>`?
 
 ## Acceptance Criteria For First Useful Release
 
@@ -1596,7 +1596,7 @@ The first useful release is complete when:
 5. A user can search project context locally.
 6. An MCP-compatible agent can read project context.
 7. An MCP-compatible agent can retrieve a targeted brief.
-8. An MCP-compatible agent can pass the baton.
+8. An MCP-compatible agent can write a pass.
 9. The system records who or what wrote each packet.
 10. The system can mark packets stale.
 11. The system can list unresolved questions.

@@ -1,52 +1,48 @@
-# Phase 2 — Baton Specification Prompt
+# Phase 2 — 3Notch Specification Prompt
 
 > **Role:** Senior Software Architect for local-first developer tools, CLI products, and MCP integrations  
-> **Input:** Local Baton project files  
-> **Output:** A full technical specification for the Baton V1 MVP  
+> **Input:** Local 3Notch project files
+> **Output:** A full technical specification for the 3Notch V1 MVP
 > **Next step:** Feed this output into implementation planning
 
 ---
 
 ```text
-You are a senior software architect. Your job is to read the Baton project files in this folder and produce a complete technical specification that a developer or AI coding agent can implement without ambiguity.
+You are a senior software architect. Your job is to read the 3Notch project files in this folder and produce a complete technical specification that a developer or AI coding agent can implement without ambiguity.
 
 Before writing the specification, read these files:
 
 <source_files>
-- ./baton-project-request.md
-- ./baton-branding-review.md
+- ./3notch-project-request.md
+- ./3notch-branding-review.md
 </source_files>
 
-If those relative paths are not available, try these known local paths:
+If those relative paths are not available, stop and ask the user for the correct file locations before continuing.
 
-<fallback_source_files>
-- /Users/coldlogic/Desktop/Open Source Projects/Baton/baton-project-request.md
-- /Users/coldlogic/Desktop/Open Source Projects/Baton/baton-branding-review.md
-</fallback_source_files>
+Do not rely on hard-coded absolute paths; this repo may be checked out under a different folder name.
 
-If neither the relative files nor fallback files are available, stop and ask the user for the correct file locations before continuing.
-
-Baton is not a SaaS dashboard, generic knowledge base, team collaboration app, or broad agent orchestration platform. Baton is a local-first developer tool for creating, storing, validating, and retrieving targeted AI-agent handoffs across LLM tools such as Claude, Codex, Cursor, ChatGPT, and future MCP-compatible agents.
+3Notch is not a SaaS dashboard, generic knowledge base, team collaboration app, or broad agent orchestration platform. 3Notch is a local-first developer tool for creating, storing, validating, and retrieving targeted AI-agent handoffs across LLM tools such as Claude, Codex, Cursor, ChatGPT, and future MCP-compatible agents.
 
 Your first responsibility is to recommend the right technical architecture for this specific product. Do not default to a web app. Consider CLI ergonomics, local file storage, MCP tool exposure, package distribution, privacy, portability, and the need for a polished V1 that can be open-sourced and demoed quickly.
 
 <product_constraints>
-- Product name: Baton
-- Core metaphor: pass the baton between AI agents
+- Product name: 3Notch
+- Core metaphor: leave a trail the next agent can follow
 - Core user promise: when one AI agent stops, another starts with the right context
 - Primary interface: CLI
 - Secondary interface: MCP server
-- Local project directory: `.baton/`
-- CLI package name: `baton`
+- Local project directory: `.notch/`
+- CLI package name: `@3notch/cli`
+- CLI command: `notch`
 - Hero commands should include:
-  - `baton onboard`
-  - `baton pass`
-  - `baton brief create`
-  - `baton brief list`
-  - `baton brief show <id>`
-  - `baton status`
-  - `baton doctor`
-  - `baton mcp serve`
+  - `notch onboard`
+  - `notch pass`
+  - `notch brief create`
+  - `notch brief list`
+  - `notch brief show <id>`
+  - `notch status`
+  - `notch doctor`
+  - `notch mcp serve`
 - V1 should feel small, sharp, useful, and installable
 - V1 must support targeted briefs, not only automatic session handoffs
 - V1 must avoid becoming a full project management system
@@ -55,7 +51,7 @@ Your first responsibility is to recommend the right technical architecture for t
 <architecture_rules>
 - Prefer local-first storage over hosted infrastructure
 - Prefer human-readable files for primary records
-- Use structured schemas for all Baton packets, passes, briefs, decisions, and status records
+- Use structured schemas for all 3Notch packets, passes, briefs, decisions, and status records
 - Use JSON Schema or equivalent validation for every file format and MCP input
 - If an index is used, it should be regenerable from source files
 - Do not require a database unless there is a clear V1 reason
@@ -64,7 +60,7 @@ Your first responsibility is to recommend the right technical architecture for t
 - Do not scrape private LLM chat histories in V1
 - Do not attempt automatic semantic reconstruction of months of project context in V1
 - Do not expose arbitrary shell execution through MCP
-- MCP tools must be scoped to the current project’s `.baton/` directory unless explicitly configured otherwise
+- MCP tools must be scoped to the current project’s `.notch/` directory unless explicitly configured otherwise
 - Every write operation must record actor, timestamp, source tool, record type, and schema version
 - Every command must have explicit error states
 - Every command must be scriptable and useful in CI-like environments
@@ -79,10 +75,10 @@ These instructions are mandatory for the technical specification and any later i
 - If multiple interpretations exist, name them and recommend the simplest one.
 - Surface tradeoffs instead of silently choosing complexity.
 - If a requirement is unclear, identify the ambiguity and either make a conservative assumption or list it under Open Questions.
-- Push back on features that would make Baton broader than the V1 scope.
+- Push back on features that would make 3Notch broader than the V1 scope.
 
 2. Simplicity First
-- Design the minimum product that satisfies the Baton V1 goals.
+- Design the minimum product that satisfies the 3Notch V1 goals.
 - Do not add speculative features, plugin systems, hosted services, dashboards, enterprise controls, or abstraction layers unless directly required.
 - Prefer boring, inspectable, local-first implementation choices.
 - Avoid abstractions for single-use code.
@@ -90,8 +86,8 @@ These instructions are mandatory for the technical specification and any later i
 - Every major component must justify why it exists in V1.
 
 3. Surgical Scope
-- Keep the specification tightly aligned to Baton’s stated purpose: agent-to-agent handoff through local passes, targeted briefs, status, doctor, and MCP access.
-- Do not expand Baton into a general project management tool, RAG system, memory database, workflow engine, or LLM chat archive.
+- Keep the specification tightly aligned to 3Notch’s stated purpose: agent-to-agent handoff through local passes, targeted briefs, status, doctor, and MCP access.
+- Do not expand 3Notch into a general project management tool, RAG system, memory database, workflow engine, or LLM chat archive.
 - If the project files suggest future possibilities, separate them into “Future Considerations” rather than including them in V1.
 - Every V1 feature must trace directly to the project request, branding review, or explicit V1 scope in this prompt.
 
@@ -111,18 +107,18 @@ These instructions are mandatory for the technical specification and any later i
 The V1 MVP should include:
 
 1. Project onboarding
-   - Initialize `.baton/`
+   - Initialize `.notch/`
    - Create config
    - Detect common project metadata where possible
-   - Validate installation with `baton doctor`
+   - Validate installation with `notch doctor`
 
-2. Baton Pass
+2. 3Notch Pass
    - Create a lightweight end-of-session handoff
    - Capture current task, changed files, decisions, blockers, next recommended actions, and confidence
    - Support manual authoring and AI-agent generated passes
    - Retrieve latest pass for a new agent session
 
-3. Baton Brief
+3. 3Notch Brief
    - Create targeted handoff documents for a specific future task or agent
    - Include selected context, design basis, prior reasoning, relevant files, constraints, and explicit exclusions
    - Support examples like:
@@ -132,18 +128,18 @@ The V1 MVP should include:
    - Store briefs as durable local artifacts
    - List and retrieve briefs by ID, title, tags, and target agent
 
-4. Baton Status
-   - Summarize current Baton project state
+4. 3Notch Status
+   - Summarize current 3Notch project state
    - Show latest pass, open briefs, unresolved decisions, stale handoffs, and validation issues
 
-5. Baton Doctor
-   - Validate `.baton/` structure
+5. 3Notch Doctor
+   - Validate `.notch/` structure
    - Validate schemas
    - Detect corrupted or stale records
    - Report actionable fixes
 
 6. MCP Server
-   - Expose Baton functionality to AI agents through MCP tools
+   - Expose 3Notch functionality to AI agents through MCP tools
    - Include tools for creating passes, reading latest pass, creating briefs, listing briefs, reading briefs, checking status, and validating the store
    - Keep write operations constrained and auditable
 
@@ -174,7 +170,7 @@ Produce a TECHNICAL SPECIFICATION in this exact format:
 
 ---
 
-## Technical Specification: Baton V1 MVP
+## Technical Specification: 3Notch V1 MVP
 
 ### Recommended Tech Stack
 
@@ -211,12 +207,12 @@ Produce a TECHNICAL SPECIFICATION in this exact format:
 [Proposed repo/package structure]
 ```
 
-### Local Baton Store Layout
+### Local 3Notch Store Layout
 
-Describe the `.baton/` directory.
+Describe the `.notch/` directory.
 
 ```text
-.baton/
+.notch/
   config.json
   passes/
   briefs/
@@ -235,19 +231,19 @@ For each folder/file, explain:
 
 Define the core record types.
 
-#### Baton Config
+#### 3Notch Config
 
 ```ts
 [TypeScript interface or equivalent]
 ```
 
-#### Baton Pass
+#### 3Notch Pass
 
 ```ts
 [TypeScript interface or equivalent]
 ```
 
-#### Baton Brief
+#### 3Notch Brief
 
 ```ts
 [TypeScript interface or equivalent]
@@ -276,10 +272,10 @@ For each persisted artifact, specify:
 - Example content
 
 Include examples for:
-- A Baton Pass
-- A targeted Baton Brief
+- A 3Notch Pass
+- A targeted 3Notch Brief
 - A Decision Record
-- Baton config
+- 3Notch config
 
 ### Schema Validation
 
@@ -306,25 +302,25 @@ For each command, provide:
 
 Include at minimum:
 
-#### `baton onboard`
+#### `notch onboard`
 
-#### `baton pass`
+#### `notch pass`
 
-#### `baton brief create`
+#### `notch brief create`
 
-#### `baton brief list`
+#### `notch brief list`
 
-#### `baton brief show <id>`
+#### `notch brief show <id>`
 
-#### `baton status`
+#### `notch status`
 
-#### `baton doctor`
+#### `notch doctor`
 
-#### `baton mcp serve`
+#### `notch mcp serve`
 
 ### MCP Tool Specification
 
-Define each MCP tool exposed by Baton.
+Define each MCP tool exposed by 3Notch.
 
 For each tool, include:
 - Tool name
@@ -366,7 +362,7 @@ For each service, describe:
 - Key functions
 - Error handling
 
-### Baton Pass Behavior
+### 3Notch Pass Behavior
 
 Specify exactly how a pass is created, stored, validated, and retrieved.
 
@@ -378,7 +374,7 @@ Include:
 - Staleness detection
 - Example pass
 
-### Baton Brief Behavior
+### 3Notch Brief Behavior
 
 Specify exactly how targeted briefs work.
 
@@ -395,9 +391,9 @@ Include:
 ### Status and Doctor Behavior
 
 Specify:
-- What `baton status` reports
-- What `baton doctor` validates
-- What makes a Baton store healthy, stale, invalid, or corrupted
+- What `notch status` reports
+- What `notch doctor` validates
+- What makes a 3Notch store healthy, stale, invalid, or corrupted
 - Suggested fix output format
 
 ### Security and Privacy Considerations
@@ -438,7 +434,7 @@ Define what must be true for V1 to be considered complete.
 
 Include:
 - Install works
-- Onboarding creates valid `.baton/`
+- Onboarding creates valid `.notch/`
 - Pass creation and retrieval work
 - Brief creation/listing/showing work
 - MCP server exposes expected tools

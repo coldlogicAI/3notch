@@ -1,21 +1,21 @@
-## Implementation Plan: Baton V1 MVP
+## Implementation Plan: 3Notch V1 MVP
 
 ### Assumptions
 
 - The current repo is documentation-only, so all package/runtime files are new unless explicitly marked modified later.
-- `baton-v1-technical-spec.md` is authoritative where it conflicts with older request language: V1 uses `.baton/config.json`, Markdown/YAML records, and regenerable JSON manifest/index files, with no SQLite.
-- V1 implements the required CLI and MCP surfaces only; `baton search`, assumption-specific commands, hosted sync, semantic search, dashboards, telemetry, and provider-specific deep config mutation are deferred.
+- `3notch-v1-technical-spec.md` is authoritative where it conflicts with older request language: V1 uses `.notch/config.json`, Markdown/YAML records, and regenerable JSON manifest/index files, with no SQLite.
+- V1 implements the required CLI and MCP surfaces only; `notch search`, assumption-specific commands, hosted sync, semantic search, dashboards, telemetry, and provider-specific deep config mutation are deferred.
 - The package uses Node.js 20+, TypeScript, Commander, Ajv, Vitest, tsup, and `@modelcontextprotocol/sdk`.
 
 ### Wave 1: Package and Foundation
 
 - [ ] **Step 1.1: Add npm package manifest**
-  - **Task:** Create the installable `baton` package with scripts, runtime dependencies, dev dependencies, bin metadata, and package files.
+  - **Task:** Create the installable `@3notch/cli` package with scripts, runtime dependencies, dev dependencies, bin metadata, and package files.
   - **Files:**
     - `package.json` - NEW
     - `package-lock.json` - NEW
   - **Implementation:**
-    - Set package name to `baton`, ESM module type, Node 20 engine, and `bin.baton` pointing at the built CLI.
+    - Set package name to `@3notch/cli`, ESM module type, Node 20 engine, and `bin.notch` pointing at the built CLI.
     - Add dependencies for Commander, Ajv, Markdown/YAML parsing, MCP SDK, and CLI output helpers.
     - Add scripts for `lint`, `type-check`, `build`, `test`, and `test:e2e`.
   - **Dependencies:** None
@@ -45,10 +45,10 @@
     - `src/core/version.ts` - NEW
     - `tests/cli/help.test.ts` - NEW
   - **Implementation:**
-    - Wire `baton --help`, `baton --version`, and global flags without real commands yet.
+    - Wire `notch --help`, `notch --version`, and global flags without real commands yet.
     - Ensure JSON and quiet output helpers are testable without process globals.
   - **Dependencies:** Step 1.2
-  - **Verification:** Run `npm test -- help`; help output includes `baton`, global flags, and exits `0`.
+  - **Verification:** Run `npm test -- help`; help output includes `notch`, global flags, and exits `0`.
 
 - [ ] **Step 1.4: Add test harness helpers**
   - **Task:** Create reusable helpers for CLI execution, temp projects, fixture stores, and MCP harness tests.
@@ -66,14 +66,14 @@
 ### Wave 2: Schemas and Record Parsing
 
 - [ ] **Step 2.1: Add core record and error types**
-  - **Task:** Define shared TypeScript types for Baton records, actors, source links, command inputs, and structured errors.
+  - **Task:** Define shared TypeScript types for 3Notch records, actors, source links, command inputs, and structured errors.
   - **Files:**
     - `src/types/records.ts` - NEW
     - `src/types/errors.ts` - NEW
     - `src/types/commands.ts` - NEW
     - `tests/unit/types.test.ts` - NEW
   - **Implementation:**
-    - Encode `RecordMeta`, `BatonPass`, `BatonBrief`, `ProjectBrief`, `DecisionRecord`, `OpenQuestionRecord`, `ConflictRecord`, `AuditEntry`, and `BatonError`.
+    - Encode `RecordMeta`, `NotchPass`, `NotchBrief`, `ProjectBrief`, `DecisionRecord`, `OpenQuestionRecord`, `ConflictRecord`, `AuditEntry`, and `NotchError`.
     - Keep MCP and CLI transport concerns out of the core record types.
   - **Dependencies:** Step 1.2
   - **Verification:** Run `npm test -- types`; fixtures compile against the expected literal unions.
@@ -89,12 +89,12 @@
   - **Implementation:**
     - Configure Ajv strict mode with reusable shared definitions for actor, source tool, source link, tags, and schema version.
     - Validate audit entries with separate `actorNameResolution` and `actorTypeResolution` fields.
-    - Return normalized `BatonError` objects for validation failures.
+    - Return normalized `NotchError` objects for validation failures.
   - **Dependencies:** Step 2.1
-  - **Verification:** Run `npm test -- base-schemas`; valid config/audit examples pass and malformed examples fail with `BATON_RECORD_INVALID` or `BATON_CONFIG_INVALID`.
+  - **Verification:** Run `npm test -- base-schemas`; valid config/audit examples pass and malformed examples fail with `NOTCH_RECORD_INVALID` or `NOTCH_CONFIG_INVALID`.
 
 - [ ] **Step 2.3: Add project brief schema and fixtures**
-  - **Task:** Define and test the default `.baton/brief.md` project brief format.
+  - **Task:** Define and test the default `.notch/brief.md` project brief format.
   - **Files:**
     - `src/schemas/project-brief.schema.json` - NEW
     - `src/templates/project-brief.md` - NEW
@@ -108,7 +108,7 @@
   - **Verification:** Run `npm test -- project-brief-schema`; valid fixture passes and missing-heading fixture fails.
 
 - [ ] **Step 2.4: Add pass schema and fixtures**
-  - **Task:** Define and test Baton pass records.
+  - **Task:** Define and test 3Notch pass records.
   - **Files:**
     - `src/schemas/pass.schema.json` - NEW
     - `src/templates/pass.md` - NEW
@@ -158,7 +158,7 @@
     - `tests/unit/templates.test.ts` - NEW
   - **Implementation:**
     - Match template frontmatter and headings to the schemas.
-    - Keep templates readable and editable without Baton.
+    - Keep templates readable and editable without 3Notch.
   - **Dependencies:** Step 2.6
   - **Verification:** Run `npm test -- templates`; generated template frontmatter validates against each schema.
 
@@ -174,7 +174,7 @@
     - Coerce scalar `schemaVersion` values to strings before schema validation.
     - Return parsed metadata, Markdown body, and structured errors without throwing raw parser errors.
   - **Dependencies:** Steps 2.2, 2.3, 2.4, 2.5, 2.6
-  - **Verification:** Run `npm test -- record-parser`; bad YAML returns `BATON_CORRUPT_RECORD` and missing headings return `BATON_RECORD_INVALID`.
+  - **Verification:** Run `npm test -- record-parser`; bad YAML returns `NOTCH_CORRUPT_RECORD` and missing headings return `NOTCH_RECORD_INVALID`.
 
 - [ ] **Step 2.9: Add status and MCP input schemas**
   - **Task:** Add schema coverage for status output and all required MCP tool input schemas.
@@ -195,7 +195,7 @@
 ### Wave 3: Store, Validation, Audit, and Index
 
 - [ ] **Step 3.1: Add config and store discovery**
-  - **Task:** Resolve project roots, store paths, initial config, and required `.baton/` folder layout.
+  - **Task:** Resolve project roots, store paths, initial config, and required `.notch/` folder layout.
   - **Files:**
     - `src/core/config-service.ts` - NEW
     - `src/core/store-layout.ts` - NEW
@@ -203,7 +203,7 @@
     - `tests/fixtures/config-valid.json` - NEW
     - `tests/fixtures/config-invalid.json` - NEW
   - **Implementation:**
-    - Support `--cwd` and `--store`, default `.baton/`, and Git-root detection.
+    - Support `--cwd` and `--store`, default `.notch/`, and Git-root detection.
     - Validate config with `config.schema.json` and warn on unknown top-level fields.
   - **Dependencies:** Steps 2.2, 2.8
   - **Verification:** Run `npm test -- config-service`; missing store maps to exit code `2`.
@@ -214,10 +214,10 @@
     - `src/core/path-safety.ts` - NEW
     - `tests/unit/path-safety.test.ts` - NEW
   - **Implementation:**
-    - Reject absolute paths, `~`, sibling traversal, paths resolving outside `config.project.root`, and symlinks inside `.baton/`.
+    - Reject absolute paths, `~`, sibling traversal, paths resolving outside `config.project.root`, and symlinks inside `.notch/`.
     - Expose helpers for CLI, MCP, doctor, and store services.
   - **Dependencies:** Step 3.1
-  - **Verification:** Run `npm test -- path-safety`; traversal attempts fail with `BATON_PATH_OUTSIDE_PROJECT`, relative backslash-separated paths normalize safely, and drive-letter absolute paths plus backslash traversal are rejected.
+  - **Verification:** Run `npm test -- path-safety`; traversal attempts fail with `NOTCH_PATH_OUTSIDE_PROJECT`, relative backslash-separated paths normalize safely, and drive-letter absolute paths plus backslash traversal are rejected.
 
 - [ ] **Step 3.3: Add ID, actor, and metadata factory services**
   - **Task:** Generate deterministic IDs, slugs, filenames, actor metadata, source tool metadata, and common record metadata.
@@ -240,7 +240,7 @@
     - `tests/unit/store-service.test.ts` - NEW
   - **Implementation:**
     - Write to temp files and rename into place.
-    - Scan only allowed `.baton/` source directories and ignore invalid records unless requested by doctor.
+    - Scan only allowed `.notch/` source directories and ignore invalid records unless requested by doctor.
   - **Dependencies:** Steps 3.1, 3.2, 2.8
   - **Verification:** Run `npm test -- store-service`; explicit slug collisions fail while auto-generated ID and filename collisions suffix safely with `-2`, `-3`, and so on.
 
@@ -251,8 +251,8 @@
     - `tests/unit/audit-service.test.ts` - NEW
     - `tests/fixtures/audit-corrupt.jsonl` - NEW
   - **Implementation:**
-    - Write `.baton/logs/audit.jsonl` append-only entries matching `audit.schema.json`.
-    - Surface `BATON_AUDIT_WRITE_FAILED` when record write succeeds but audit append fails.
+    - Write `.notch/logs/audit.jsonl` append-only entries matching `audit.schema.json`.
+    - Surface `NOTCH_AUDIT_WRITE_FAILED` when record write succeeds but audit append fails.
   - **Dependencies:** Steps 2.2, 3.3, 3.4
   - **Verification:** Run `npm test -- audit-service`; every successful write fixture produces one valid audit line.
 
@@ -263,12 +263,12 @@
     - `tests/unit/secret-scan-service.test.ts` - NEW
   - **Implementation:**
     - Detect configured regexes, JWTs, SSH private keys, and token-like 32+ character strings.
-    - Emit `BATON_SECRET_DETECTED` and require audit operation `secret-blocked`.
+    - Emit `NOTCH_SECRET_DETECTED` and require audit operation `secret-blocked`.
   - **Dependencies:** Steps 3.1, 3.5
   - **Verification:** Run `npm test -- secret-scan-service`; blocked writes do not create source records and append one `secret-blocked` audit entry.
 
 - [ ] **Step 3.7: Add derived JSON index service**
-  - **Task:** Build regenerable `.baton/index/records.json` and `.baton/index/manifest.json` from source files.
+  - **Task:** Build regenerable `.notch/index/records.json` and `.notch/index/manifest.json` from source files.
   - **Files:**
     - `src/core/index-service.ts` - NEW
     - `src/types/index.ts` - NEW
@@ -305,7 +305,7 @@
     - Reject stale marking for the default project brief and treat already stale or superseded records as no-op warnings.
     - Preserve `createdAt`, set `updatedAt`, append stale/resolution notes to Markdown, and audit rewrites.
   - **Dependencies:** Steps 3.2, 3.3, 3.4, 3.5, 3.6, 3.7
-  - **Verification:** Run `npm test -- context-services`; stale and conflict resolve operations rewrite only allowed Baton source records, default project brief stale marking is rejected, and stale/superseded records return no-op warnings.
+  - **Verification:** Run `npm test -- context-services`; stale and conflict resolve operations rewrite only allowed 3Notch source records, default project brief stale marking is rejected, and stale/superseded records return no-op warnings.
 
 - [ ] **Step 3.10: Add status and doctor services**
   - **Task:** Compute project status summaries and full store diagnostics with safe derived fixes.
@@ -317,7 +317,7 @@
     - `tests/fixtures/corrupt-store.md` - NEW
   - **Implementation:**
     - Report latest pass, open briefs, active decisions, open questions, conflicts, stale records, validation counts, and warnings.
-    - Validate store structure, schemas, IDs, source links, audit log, symlinks, secrets, MCP write config, and `.baton/.gitignore`.
+    - Validate store structure, schemas, IDs, source links, audit log, symlinks, secrets, MCP write config, and `.notch/.gitignore`.
   - **Dependencies:** Steps 3.1 through 3.9
   - **Verification:** Run `npm test -- status-service doctor-service`; corrupt YAML is reported as corruption and `doctor --fix` behavior is limited to derived state.
 
@@ -332,28 +332,28 @@
     - `src/cli/program.ts` - MODIFIED
     - `tests/cli/global-flags.test.ts` - NEW
   - **Implementation:**
-    - Map `BatonError.exitCode` to specified CLI exit codes.
+    - Map `NotchError.exitCode` to specified CLI exit codes.
     - Ensure `--json` output is machine-readable and `--quiet` suppresses non-error text.
   - **Dependencies:** Steps 1.3, 3.1, 3.3
   - **Verification:** Run `npm test -- global-flags`; invalid store emits JSON error with exit code `2`.
 
-- [ ] **Step 4.2: Add `baton onboard`**
-  - **Task:** Initialize `.baton/` stores with config, starter brief, required folders, `.baton/.gitignore`, and MCP setup instructions.
+- [ ] **Step 4.2: Add `notch onboard`**
+  - **Task:** Initialize `.notch/` stores with config, starter brief, required folders, `.notch/.gitignore`, and MCP setup instructions.
   - **Files:**
     - `src/cli/commands/onboard.ts` - NEW
     - `src/cli/mcp-instructions.ts` - NEW
     - `src/cli/program.ts` - MODIFIED
     - `tests/cli/onboard.test.ts` - NEW
-    - `tests/fixtures/baton-gitignore.txt` - NEW
+    - `tests/fixtures/notch-gitignore.txt` - NEW
   - **Implementation:**
     - Support `--name`, `--yes`, `--mcp`, `--force`, and `--json`.
     - Mutate known Claude Desktop/Cursor MCP config files only after explicit confirmation, using injectable config-home paths for tests.
     - Print copy-pasteable MCP configuration instructions when a client path is unsupported or mutation is not confirmed.
     - Never overwrite existing source records silently; only repair missing starter files with `--force`.
   - **Dependencies:** Steps 3.1, 3.4, 3.5, 4.1
-  - **Verification:** Run `npm test -- onboard`; `baton onboard --name my-app --yes --json` creates a healthy store, `.baton/.gitignore` contains `index/` and `logs/`, and `--mcp claude-desktop` mutates only the expected temp config path or prints fallback instructions when unsupported.
+  - **Verification:** Run `npm test -- onboard`; `notch onboard --name my-app --yes --json` creates a healthy store, `.notch/.gitignore` contains `index/` and `logs/`, and `--mcp claude-desktop` mutates only the expected temp config path or prints fallback instructions when unsupported.
 
-- [ ] **Step 4.3: Add `baton brief` command family**
+- [ ] **Step 4.3: Add `notch brief` command family**
   - **Task:** Implement default project brief display plus targeted brief create/list/show commands.
   - **Files:**
     - `src/cli/commands/brief.ts` - NEW
@@ -362,12 +362,12 @@
     - `tests/cli/brief.test.ts` - NEW
     - `tests/cli/targeted-brief.test.ts` - NEW
   - **Implementation:**
-    - Implement `baton brief`, `baton brief create`, `baton brief list`, and `baton brief show <id>`.
+    - Implement `notch brief`, `notch brief create`, `notch brief list`, and `notch brief show <id>`.
     - Support interactive prompts, `--stdin`, `--editor`, filters, JSON output, slug collision rules, and path validation.
   - **Dependencies:** Steps 3.8, 4.1
   - **Verification:** Run `npm test -- brief targeted-brief`; create/list/show works by ID and slug, and invalid paths exit `5`.
 
-- [ ] **Step 4.4: Add `baton pass`**
+- [ ] **Step 4.4: Add `notch pass`**
   - **Task:** Implement interactive and non-interactive pass creation.
   - **Files:**
     - `src/cli/commands/pass.ts` - NEW
@@ -378,7 +378,7 @@
     - Support all required flags, `--stdin`, `--editor`, default confidence warning, and repeatable files/decisions/blockers/questions/next actions.
     - Prompt for exactly the specified interactive questions.
   - **Dependencies:** Steps 3.8, 4.1
-  - **Verification:** Run `npm test -- pass`; non-interactive pass creation returns created ID/path and writes one audit entry, and `baton pass --agent codex` writes `actorType: agent` with `reviewStatus: unreviewed`.
+  - **Verification:** Run `npm test -- pass`; non-interactive pass creation returns created ID/path and writes one audit entry, and `notch pass --agent codex` writes `actorType: agent` with `reviewStatus: unreviewed`.
 
 - [ ] **Step 4.5: Add decision and question commands**
   - **Task:** Implement decision and open-question creation/listing through CLI.
@@ -389,7 +389,7 @@
     - `tests/cli/decision.test.ts` - NEW
     - `tests/cli/question.test.ts` - NEW
   - **Implementation:**
-    - Implement `baton decision add`, `baton decision list`, `baton question add`, and `baton question list`.
+    - Implement `notch decision add`, `notch decision list`, `notch question add`, and `notch question list`.
     - Support filters, JSON output, stdin/editor inputs, and default confidence for decisions.
   - **Dependencies:** Steps 3.9, 4.1
   - **Verification:** Run `npm test -- decision question`; active records list correctly and malformed related records fail.
@@ -403,7 +403,7 @@
     - `tests/cli/stale.test.ts` - NEW
     - `tests/cli/conflict.test.ts` - NEW
   - **Implementation:**
-    - Implement `baton stale mark <id>`, `baton conflict add`, `baton conflict list`, and `baton conflict resolve <id>`.
+    - Implement `notch stale mark <id>`, `notch conflict add`, `notch conflict list`, and `notch conflict resolve <id>`.
     - Require conflict creation to reference at least two distinct existing records.
   - **Dependencies:** Steps 3.9, 4.1
   - **Verification:** Run `npm test -- stale conflict`; stale records remain inspectable, resolved conflicts become archived, and duplicate conflict record IDs are rejected.
@@ -411,7 +411,7 @@
 ### Wave 5: MCP Server
 
 - [ ] **Step 5.1: Add stdio MCP server foundation**
-  - **Task:** Start `baton mcp serve` over stdio with scoped store context, tool registration plumbing, and MCP error mapping.
+  - **Task:** Start `notch mcp serve` over stdio with scoped store context, tool registration plumbing, and MCP error mapping.
   - **Files:**
     - `src/mcp/server.ts` - NEW
     - `src/mcp/errors.ts` - NEW
@@ -436,7 +436,7 @@
     - Register `get_brief`, `get_latest_pass`, and `get_recent_passes`.
     - Enforce schemas, default recent pass limit `3`, and max limit `10`.
   - **Dependencies:** Steps 3.8, 5.1
-  - **Verification:** Run `npm test -- read-tools`; tools read only `.baton/` records and return warnings for skipped invalid records.
+  - **Verification:** Run `npm test -- read-tools`; tools read only `.notch/` records and return warnings for skipped invalid records.
 
 - [ ] **Step 5.3: Add MCP targeted brief tools**
   - **Task:** Implement targeted brief creation, listing, and lookup tools.
@@ -464,7 +464,7 @@
     - Register `create_pass`, `record_decision`, and `get_decisions`.
     - Validate all source links and block secrets before writes.
   - **Dependencies:** Steps 3.8, 3.9, 5.1
-  - **Verification:** Run `npm test -- pass-decision-tools`; created records include source tool `baton-mcp`.
+  - **Verification:** Run `npm test -- pass-decision-tools`; created records include source tool `notch-mcp`.
 
 - [ ] **Step 5.5: Add MCP question and stale tools**
   - **Task:** Implement open-question and stale-marking MCP tools.
@@ -507,12 +507,12 @@
     - In read-only mode, reject every write tool and reject `run_doctor({ fixDerivedState: true })`.
     - Treat an empty `config.defaults.allowedMcpWriteTools` list as effective MCP read-only mode for write tools while keeping read tools available.
   - **Dependencies:** Steps 3.10, 5.1
-  - **Verification:** Run `npm test -- status-doctor-tools read-only-mode`; write tools fail with `BATON_MCP_READ_ONLY` under `--read-only` and under an empty `allowedMcpWriteTools` config.
+  - **Verification:** Run `npm test -- status-doctor-tools read-only-mode`; write tools fail with `NOTCH_MCP_READ_ONLY` under `--read-only` and under an empty `allowedMcpWriteTools` config.
 
 ### Wave 6: Status, Doctor, Fixtures, and Documentation
 
 - [ ] **Step 6.1: Add status and doctor CLI commands**
-  - **Task:** Expose core status and doctor services through `baton status` and `baton doctor`.
+  - **Task:** Expose core status and doctor services through `notch status` and `notch doctor`.
   - **Files:**
     - `src/cli/commands/status.ts` - NEW
     - `src/cli/commands/doctor.ts` - NEW
@@ -539,18 +539,18 @@
   - **Verification:** Run `npm test -- corrupt-store path-traversal audit-integration secret-scan`.
 
 - [ ] **Step 6.3: Add Claude-to-Codex demo fixture**
-  - **Task:** Include a realistic local `.baton/` fixture for the primary handoff demo.
+  - **Task:** Include a realistic local `.notch/` fixture for the primary handoff demo.
   - **Files:**
-    - `fixtures/claude-to-codex-demo/.baton/config.json` - NEW
-    - `fixtures/claude-to-codex-demo/.baton/.gitignore` - NEW
-    - `fixtures/claude-to-codex-demo/.baton/brief.md` - NEW
-    - `fixtures/claude-to-codex-demo/.baton/passes/20260523T170000Z-claude-planning.md` - NEW
-    - `fixtures/claude-to-codex-demo/.baton/briefs/20260523T171500Z-route-guard-for-codex.md` - NEW
+    - `fixtures/claude-to-codex-demo/.notch/config.json` - NEW
+    - `fixtures/claude-to-codex-demo/.notch/.gitignore` - NEW
+    - `fixtures/claude-to-codex-demo/.notch/brief.md` - NEW
+    - `fixtures/claude-to-codex-demo/.notch/passes/20260523T170000Z-claude-planning.md` - NEW
+    - `fixtures/claude-to-codex-demo/.notch/briefs/20260523T171500Z-route-guard-for-codex.md` - NEW
   - **Implementation:**
     - Model Claude planning, Codex-targeted brief, local-only config, and valid source-linked records.
     - Keep `index/` and `logs/` absent or regenerable to prove source files are authoritative.
   - **Dependencies:** Steps 2.3, 2.4, 2.5, 3.10
-  - **Verification:** Run `baton doctor --cwd fixtures/claude-to-codex-demo --fix --yes`; fixture becomes healthy and index is regenerated.
+  - **Verification:** Run `notch doctor --cwd fixtures/claude-to-codex-demo --fix --yes`; fixture becomes healthy and index is regenerated.
 
 - [ ] **Step 6.4: Add README and workflow docs**
   - **Task:** Document quickstart, first-pass workflow, targeted briefs, MCP setup, and local-first privacy.
@@ -561,13 +561,13 @@
     - `docs/mcp-setup.md` - NEW
     - `docs/privacy.md` - NEW
   - **Implementation:**
-    - Use Baton positioning: local-first context passing, not generic memory.
-    - Include `npx baton onboard`, `baton brief`, `baton brief create`, `baton pass`, `baton status`, `baton doctor`, and `baton mcp serve`.
+    - Use 3Notch positioning: local-first context passing, not generic memory.
+    - Include `npx @3notch/cli onboard`, `notch brief`, `notch brief create`, `notch pass`, `notch status`, `notch doctor`, and `notch mcp serve`.
   - **Dependencies:** Steps 4.2 through 4.6, 5.1 through 5.7, 6.1
   - **Verification:** Manually run every README quickstart command in a temp project and confirm outputs match the documented flow.
 
 - [ ] **Step 6.5: Add agent workflow prompts and demo notes**
-  - **Task:** Ship concise prompts that teach agents to read before work and pass the baton before stopping.
+  - **Task:** Ship concise prompts that teach agents to read before work and leave a notch before stopping.
   - **Files:**
     - `docs/prompts/claude-planning.md` - NEW
     - `docs/prompts/codex-implementation.md` - NEW
@@ -581,7 +581,7 @@
   - **Verification:** Review prompt files for no claims about chat-history scraping, telemetry, cloud sync, semantic search, or autonomous orchestration.
 
 - [ ] **Step 6.6: Add CI and telemetry regression guard**
-  - **Task:** Add contributor CI and a test that prevents telemetry dependencies from entering Baton unnoticed.
+  - **Task:** Add contributor CI and a test that prevents telemetry dependencies from entering 3Notch unnoticed.
   - **Files:**
     - `.github/workflows/ci.yml` - NEW
     - `tests/helpers/package-inspection.ts` - NEW
@@ -603,11 +603,11 @@
     - `tests/helpers/mcp-harness.ts` - MODIFIED
     - `package.json` - MODIFIED
   - **Implementation:**
-    - Create a temp project, run `baton onboard --yes`, create a pass, retrieve latest/recent passes, create/list/show a targeted brief, run status, run doctor, start MCP harness, and call `tools/list`.
+    - Create a temp project, run `notch onboard --yes`, create a pass, retrieve latest/recent passes, create/list/show a targeted brief, run status, run doctor, start MCP harness, and call `tools/list`.
     - Assert all required MCP tools are listed and no telemetry, cloud, login, hosted endpoint, or arbitrary shell capability exists.
   - **Dependencies:** Steps 1.1 through 6.6
   - **Verification:** Run `npm run lint && npm run type-check && npm run build && npm test && npm run test:e2e`; the smoke test verifies onboarding, pass creation/retrieval, targeted brief creation/retrieval, status, doctor, MCP tool listing, and local-only/no-telemetry posture.
 
 ### Future Considerations
 
-- Hosted encrypted sync, teams, managed MCP endpoints, browser UI, Homebrew distribution, SQLite/FTS, semantic search, auto conflict detection, chat importers, review workflows, assumption-specific records, and Baton repo dogfooding files such as root `AGENTS.md` or a committed `.baton/` example remain outside V1.
+- Hosted encrypted sync, teams, managed MCP endpoints, browser UI, Homebrew distribution, SQLite/FTS, semantic search, auto conflict detection, chat importers, review workflows, assumption-specific records, and 3Notch repo dogfooding files such as root `AGENTS.md` or a committed `.notch/` example remain outside V1.

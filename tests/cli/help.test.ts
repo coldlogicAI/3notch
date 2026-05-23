@@ -37,7 +37,7 @@ async function runCli(args: string[]): Promise<{
   });
 
   try {
-    await program.parseAsync(['node', 'baton', ...args], { from: 'node' });
+    await program.parseAsync(['node', 'notch', ...args], { from: 'node' });
   } catch (error) {
     if (!isCommanderExit(error)) {
       throw error;
@@ -55,7 +55,7 @@ describe('CLI skeleton', () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe('');
-    expect(result.stdout).toContain('Usage: baton [options]');
+    expect(result.stdout).toContain('Usage: notch [options]');
     expect(result.stdout).toContain('--cwd <path>');
     expect(result.stdout).toContain('--store <path>');
     expect(result.stdout).toContain('mcp serve');

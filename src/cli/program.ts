@@ -4,11 +4,11 @@ import { VERSION } from '../core/version.js';
 
 export function createProgram(): Command {
   return new Command()
-    .name('baton')
+    .name('notch')
     .description('Local-first context passing for AI agents.')
-    .version(VERSION, '-v, --version', 'print the Baton version')
-    .option('--cwd <path>', 'run Baton as if started from another project directory')
-    .option('--store <path>', 'use a specific .baton store path')
+    .version(VERSION, '-v, --version', 'print the 3Notch version')
+    .option('--cwd <path>', 'run 3Notch as if started from another project directory')
+    .option('--store <path>', 'use a specific .notch store path')
     .option('--json', 'emit machine-readable JSON where supported')
     .option('-q, --quiet', 'reduce non-essential output')
     .showHelpAfterError()
@@ -16,8 +16,8 @@ export function createProgram(): Command {
       'after',
       `
 Examples:
-  $ baton --help
-  $ baton --version
+  $ notch --help
+  $ notch --version
 
 V1 implementation note:
   Commands like onboard, brief, pass, status, doctor, and mcp serve are planned

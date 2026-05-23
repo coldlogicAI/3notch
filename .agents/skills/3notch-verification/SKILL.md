@@ -1,6 +1,6 @@
-# Baton Verification
+# 3Notch Verification
 
-Use this skill when validating Baton changes.
+Use this skill when validating 3Notch changes.
 
 ## Required Checks
 
@@ -17,6 +17,6 @@ node dist/cli/index.js --version
 
 - No telemetry, analytics, hosted sync, or unexpected network dependency.
 - No SQLite/native DB, vector database, or semantic search dependency in V1.
-- `.baton/` source records remain human-readable.
-- Generated `dist/`, coverage, `.baton/index/`, and `.baton/logs/` output are ignored.
+- `.notch/` source records remain human-readable.
+- Generated `dist/`, coverage, `.notch/index/`, and `.notch/logs/` output are ignored.
 - Path handling changes reject traversal and out-of-project references.

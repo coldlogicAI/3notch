@@ -20,6 +20,6 @@ pnpm-debug.log*
 .env.*
 !.env.example
 
-# Derived Baton store output. Source records under .baton/ stay Git-friendly.
-.baton/index/
-.baton/logs/
+# Derived 3Notch store output. Source records under .notch/ stay Git-friendly.
+.notch/index/
+.notch/logs/

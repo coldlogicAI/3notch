@@ -1,14 +1,14 @@
-# Branding And Product Design Review: Baton
+# Branding And Product Design Review: 3Notch
 
 ## Executive Recommendation
 
-The product should launch as **Baton** with `baton` as the CLI/package name unless a better short package name is available.
+The product should launch under the working brand **3Notch**, with `notch` as the CLI command, `@3notch/cli` as the intended npm package, and `.notch/` as the local project store.
 
 The brand should not lead with "memory." That market is already crowded and abstract. The sharp value is continuity, clean handoffs, and reducing copy-paste between agents.
 
 Recommended public framing:
 
-> Baton helps Claude, Codex, Cursor, ChatGPT, and local agents pick up where each other left off.
+> 3Notch leaves a trail the next agent can follow.
 
 Recommended launch tagline:
 
@@ -22,57 +22,61 @@ Recommended category:
 
 ### Best Current Name
 
-**Baton**
+**3Notch**
 
 Why it works:
 
-- It describes the workflow, not the implementation.
-- It is understandable in one second.
+- It has a real origin story: Three Notch'd Road was marked so the next traveler could stay on the route.
+- It is more distinctive than generic relay, memory, or context names.
 - It avoids crowded "memory" language.
-- It implies a beginning and end to agent work.
-- It is compatible with a commercial product later.
+- It creates a visual system: three cuts, a trail mark, a compact terminal glyph.
+- It gives the product a memorable hook while the tagline explains the job.
 
 Weakness:
 
-- It is descriptive and may be hard to own as a trademark.
-- It may be slightly generic for SEO.
+- It does not explain the product by itself.
+- The numeric brand needs consistent styling.
+- It requires formal trademark and domain clearance before public launch.
+
+Use the historical spelling **Three Notch'd Road** only in origin copy. Do not use `Notch'd`, `notchd`, or apostrophes in the product name, CLI, package, or domain.
 
 ### Best CLI Name
 
-**baton**
+**notch**
 
 Why it works:
 
 - Short enough to type.
-- Communicates agent context.
-- More package-name-friendly than `agent-pass`.
-- Can survive a later product rename.
+- Matches the brand without forcing a numeric command.
+- Reads cleanly in the terminal: `notch brief`, `notch pass`, `notch doctor`.
+- Supports product language such as "leave a notch" and "check the latest pass."
 
 Alternative CLI names:
 
+- `3notch`
+- `mark`
+- `trail`
+- `waymark`
 - `pass`
 - `ctx`
-- `agentbrief`
-- `brief`
-- `relay`
-- `passoff`
 
 Avoid:
 
 - `memory`
-- `mesh`
 - `brain`
+- `mesh`
 - `hive`
-- `contextos`
+- `agentos`
 - anything that sounds like a platform before the v1 is useful.
 
 ### Naming Architecture
 
 Use:
 
-- Product: Baton
-- CLI/package: `baton`
-- Local folder: `.baton/`
+- Product: 3Notch
+- CLI binary: `notch`
+- npm package: `@3notch/cli`
+- Local folder: `.notch/`
 - Core object: pass
 - Startup object: brief
 - Health object: status
@@ -80,28 +84,45 @@ Use:
 Example:
 
 ```bash
-npx baton onboard
-baton brief
-baton pass
-baton status
-baton doctor
+npx @3notch/cli onboard
+notch brief
+notch pass
+notch status
+notch doctor
 ```
 
 ## Positioning
 
 ### Primary Positioning
 
-Baton is a local-first tool for passing project context between AI agents.
+3Notch is a local-first tool for leaving project context marks that AI agents can follow.
 
 ### Short Pitch
 
-Stop copy-pasting context between AI tools. Baton gives every agent the same project brief, recent passes, decisions, open questions, and stale-context warnings.
+Stop copy-pasting context between AI tools. 3Notch gives every agent the same project brief, recent passes, decisions, open questions, and stale-context warnings.
 
 ### Longer Pitch
 
-Baton is a local-first CLI and MCP server that lets Claude, Codex, Cursor, ChatGPT, and local agents share structured project context without exposing full private chat histories. Agents read a compact brief before they start and pass the baton before they stop, so the next agent can continue correctly.
+3Notch is a local-first CLI and MCP server that lets Claude, Codex, Cursor, ChatGPT, and local agents share structured project context without exposing full private chat histories. Agents read a compact brief before they start and write a pass before they stop, so the next agent can continue correctly.
 
-Baton also supports targeted briefs: deliberate, scoped handoff documents for a specific future task or agent.
+3Notch also supports targeted briefs: deliberate, scoped handoff documents for a specific future task or agent.
+
+### Origin Story
+
+3Notch takes its name from Three Notch'd Road, a colonial-era route marked by three notches cut into trees to blaze the trail. The product does the same for AI work: it leaves compact, source-linked marks so the next agent can continue without rebuilding context.
+
+Keep the origin story short and concrete. It should support the brand, not become the whole pitch.
+
+### Availability Notes
+
+Current working assumptions from the bootstrap naming check:
+
+- `3notch` and `@3notch/cli` were not found on npm during the check.
+- `notch` exists on npm as an old CouchApps CLI package, so publish under the scoped package and use `notch` only as the binary.
+- GitHub user/org/repo lookups for `3notch` returned not found during the check.
+- `3notch.com` is occupied by Three Notch Group.
+- The user found `3notch.ai` available for purchase during this session.
+- There are existing names around Three Notch'd Road and Three Notch'd Brewing; these appear adjacent to the origin story rather than direct software overlap, but formal trademark clearance is still required before public launch.
 
 ### Category Design
 
@@ -127,12 +148,12 @@ When Claude stops, Codex starts with the right context.
 
 ### Subhead
 
-Baton is a local-first CLI and MCP server for passing project briefs, targeted task context, decisions, open questions, and implementation summaries between AI agents.
+3Notch is a local-first CLI and MCP server for passing project briefs, targeted task context, decisions, open questions, and implementation summaries between AI agents.
 
 ### Primary CTA
 
 ```bash
-npx baton onboard
+npx @3notch/cli onboard
 ```
 
 ### Secondary CTA
@@ -143,7 +164,7 @@ View the Claude to Codex demo
 
 - Read the same project brief before work starts.
 - Create targeted briefs for specific tasks.
-- Pass the baton before work ends.
+- Write a pass before work ends.
 - Keep decisions, questions, stale assumptions, and conflicts visible.
 
 ## README Hero
@@ -151,23 +172,23 @@ View the Claude to Codex demo
 Recommended top of README:
 
 ```md
-# Baton
+# 3Notch
 
 When Claude stops, Codex starts with the right context.
 
-Baton is a local-first CLI and MCP server for passing project context between AI agents. It gives every agent the same project brief, recent passes, active decisions, open questions, stale assumptions, and conflict warnings without sharing full chat histories.
+3Notch is a local-first CLI and MCP server for passing project context between AI agents. It gives every agent the same project brief, recent passes, active decisions, open questions, stale assumptions, and conflict warnings without sharing full chat histories.
 
 ```bash
-npx baton onboard
-baton brief
-baton brief create --title "March training feature" --to codex
-baton pass
-baton mcp serve
+npx @3notch/cli onboard
+notch brief
+notch brief create --title "March training feature" --to codex
+notch pass
+notch mcp serve
 ```
 
 ## Why
 
-AI work now happens across Claude, Codex, Cursor, ChatGPT, and local agents. Each tool remembers different things. Baton creates one local project context that agents can read before they start and update before they stop.
+AI work now happens across Claude, Codex, Cursor, ChatGPT, and local agents. Each tool remembers different things. 3Notch creates one local project context that agents can read before they start and update before they stop.
 ```
 
 ## Product Personality
@@ -203,7 +224,7 @@ Use a restrained developer-tool identity. The product should feel closer to `gh`
 
 Recommended motif:
 
-**baton / relay / pass / packet**
+**three notches / trail mark / pass / packet**
 
 Use a simple symbolic visual:
 
@@ -214,7 +235,7 @@ Claude -> brief -> Codex
 Or:
 
 ```text
-[agent] --pass--> [agent]
+[agent] --notch--> [agent]
 ```
 
 Avoid brain, hive, neural-network, magic, or glowing-orb imagery.
@@ -235,11 +256,11 @@ The product should look like a serious tool, not a generic AI landing page.
 
 Simple possibilities:
 
-- two brackets with an arrow: `[ ] -> [ ]`
-- a folded note passing through a terminal prompt;
-- `ctx>` prompt mark;
-- two cursors with a small transfer arrow;
-- a compact `baton` wordmark.
+- three short angled cuts;
+- a trail blaze rendered as three marks;
+- a terminal prompt paired with three notches;
+- two cursors with a small trail mark between them;
+- a compact `3Notch` wordmark.
 
 Do not over-invest in the logo before the demo works.
 
@@ -250,25 +271,25 @@ Do not over-invest in the logo before the demo works.
 The first run should be guided:
 
 ```bash
-npx baton onboard
+npx @3notch/cli onboard
 ```
 
 Ideal output:
 
 ```text
-Baton
+3Notch
 
 Found Git repo: my-app
-Create local context store at .baton/? yes
+Create local context store at .notch/? yes
 Create starter brief? yes
 Configure MCP for Claude Desktop? yes
 
 Ready.
 
 Next:
-  baton brief
-  baton pass
-  baton mcp serve
+  notch brief
+  notch pass
+  notch mcp serve
 ```
 
 ### Daily Use Loop
@@ -286,7 +307,7 @@ Everything else supports that loop.
 
 ### Status Output
 
-`baton status` should be one of the best-designed commands.
+`notch status` should be one of the best-designed commands.
 
 Example:
 
@@ -306,7 +327,7 @@ Last pass
 
 ### Brief Output
 
-`baton brief` should be compact, not a dump.
+`notch brief` should be compact, not a dump.
 
 Recommended shape:
 
@@ -333,12 +354,12 @@ Warnings
 
 ### Targeted Brief Output
 
-`baton brief create` should produce a scoped handoff document, not a full memory dump.
+`notch brief create` should produce a scoped handoff document, not a full memory dump.
 
 Recommended shape:
 
 ```text
-Baton Brief: March Training Feature
+3Notch Brief: March Training Feature
 
 Goal For Codex
   Enhance/debug the March training feature without revisiting unrelated project history.
@@ -369,7 +390,7 @@ V1 should store and retrieve targeted briefs. It should not promise automatic hi
 
 ### Pass Writer
 
-`baton pass` should be easy for humans and agents.
+`notch pass` should be easy for humans and agents.
 
 Interactive mode for humans:
 
@@ -384,7 +405,7 @@ Any stale assumptions found?
 Structured mode for agents:
 
 ```bash
-baton pass --from codex --summary "Implemented route guard" --files src/middleware.ts
+notch pass --from codex --summary "Implemented route guard" --files src/middleware.ts
 ```
 
 ## V1 Website Structure
@@ -401,7 +422,7 @@ Recommended structure:
 
 2. Demo:
    - Claude plans
-   - Baton writes pass
+   - 3Notch writes pass
    - Codex reads brief
    - Codex writes pass
 
@@ -420,7 +441,7 @@ Recommended structure:
    - conflicts.
 
 5. Local-First Privacy:
-   - stored in `.baton/`;
+   - stored in `.notch/`;
    - human-readable;
    - no cloud unless enabled.
 
@@ -441,7 +462,7 @@ The first public demo should be under two minutes.
 Show terminal:
 
 ```bash
-npx baton onboard
+npx @3notch/cli onboard
 ```
 
 ### Scene 2
@@ -458,7 +479,7 @@ create_brief(...)
 Terminal:
 
 ```bash
-baton brief
+notch brief
 ```
 
 Shows Claude's plan.
@@ -476,7 +497,7 @@ Codex writes pass.
 Terminal:
 
 ```bash
-baton status
+notch status
 ```
 
 Shows recent pass, open question, no conflicts.
@@ -491,9 +512,9 @@ The OSS product should feel complete. The commercial layer should feel like conv
 
 Commercial name options:
 
-- Baton Cloud
-- Baton Sync
-- Baton Teams
+- 3Notch Cloud
+- 3Notch Sync
+- 3Notch Teams
 
 Avoid making the OSS README feel like crippleware. The hosted layer should be:
 
@@ -506,7 +527,7 @@ Avoid making the OSS README feel like crippleware. The hosted layer should be:
 
 Public sentence:
 
-> Baton is local-first and open source. Hosted sync and team workspaces are planned for users who want shared context across devices and teams.
+> 3Notch is local-first and open source. Hosted sync and team workspaces are planned for users who want shared context across devices and teams.
 
 ## Copy Guidelines
 
@@ -550,7 +571,7 @@ The main request is now strong. Remaining possible edits:
 
 1. Consider renaming the file later to `agent-pass-project-request.md`.
 2. Replace remaining "context exchange" language in public-facing sections with "pass" or "brief."
-3. Add `baton brief` and `baton pass` as the two hero commands everywhere.
+3. Add `notch brief` and `notch pass` as the two hero commands everywhere.
 4. Keep "memory" mostly in technical sections.
 5. Make "doctor" and "status" part of the MVP, not nice-to-have.
 
@@ -564,7 +585,7 @@ The emotional hook:
 
 The functional hook:
 
-> Every agent reads the brief before work and passes the baton after work.
+> Every agent reads the brief before work and writes a pass after work.
 
 The trust hook:
 

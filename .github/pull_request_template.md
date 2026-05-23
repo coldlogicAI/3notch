@@ -11,4 +11,4 @@
 
 - [ ] No telemetry/cloud dependency added
 - [ ] No SQLite/native DB added for V1
-- [ ] Human-readable `.baton/` source files preserved
+- [ ] Human-readable `.notch/` source files preserved

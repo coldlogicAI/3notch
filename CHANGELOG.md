@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Baton will be documented in this file.
+All notable changes to 3Notch will be documented in this file.
 
 ## Unreleased
 
