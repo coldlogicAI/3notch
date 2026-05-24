@@ -20,8 +20,8 @@ Examples:
   $ notch --version
 
 V1 implementation note:
-  Commands like onboard, seed, packet, send, brief, pass, status, doctor, and mcp serve are planned
-  but not implemented in this bootstrap slice.
+  Commands like onboard, seed, packet, brief, status, doctor, and mcp serve are planned
+  but not implemented in this bootstrap slice. See docs/3notch-v1-implementation-plan.md.
 `,
     );
 }

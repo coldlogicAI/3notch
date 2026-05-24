@@ -18,6 +18,6 @@ assignees: ""
 
 ## Environment
 
-- Baton version:
+- 3Notch (`@3notch/cli`) version:
 - Node version:
 - OS:

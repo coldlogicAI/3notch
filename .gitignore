@@ -23,3 +23,4 @@ pnpm-debug.log*
 # Derived 3Notch store output. Source records under .notch/ stay Git-friendly.
 .notch/index/
 .notch/logs/
+.notch/private/

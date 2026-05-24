@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest a scoped Baton improvement
+about: Suggest a scoped 3Notch improvement
 title: ""
 labels: enhancement
 assignees: ""
@@ -12,4 +12,4 @@ assignees: ""
 
 ## V1 fit
 
-Does this directly improve local-first agent handoff?
+Does this directly improve cross-boundary context transfer (cross-repo, cross-tool, or new-project seeding)? Same-repo same-session continuity is intentionally deferred from V1.

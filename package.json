@@ -1,7 +1,7 @@
 {
   "name": "@3notch/cli",
   "version": "0.0.0",
-  "description": "Local-first private context packets across repos and AI agents.",
+  "description": "Local-first private context packets across repos and AI tools.",
   "type": "module",
   "license": "MIT",
   "author": "",
