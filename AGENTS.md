@@ -15,6 +15,8 @@
 
 For a persistent V1 implementation run, use `Prompts/3notch-v1-goal.md` as the paste-ready `/goal` prompt. During that run, append concise progress entries to `docs/v1-implementation-log.md` after each coherent slice or wave.
 
+Keep paste-ready `/goal` prompts under 4,000 characters. Move detail into repo docs and have the prompt read those files instead of embedding the full plan.
+
 ## V1 Surface (build this, nothing else)
 
 CLI commands:
