@@ -102,7 +102,7 @@ Use this file during long-running `/goal` implementation sessions. Keep entries 
 - Plan steps covered: Wave 7, Step 7.5.
 - Files changed: `tests/unit/no-telemetry-deps.test.ts`.
 - Verification: `npm test -- no-telemetry-deps`.
-- Commit: pending.
+- Commit: `eb35b04`.
 - Next step: Commit the audit hardening and complete final acceptance verification.
 - Blockers or decisions: The lockfile contains an optional Vitest peer reference to `@opentelemetry/api`, but `npm ls @opentelemetry/api` proves it is not installed. The guard checks installed lockfile package keys rather than raw optional peer text.
 
