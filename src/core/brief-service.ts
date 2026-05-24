@@ -11,9 +11,11 @@ import { isValidScannedRecord, renderMarkdownRecord, scanMarkdownRecords, writeR
 import { toSlug } from './id-service.js';
 import { NotchException, type NotchError } from '../types/errors.js';
 import type { LoadedConfig } from './config-service.js';
-import type { NotchBrief, ProjectBrief, SourceLink } from '../types/records.js';
+import type { NotchBrief, ProjectBrief, SourceLink, SourceTool } from '../types/records.js';
 
 export type CreateBriefInput = {
+  actor?: string;
+  agent?: string;
   constraints?: string[];
   designBasis: string;
   exclusions: string[];
@@ -27,6 +29,7 @@ export type CreateBriefInput = {
     topics: string[];
   };
   slug?: string;
+  sourceTool?: SourceTool['name'];
   tags?: string[];
   targetAgent: string;
   title: string;
@@ -69,8 +72,11 @@ export async function createTargetedBrief(
   }
 
   const created = createRecordMeta({
+    ...(input.actor ? { actor: input.actor } : {}),
+    ...(input.agent ? { agent: input.agent } : {}),
     cwd: context.projectRoot,
     recordType: 'brief',
+    ...(input.sourceTool ? { sourceTool: input.sourceTool } : {}),
     ...(input.tags ? { tags: input.tags } : {}),
     title: input.title,
   });

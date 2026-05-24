@@ -65,3 +65,13 @@ Use this file during long-running `/goal` implementation sessions. Keep entries 
 - Commit: pending.
 - Next step: Wave 5, Step 5.3 `notch brief` command family.
 - Blockers or decisions: None.
+
+## 2026-05-23 23:55 EDT
+
+- Goal slice: Complete Wave 5 CLI command families for briefs, packets, private seeds, status, and doctor.
+- Plan steps covered: Wave 5, Steps 5.3 through 5.5.
+- Files changed: `src/cli/commands/brief.ts`, `src/cli/commands/packet.ts`, `src/cli/commands/seed.ts`, `src/cli/commands/doctor.ts`, `src/cli/program.ts`, `src/core/brief-service.ts`, `src/core/packet-service.ts`, CLI tests for brief, targeted brief, packet, seed, status, and doctor.
+- Verification: `npm test -- brief targeted-brief brief-service`; `npm test -- packet seed packet-service transfer-service seed-service`; `npm test -- brief targeted-brief packet seed status doctor global-flags onboard help`; `npm run lint`; `npm run type-check`; `npm run build`; `npm test`; `node dist/cli/index.js --help`; `node dist/cli/index.js --version`.
+- Commit: pending.
+- Next step: Wave 6, Step 6.1 stdio MCP server foundation.
+- Blockers or decisions: None.

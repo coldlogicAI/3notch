@@ -1,7 +1,11 @@
 import { Command } from 'commander';
 
 import { VERSION } from '../core/version.js';
+import { registerBriefCommand } from './commands/brief.js';
+import { registerDoctorCommand } from './commands/doctor.js';
 import { registerOnboardCommand } from './commands/onboard.js';
+import { registerPacketCommand } from './commands/packet.js';
+import { registerSeedCommand } from './commands/seed.js';
 import { registerStatusCommand } from './commands/status.js';
 
 export function createProgram(): Command {
@@ -27,13 +31,17 @@ Examples:
   $ notch onboard --yes
 
 V1 implementation note:
-  Commands like seed, packet, brief, status, doctor, and mcp serve are being implemented
+  Command mcp serve is being implemented
   from docs/3notch-v1-implementation-plan.md. Deferred surfaces like pass and send are out of scope.
 `,
     );
 
   registerOnboardCommand(program);
+  registerBriefCommand(program);
+  registerPacketCommand(program);
+  registerSeedCommand(program);
   registerStatusCommand(program);
+  registerDoctorCommand(program);
 
   return program;
 }

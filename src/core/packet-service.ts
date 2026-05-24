@@ -14,12 +14,15 @@ import type { LoadedConfig } from './config-service.js';
 import type { NotchPacket, PacketPurpose, PacketRecordRef, Sensitivity, SourceLink } from '../types/records.js';
 
 export type CreatePacketInput = {
+  actor?: string;
+  agent?: string;
   includedRecords?: PacketRecordRef[];
   importNotes?: string;
   outputPath?: string;
   purpose?: PacketPurpose;
   sensitivity?: Sensitivity;
   sourceLinks?: SourceLink[];
+  sourceTool?: NotchPacket['sourceTool']['name'];
   summary: string;
   task?: string;
   title: string;
@@ -62,8 +65,11 @@ export async function createPacket(
   }
 
   const created = createRecordMeta({
+    ...(input.actor ? { actor: input.actor } : {}),
+    ...(input.agent ? { agent: input.agent } : {}),
     cwd: context.projectRoot,
     recordType: 'packet',
+    ...(input.sourceTool ? { sourceTool: input.sourceTool } : {}),
     title: input.title,
   });
   const packet: NotchPacket = {
