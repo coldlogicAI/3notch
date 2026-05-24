@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import { rebuildRelationshipsIndex } from './relationships-service.js';
 import { scanMarkdownRecords } from './store-service.js';
 import type { NotchBrief, NotchPacket, ProjectBrief } from '../types/records.js';
 
@@ -55,6 +56,7 @@ export async function rebuildIndex(storePath: string, includePrivate = true): Pr
   await mkdir(path.join(storePath, 'index'), { recursive: true });
   await writeFile(path.join(storePath, 'index/records.json'), `${JSON.stringify(records, null, 2)}\n`, 'utf8');
   await writeFile(path.join(storePath, 'index/manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  await rebuildRelationshipsIndex(storePath, includePrivate);
 
   return { manifest, records };
 }

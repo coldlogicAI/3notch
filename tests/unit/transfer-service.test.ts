@@ -1,11 +1,11 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { readAuditLog } from '../../src/core/audit-service.js';
 import { createPacket } from '../../src/core/packet-service.js';
 import { loadConfig } from '../../src/core/config-service.js';
-import { importPacketFile } from '../../src/core/transfer-service.js';
+import { assertImmutableRecordDestination, importPacketFile } from '../../src/core/transfer-service.js';
 import { createBareStore } from '../helpers/store-fixtures.js';
 import { withTempProject } from '../helpers/temp-project.js';
 
@@ -35,6 +35,18 @@ describe('transfer service', () => {
           expect.objectContaining({ importedFrom: created.outboxPath }),
         ]);
       });
+    });
+  });
+
+  it('fails loudly before overwriting an immutable inbox packet with different content', async () => {
+    await withTempProject({}, async (project) => {
+      const packetPath = path.join(project.path, 'received.md');
+      await writeFile(packetPath, 'existing packet content', 'utf8');
+
+      await expect(assertImmutableRecordDestination(packetPath, 'different packet content')).rejects.toMatchObject({
+        notchError: { code: 'NOTCH_RECORD_IMMUTABLE' },
+      });
+      await expect(assertImmutableRecordDestination(packetPath, 'existing packet content')).resolves.toBeUndefined();
     });
   });
 });

@@ -11,20 +11,27 @@ import { atomicWriteFile, isValidScannedRecord, renderMarkdownRecord, scanMarkdo
 import { toSlug } from './id-service.js';
 import { NotchException, type NotchError } from '../types/errors.js';
 import type { LoadedConfig } from './config-service.js';
-import type { NotchPacket, PacketPurpose, PacketRecordRef, Sensitivity, SourceLink } from '../types/records.js';
+import type { NotchPacket, PacketPurpose, PacketRecordRef, ReplyStatus, ReplyType, Sensitivity, SourceLink } from '../types/records.js';
 
 export type CreatePacketInput = {
   actor?: string | undefined;
   agent?: string | undefined;
+  destination?: 'outbox' | 'private-inbox' | undefined;
   includedRecords?: PacketRecordRef[];
   importNotes?: string | undefined;
   mcp?: boolean | undefined;
   outputPath?: string | undefined;
   purpose?: PacketPurpose | undefined;
+  replyStatus?: ReplyStatus | undefined;
+  replyTo?: string | undefined;
+  replyType?: ReplyType | undefined;
+  requireRecipient?: boolean | undefined;
   sensitivity?: Sensitivity | undefined;
   sourceLinks?: SourceLink[];
   sourceTool?: NotchPacket['sourceTool']['name'] | undefined;
   summary: string;
+  supersedes?: string | undefined;
+  tags?: string[] | undefined;
   task?: string | undefined;
   title: string;
   toAgent?: string | undefined;
@@ -38,13 +45,24 @@ export async function createPacket(
 ): Promise<{ packet: NotchPacket; outboxPath: string; outputPath?: string; warnings: NotchError[] }> {
   const purpose = input.purpose ?? 'handoff';
   const sensitivity = input.sensitivity ?? (purpose === 'seed' ? 'private' : 'project');
+  const requireRecipient = input.requireRecipient ?? true;
   const warnings: NotchError[] = [];
 
-  if (purpose === 'handoff' && !input.toAgent && !input.toPerson && !input.toRepo) {
+  if (requireRecipient && purpose === 'handoff' && !input.toAgent && !input.toPerson && !input.toRepo) {
     throw new NotchException({
       code: 'NOTCH_RECORD_INVALID',
       message: 'Handoff packets require at least one recipient.',
       recovery: 'Pass --to-agent, --to-person, or --to-repo.',
+      severity: 'error',
+      exitCode: 1,
+    });
+  }
+
+  if (input.replyTo && !input.replyType) {
+    throw new NotchException({
+      code: 'NOTCH_RECORD_INVALID',
+      message: 'Reply packets require a reply type.',
+      recovery: 'Pass --type question, clarification, counter-decision, objection, or confirmation.',
       severity: 'error',
       exitCode: 1,
     });
@@ -72,15 +90,17 @@ export async function createPacket(
     ...(input.mcp ? { mcp: true } : {}),
     recordType: 'packet',
     ...(input.sourceTool ? { sourceTool: input.sourceTool } : {}),
+    tags: input.tags ?? [],
     title: input.title,
   });
   const packet: NotchPacket = {
     ...created.meta,
     recordType: 'packet',
+    status: input.replyTo ? input.replyStatus ?? 'open' : created.meta.status,
     title: input.title,
     purpose,
     sensitivity,
-    transferStatus: 'outbox',
+    transferStatus: input.destination === 'private-inbox' ? 'imported' : 'outbox',
     origin: {
       projectName: context.config.project.name,
       storePath: context.storePath,
@@ -92,14 +112,23 @@ export async function createPacket(
       ...(input.toRepo ? { targetRepo: input.toRepo } : {}),
     },
     summary: input.summary,
+    ...(input.supersedes ? { supersedes: input.supersedes } : {}),
+    ...(input.replyTo ? { replyTo: input.replyTo } : {}),
+    ...(input.replyType ? { replyType: input.replyType } : {}),
     includedRecords: input.includedRecords ?? [],
     includedSourceLinks: input.sourceLinks ?? [],
     ...(input.importNotes ? { importNotes: input.importNotes } : {}),
   };
   const body = renderPacketBody(packet, input.task);
   const markdown = renderMarkdownRecord(packet, body);
-  const directory = sensitivity === 'private' || purpose === 'seed' ? context.paths.privateOutbox : context.paths.outbox;
-  const slug = `${created.filenameBase}-to-${toSlug(input.toAgent ?? input.toPerson ?? input.toRepo ?? 'seed')}`;
+  const directory = input.destination === 'private-inbox'
+    ? context.paths.privateInbox
+    : sensitivity === 'private' || purpose === 'seed'
+      ? context.paths.privateOutbox
+      : context.paths.outbox;
+  const slug = input.destination === 'private-inbox'
+    ? created.filenameBase
+    : `${created.filenameBase}-to-${toSlug(input.toAgent ?? input.toPerson ?? input.toRepo ?? 'seed')}`;
 
   await assertNoSecretsWithAudit(markdown, context.config, {
     actor: packet.createdBy,
@@ -143,6 +172,7 @@ export async function createPacket(
     recordType: 'packet',
     recordId: packet.id,
     recordPath: written.relativePath,
+    ...(packet.supersedes ? { supersedes: packet.supersedes } : {}),
   });
   await rebuildIndex(context.storePath);
 
@@ -236,7 +266,7 @@ ${packet.summary}
 
 ## Recipient
 
-${packet.recipient.targetAgent ?? packet.recipient.targetPerson ?? packet.recipient.targetRepo ?? 'Private seed packet.'}
+${packet.recipient.targetAgent ?? packet.recipient.targetPerson ?? packet.recipient.targetRepo ?? (packet.replyTo ? `Reply to ${packet.replyTo}.` : 'Private seed packet.')}
 
 ## Origin
 

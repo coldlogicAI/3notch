@@ -4,9 +4,12 @@ export type RecordType = 'config' | 'project_brief' | 'brief' | 'packet';
 export type ActorType = 'human' | 'agent' | 'system';
 export type ReviewStatus = 'unreviewed' | 'reviewed';
 export type RecordStatus = 'draft' | 'active' | 'archived';
+export type ReplyStatus = 'open' | 'resolved' | 'dismissed';
+export type PacketStatus = RecordStatus | ReplyStatus;
 export type PacketPurpose = 'handoff' | 'seed';
 export type Sensitivity = 'project' | 'private';
 export type TransferStatus = 'draft' | 'outbox' | 'imported' | 'archived';
+export type ReplyType = 'question' | 'clarification' | 'counter-decision' | 'objection' | 'confirmation';
 export type AuditOperation =
   | 'create'
   | 'import'
@@ -143,8 +146,9 @@ export type PacketRecordRef = {
   summary?: string;
 };
 
-export type NotchPacket = RecordMeta & {
+export type NotchPacket = Omit<RecordMeta, 'recordType' | 'status'> & {
   recordType: 'packet';
+  status: PacketStatus;
   title: string;
   purpose: PacketPurpose;
   sensitivity: Sensitivity;
@@ -164,6 +168,9 @@ export type NotchPacket = RecordMeta & {
     targetStore?: string;
   };
   summary: string;
+  supersedes?: string;
+  replyTo?: string;
+  replyType?: ReplyType;
   privateContextSummary?: string;
   includedRecords: PacketRecordRef[];
   includedSourceLinks: SourceLink[];
@@ -185,6 +192,7 @@ export type AuditEntry = {
   recordId?: string;
   recordPath?: string;
   importedFrom?: string;
+  supersedes?: string;
   errorCode?: string;
 };
 

@@ -14,6 +14,7 @@ export type StorePaths = {
   privateInbox: string;
   privateOutbox: string;
   recordsIndex: string;
+  relationships: string;
   store: string;
 };
 
@@ -33,6 +34,7 @@ export function getStorePaths(storePath: string): StorePaths {
     privateInbox: path.join(storePath, 'private/inbox'),
     privateOutbox: path.join(storePath, 'private/outbox'),
     recordsIndex: path.join(storePath, 'index/records.json'),
+    relationships: path.join(storePath, 'index/relationships.json'),
     store: storePath,
   };
 }

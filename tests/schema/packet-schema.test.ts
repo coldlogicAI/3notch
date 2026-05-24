@@ -31,4 +31,37 @@ describe('packet schema', () => {
     expect(result.ok).toBe(false);
     expect(result.ok ? '' : JSON.stringify(result.errors)).toContain('origin');
   });
+
+  it('validates explicit packet relationship fields', async () => {
+    const markdown = await readFile(path.join(fixturesDir, 'valid-packet.md'), 'utf8');
+    const related = markdown.replace(
+      'summary: Carries schema implementation context into another repo.',
+      [
+        'summary: Carries schema implementation context into another repo.',
+        'supersedes: packet_previous_slice',
+        'replyTo: packet_parent_slice',
+        'replyType: question',
+      ].join('\n'),
+    ).replace('status: active', 'status: open');
+    const result = parseAndValidateRecord<NotchPacket>(related, 'related-packet.md');
+
+    expect(result.ok).toBe(true);
+    expect(result.ok ? result.data.supersedes : undefined).toBe('packet_previous_slice');
+    expect(result.ok ? result.data.replyType : undefined).toBe('question');
+  });
+
+  it('rejects malformed relationship IDs and reply fields without replyTo', async () => {
+    const markdown = await readFile(path.join(fixturesDir, 'valid-packet.md'), 'utf8');
+    const malformed = markdown.replace(
+      'summary: Carries schema implementation context into another repo.',
+      'summary: Carries schema implementation context into another repo.\nsupersedes: "not a valid id"',
+    );
+    const orphanReplyType = markdown.replace(
+      'summary: Carries schema implementation context into another repo.',
+      'summary: Carries schema implementation context into another repo.\nreplyType: question',
+    );
+
+    expect(parseAndValidateRecord<NotchPacket>(malformed, 'malformed.md').ok).toBe(false);
+    expect(parseAndValidateRecord<NotchPacket>(orphanReplyType, 'orphan-reply.md').ok).toBe(false);
+  });
 });

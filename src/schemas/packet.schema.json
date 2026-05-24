@@ -36,6 +36,34 @@
           "sensitivity": { "const": "private" }
         }
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "replyTo": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordId" }
+        },
+        "required": ["replyTo"]
+      },
+      "then": {
+        "required": ["replyType"],
+        "properties": {
+          "replyType": { "enum": ["question", "clarification", "counter-decision", "objection", "confirmation"] },
+          "status": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/replyStatus" }
+        }
+      },
+      "else": {
+        "not": {
+          "anyOf": [
+            { "required": ["replyType"] },
+            {
+              "properties": {
+                "status": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/replyStatus" }
+              },
+              "required": ["status"]
+            }
+          ]
+        }
+      }
     }
   ],
   "type": "object",
@@ -62,10 +90,10 @@
     "reviewStatus"
   ],
   "properties": {
-    "id": { "type": "string", "minLength": 1 },
+    "id": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordId" },
     "schemaVersion": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/schemaVersion" },
     "recordType": { "const": "packet" },
-    "status": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordStatus" },
+    "status": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/packetStatus" },
     "title": { "type": "string", "minLength": 1 },
     "purpose": { "enum": ["handoff", "seed"] },
     "sensitivity": { "enum": ["project", "private"] },
@@ -94,6 +122,9 @@
       }
     },
     "summary": { "type": "string", "minLength": 1 },
+    "supersedes": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordId" },
+    "replyTo": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordId" },
+    "replyType": { "enum": ["question", "clarification", "counter-decision", "objection", "confirmation"] },
     "privateContextSummary": { "type": "string", "minLength": 1 },
     "includedRecords": {
       "type": "array",

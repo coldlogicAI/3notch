@@ -15,6 +15,7 @@ type CreatePacketOptions = {
   purpose?: PacketPurpose;
   sensitivity?: Sensitivity;
   summary?: string;
+  supersedes?: string;
   task?: string;
   title?: string;
   toAgent?: string;
@@ -56,6 +57,7 @@ export function registerPacketCommand(program: Command): void {
     .option('--task <text>', 'task context')
     .option('--purpose <purpose>', 'packet purpose: handoff or seed')
     .option('--sensitivity <sensitivity>', 'packet sensitivity: project or private')
+    .option('--supersedes <id>', 'record ID this packet supersedes')
     .option('--private', 'create a private seed packet')
     .option('--file <path>', 'include a source file link', collect, [])
     .option('--out <path>', 'write an additional portable packet file')
@@ -71,6 +73,7 @@ export function registerPacketCommand(program: Command): void {
         ...(options.private ? { purpose: 'seed', sensitivity: 'private' } : {}),
         ...(options.purpose && !options.private ? { purpose: options.purpose } : {}),
         ...(options.sensitivity && !options.private ? { sensitivity: options.sensitivity } : {}),
+        ...(options.supersedes ? { supersedes: options.supersedes } : {}),
         ...(options.task ? { task: options.task } : {}),
         ...(options.toAgent ? { toAgent: options.toAgent } : {}),
         ...(options.toPerson ? { toPerson: options.toPerson } : {}),

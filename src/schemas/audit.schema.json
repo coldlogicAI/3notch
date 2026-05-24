@@ -26,6 +26,7 @@
     "recordId": { "type": "string", "minLength": 1 },
     "recordPath": { "type": "string", "minLength": 1 },
     "importedFrom": { "type": "string", "minLength": 1 },
+    "supersedes": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordId" },
     "errorCode": { "type": "string", "minLength": 1 }
   }
 }

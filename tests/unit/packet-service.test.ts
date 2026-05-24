@@ -45,4 +45,28 @@ describe('packet service', () => {
       ]);
     });
   });
+
+  it('records supersedes metadata in created packets and audit log', async () => {
+    await withTempProject({}, async (project) => {
+      await createBareStore(project.path, { name: 'supersedes-app' });
+      const context = await loadConfig({ cwd: project.path });
+      const previous = await createPacket(context, {
+        summary: 'Previous state.',
+        title: 'Previous state',
+        toAgent: 'codex',
+      });
+      const next = await createPacket(context, {
+        summary: 'Next state.',
+        supersedes: previous.packet.id,
+        title: 'Next state',
+        toAgent: 'codex',
+      });
+      const audit = await readAuditLog(context.paths.logs);
+
+      expect(next.packet.supersedes).toBe(previous.packet.id);
+      expect(audit).toEqual(expect.arrayContaining([
+        expect.objectContaining({ recordId: next.packet.id, supersedes: previous.packet.id }),
+      ]));
+    });
+  });
 });
