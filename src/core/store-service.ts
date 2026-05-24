@@ -24,6 +24,12 @@ export type ScannedRecord = RecordParserResult & {
   relativePath: string;
 };
 
+export type ValidScannedRecord = Extract<ScannedRecord, { ok: true }>;
+
+export function isValidScannedRecord(record: ScannedRecord): record is ValidScannedRecord {
+  return record.ok;
+}
+
 export async function ensureDir(directory: string): Promise<void> {
   await mkdir(directory, { recursive: true });
 }

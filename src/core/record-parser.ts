@@ -87,7 +87,17 @@ export function parseAndValidateRecord<T extends NotchBrief | NotchPacket | Proj
     };
   }
 
-  const headingErrors = validateRequiredHeadings(parsed.record.body, headingRequirements[recordType], path);
+  const requiredHeadings =
+    recordType === 'packet' && parsed.record.metadata.purpose === 'seed'
+      ? [
+          ...headingRequirements.packet,
+          '## User Preferences',
+          '## Workflow Conventions',
+          '## Lessons From Prior Work',
+          '## What Not To Carry Forward',
+        ]
+      : headingRequirements[recordType];
+  const headingErrors = validateRequiredHeadings(parsed.record.body, requiredHeadings, path);
 
   if (headingErrors.length > 0) {
     return { errors: headingErrors, ok: false, warnings: [] };

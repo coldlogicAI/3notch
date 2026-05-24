@@ -9,7 +9,7 @@ export type SecretFinding = {
 
 const jwtPattern = /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/;
 const sshPrivateKeyPattern = /-----BEGIN [A-Z ]*PRIVATE KEY-----/;
-const tokenLikePattern = /\b[A-Za-z0-9_=-]{32,}\b/g;
+const tokenLikePattern = /\b(?=[A-Za-z0-9_=-]{32,}\b)(?=[A-Za-z0-9_=-]*[A-Z])(?=[A-Za-z0-9_=-]*[a-z])(?=[A-Za-z0-9_=-]*\d)[A-Za-z0-9_=-]{32,}\b/g;
 
 export function scanForSecrets(content: string, config?: NotchConfig): SecretFinding[] {
   const findings: SecretFinding[] = [];
@@ -47,6 +47,10 @@ export function scanForSecrets(content: string, config?: NotchConfig): SecretFin
     for (const match of content.matchAll(tokenLikePattern)) {
       const value = match[0];
 
+      if (isGeneratedNotchId(value)) {
+        continue;
+      }
+
       if (uniqueCharRatio(value) > 0.35) {
         findings.push({
           code: 'NOTCH_SECRET_DETECTED',
@@ -81,4 +85,8 @@ export function findingToError(finding: SecretFinding | undefined): NotchError {
 
 function uniqueCharRatio(value: string): number {
   return new Set(value.split('')).size / value.length;
+}
+
+function isGeneratedNotchId(value: string): boolean {
+  return /^(project_brief|brief|packet)_\d{8}T\d{6}Z_[a-z0-9_]+$/.test(value);
 }

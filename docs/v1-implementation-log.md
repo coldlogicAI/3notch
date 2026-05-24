@@ -45,3 +45,13 @@ Use this file during long-running `/goal` implementation sessions. Keep entries 
 - Commit: pending.
 - Next step: Wave 4, Step 4.1 brief service.
 - Blockers or decisions: None.
+
+## 2026-05-23 23:47 EDT
+
+- Goal slice: Add Wave 4 service layer for project/targeted briefs, packet creation/list/read, transfer imports, private seed packets, status summaries, and doctor checks.
+- Plan steps covered: Wave 4, Steps 4.1 through 4.3.
+- Files changed: `src/core/brief-service.ts`, `src/core/packet-service.ts`, `src/core/transfer-service.ts`, `src/core/seed-service.ts`, `src/core/status-service.ts`, `src/core/doctor-service.ts`, `src/core/store-service.ts`, `src/core/record-parser.ts`, `src/core/secret-scan-service.ts`, Wave 4 unit tests.
+- Verification: `npm test -- brief-service packet-service transfer-service seed-service status-service doctor-service secret-scan-service`; `npm test -- packet-schema record-parser seed-service packet-service transfer-service status-service doctor-service`; `npm run lint`; `npm run type-check`; `npm run build`; `npm test`; `node dist/cli/index.js --help`; `node dist/cli/index.js --version`.
+- Commit: pending.
+- Next step: Wave 5, Step 5.1 global CLI runtime plumbing.
+- Blockers or decisions: None.
