@@ -27,6 +27,8 @@ describe('deferred surface guard', () => {
       'src/cli/commands/mcp.ts',
       'src/cli/commands/onboard.ts',
       'src/cli/commands/packet.ts',
+      'src/cli/commands/prompt.ts',
+      'src/cli/commands/scan.ts',
       'src/cli/commands/seed.ts',
       'src/cli/commands/status.ts',
     ];

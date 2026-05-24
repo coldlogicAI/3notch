@@ -6,14 +6,19 @@
 
 ## Read First
 
-1. `docs/3notch-v1-technical-spec.md`
-2. `docs/3notch-v1-implementation-plan.md`
+Active plan:
+
+1. `docs/active-plans/v1.1/3notch-v1.1-plan.md`
+
+Architecture invariants and product framing (V1 is shipped):
+
+2. `docs/archived-plans/v1/3notch-v1-technical-spec.md`
 3. `docs/3notch-project-request.md`
 4. `docs/3notch-branding-review.md`
 
 ## Long-Run Goal
 
-For a persistent V1 implementation run, use `Prompts/3notch-v1-goal.md` as the paste-ready `/goal` prompt. During that run, append concise progress entries to `docs/v1-implementation-log.md` after each coherent slice or wave.
+For a persistent V1.1 implementation run, use `Prompts/3notch-v1.1-goal.md` as the paste-ready `/goal` prompt. Append concise progress entries to `docs/active-plans/v1.1/v1.1-implementation-log.md` after each coherent slice or wave. The V1 implementation log is preserved at `docs/archived-plans/v1/v1-implementation-log.md` as historical record.
 
 Keep paste-ready `/goal` prompts under 4,000 characters. Move detail into repo docs and have the prompt read those files instead of embedding the full plan.
 

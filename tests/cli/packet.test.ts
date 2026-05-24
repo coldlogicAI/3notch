@@ -1,3 +1,4 @@
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -67,4 +68,36 @@ describe('notch packet', () => {
       });
     });
   }, 15_000);
+
+  it('previews the agent-visible packet content and warns on current scanner findings', async () => {
+    await withTempProject({}, async (project) => {
+      await runCli(['onboard', '--yes', '--name', 'preview-app'], { cwd: project.path });
+      const create = await runCli([
+        '--json',
+        'packet',
+        'create',
+        '--title',
+        'Preview me',
+        '--summary',
+        'Use this selected implementation summary.',
+        '--to-agent',
+        'claude-desktop',
+      ], { cwd: project.path });
+      const created = JSON.parse(create.stdout) as { outboxPath: string; packet: { id: string } };
+
+      const preview = await runCli(['packet', 'preview', created.packet.id, '--outbox'], { cwd: project.path });
+
+      expect(preview.exitCode).toBe(0);
+      expect(preview.stdout).toContain('This is what an agent reading this packet will see.');
+      expect(preview.stdout).toContain('Use this selected implementation summary.');
+
+      const original = await readFile(created.outboxPath, 'utf8');
+      await writeFile(created.outboxPath, `${original}\napi_key=abc123\n`, 'utf8');
+
+      const warned = await runCli(['packet', 'preview', created.packet.id, '--outbox'], { cwd: project.path });
+
+      expect(warned.exitCode).toBe(0);
+      expect(warned.stdout).toContain('scanner warning');
+    });
+  });
 });

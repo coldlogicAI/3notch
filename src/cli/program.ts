@@ -6,6 +6,8 @@ import { registerDoctorCommand } from './commands/doctor.js';
 import { registerMcpCommand } from './commands/mcp.js';
 import { registerOnboardCommand } from './commands/onboard.js';
 import { registerPacketCommand } from './commands/packet.js';
+import { registerPromptCommand } from './commands/prompt.js';
+import { registerScanCommand } from './commands/scan.js';
 import { registerSeedCommand } from './commands/seed.js';
 import { registerStatusCommand } from './commands/status.js';
 
@@ -27,23 +29,24 @@ export function createProgram(): Command {
       'after',
       `
 Examples:
-  $ notch --help
-  $ notch --version
   $ notch onboard --yes
+  $ notch prompt --client claude-code
+  $ notch packet create --title "Auth handoff" --to-agent codex --summary "..."
+  $ notch packet import ../other-repo/.notch/outbox/<file>.md
+  $ notch scan README.md
+  $ notch seed from ../old-project --review
   $ notch mcp serve
-
-V1 implementation note:
-  V1 command and MCP surfaces are implemented from docs/3notch-v1-implementation-plan.md.
-  Deferred surfaces like pass and send are out of scope.
 `,
     );
 
   registerOnboardCommand(program);
+  registerPromptCommand(program);
   registerBriefCommand(program);
   registerPacketCommand(program);
   registerSeedCommand(program);
   registerStatusCommand(program);
   registerDoctorCommand(program);
+  registerScanCommand(program);
   registerMcpCommand(program);
 
   return program;

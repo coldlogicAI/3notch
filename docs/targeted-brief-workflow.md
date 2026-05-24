@@ -8,7 +8,7 @@ notch brief create \
   --to codex \
   --goal "Implement and verify the packet schema" \
   --topic schemas \
-  --file docs/3notch-v1-technical-spec.md \
+  --file README.md \
   --exclude "Do not add deferred commands"
 ```
 

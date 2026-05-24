@@ -152,6 +152,7 @@ export async function seedFrom(context: LoadedConfig, input: SeedFromInput) {
     actor: created.meta.createdBy,
     actorNameResolution: created.actorNameResolution,
     actorTypeResolution: created.actorTypeResolution,
+    field: 'reviewed seed packet markdown',
     logsDir: context.paths.logs,
     recordId: parsed.data.id,
     recordType: 'packet',

@@ -54,6 +54,17 @@ describe('notch onboard', () => {
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain('notch mcp serve --store');
       expect(result.stdout).toContain('--include-private');
+      expect(result.stdout).toContain('Agent Instructions');
+      expect(result.stdout).toContain('create_packet');
+    });
+  });
+
+  it('prints an agent instruction hint without --mcp', async () => {
+    await withTempProject({}, async (project) => {
+      const result = await runCli(['onboard', '--yes'], { cwd: project.path });
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('notch prompt --client <client>');
     });
   });
 

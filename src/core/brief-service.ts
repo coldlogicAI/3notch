@@ -103,6 +103,7 @@ export async function createTargetedBrief(
     actor: brief.createdBy,
     actorNameResolution: created.actorNameResolution,
     actorTypeResolution: created.actorTypeResolution,
+    field: 'brief markdown',
     logsDir: context.paths.logs,
     recordId: brief.id,
     recordType: 'brief',

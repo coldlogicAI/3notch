@@ -142,6 +142,6 @@ V1 is successful when:
 
 ## Reference Documents
 
-- [`3notch-v1-technical-spec.md`](3notch-v1-technical-spec.md) — authoritative architecture and contract.
-- [`3notch-v1-implementation-plan.md`](3notch-v1-implementation-plan.md) — wave-by-wave build plan.
+- [`archived-plans/v1/3notch-v1-technical-spec.md`](archived-plans/v1/3notch-v1-technical-spec.md) — authoritative architecture and contract (V1 shipped).
+- [`active-plans/v1.1/3notch-v1.1-plan.md`](active-plans/v1.1/3notch-v1.1-plan.md) — current active plan.
 - [`3notch-branding-review.md`](3notch-branding-review.md) — naming, positioning, visual direction, public copy.

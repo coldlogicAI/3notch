@@ -14,7 +14,7 @@ scope:
 exclusions: []
 relevantFiles:
   - kind: file
-    path: docs/3notch-v1-technical-spec.md
+    path: docs/example.md
 designBasis: The technical spec defines V1 record contracts.
 priorReasoningSummary: Keep schema work independent from CLI transport.
 constraints:
@@ -50,7 +50,7 @@ The technical spec defines V1 record contracts.
 
 ## Relevant Files And Sources
 
-- `docs/3notch-v1-technical-spec.md`
+- `docs/example.md`
 
 ## Known Pitfalls
 

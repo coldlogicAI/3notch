@@ -13,6 +13,8 @@ Seed packets use `purpose: seed` and `sensitivity: private`. They are stored und
 
 Use `--file <relative-path>` to carry selected source file references as links. V1 does not ingest file bodies during seeding.
 
+The secret scanner fires on any seed content containing words like `secret`, `password`, `token`, or `api_key` — even when used in legitimate documentation prose (for example, "Never commit secrets to .env"). This is intentional: seed packets land in private storage that may later be shared with agents, so the scanner errs on the side of false positives. If a seed is blocked by `NOTCH_SECRET_DETECTED` on benign source text, rephrase the trigger words in your source brief and re-run.
+
 ## MCP Visibility
 
 Private records are hidden from MCP by default:

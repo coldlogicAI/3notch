@@ -1,4 +1,6 @@
-# 3Notch V1 Long-Run Goal Prompt
+# 3Notch V1 Long-Run Goal Prompt (Archived)
+
+> V1 is shipped. This prompt is preserved for historical reference only. For the current implementation goal, use `Prompts/3notch-v1.1-goal.md`.
 
 Use this prompt to start a persistent `/goal` implementation session.
 

@@ -4,6 +4,7 @@ import { getCliContext } from '../context.js';
 import { printInfo, printJson } from '../output.js';
 import { loadConfig } from '../../core/config-service.js';
 import { createPacket, getPacket, listPackets } from '../../core/packet-service.js';
+import { scanForSecrets, type SecretFinding } from '../../core/secret-scan-service.js';
 import { importPacketFile } from '../../core/transfer-service.js';
 import type { PacketPurpose, Sensitivity, SourceLink } from '../../types/records.js';
 
@@ -168,6 +169,37 @@ export function registerPacketCommand(program: Command): void {
 
       printInfo(result.markdown, context.output);
     });
+
+  packet
+    .command('preview')
+    .description('preview what an agent will see when reading a packet')
+    .argument('<id>')
+    .option('--inbox', 'search inbox only')
+    .option('--outbox', 'search outbox only')
+    .option('--private', 'include private packets')
+    .action(async (id: string, options: ShowPacketOptions, command: Command) => {
+      const context = getCliContext(command);
+      const loaded = await loadCurrentConfig(context);
+      const result = await getPacket(loaded, id, {
+        direction: options.inbox ? 'inbox' : options.outbox ? 'outbox' : 'both',
+        includePrivate: Boolean(options.private),
+      });
+      const scannerFindings = scanForSecrets(result.markdown, loaded.config, {
+        field: 'packet markdown',
+        path: result.path,
+      });
+
+      if (context.output.json) {
+        printJson({
+          ...result,
+          preview: renderPacketPreview(result.markdown, scannerFindings),
+          scannerFindings,
+        });
+        return;
+      }
+
+      printInfo(renderPacketPreview(result.markdown, scannerFindings), context.output);
+    });
 }
 
 function collect(value: string, previous: string[]): string[] {
@@ -187,4 +219,23 @@ async function loadCurrentConfig(context: ReturnType<typeof getCliContext>) {
     ...(context.cwd ? { cwd: context.cwd } : {}),
     ...(context.store ? { store: context.store } : {}),
   });
+}
+
+function renderPacketPreview(markdown: string, scannerFindings: SecretFinding[]): string {
+  const warningLines = scannerFindings.map((finding) => {
+    const location = [
+      finding.path,
+      finding.line ? `line ${finding.line}` : undefined,
+    ].filter(Boolean).join(' ');
+
+    return `⚠ scanner warning: ${finding.pattern}${location ? ` at ${location}` : ''}`;
+  });
+
+  return [
+    'Agent Packet Preview',
+    'This is what an agent reading this packet will see.',
+    ...warningLines,
+    '',
+    markdown,
+  ].join('\n');
 }

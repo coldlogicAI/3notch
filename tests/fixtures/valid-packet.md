@@ -25,7 +25,7 @@ includedRecords:
     summary: Brief summary.
 includedSourceLinks:
   - kind: file
-    path: docs/3notch-v1-technical-spec.md
+    path: docs/example.md
 createdAt: 2026-05-23T18:20:00Z
 createdBy:
   actorType: agent
@@ -56,7 +56,7 @@ source-app.
 
 ## Source Links
 
-- `docs/3notch-v1-technical-spec.md`
+- `docs/example.md`
 
 ## Import Notes
 

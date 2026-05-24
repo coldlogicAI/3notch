@@ -13,4 +13,4 @@
 - Do not expose `.notch/private/` through MCP unless the user explicitly enables private context for that server/session via `--include-private`.
 - Do not expose arbitrary shell execution through MCP.
 - Do not run destructive Git operations or create/push GitHub remotes without explicit user approval.
-- Prefer small, verified CLI/core slices that follow `docs/3notch-v1-implementation-plan.md`.
+- Prefer small, verified CLI/core slices that follow the active plan in `docs/active-plans/` (currently `docs/active-plans/v1.1/3notch-v1.1-plan.md`). The V1 spec at `docs/archived-plans/v1/3notch-v1-technical-spec.md` remains authoritative for architecture invariants.

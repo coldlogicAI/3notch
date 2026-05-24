@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { assertNoSecrets, scanForSecrets } from '../../src/core/secret-scan-service.js';
+import { isNotchException } from '../../src/types/errors.js';
 
 describe('secret scan service', () => {
   it('detects configured secret words, JWTs, private keys, and token-like strings', () => {
@@ -20,6 +21,23 @@ describe('secret scan service', () => {
 
   it('throws NOTCH_SECRET_DETECTED before writes', () => {
     expect(() => assertNoSecrets('password: abc')).toThrow('Content matched configured secret pattern');
+  });
+
+  it('includes location context and a rephrase hint for benign prose matches', () => {
+    try {
+      assertNoSecrets('Document how to rotate a password value.', undefined, {
+        field: 'docs',
+        path: 'example.md',
+      });
+      throw new Error('Expected assertNoSecrets to throw.');
+    } catch (error) {
+      expect(isNotchException(error)).toBe(true);
+
+      if (isNotchException(error)) {
+        expect(error.notchError.message).toMatch(/File: example\.md\..*Field: docs\..*Line: 1\./);
+        expect(error.notchError.recovery).toMatch(/rephrase trigger words/i);
+      }
+    }
   });
 
   it('does not flag generated 3Notch identifiers as token-like secrets', () => {

@@ -1,10 +1,14 @@
 import { mkdir, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { createInterface } from 'node:readline/promises';
 import type { Command } from 'commander';
 
 import { getCliContext } from '../context.js';
+import { configureClaudeCodeMcp, type McpConfigWriteResult } from '../mcp-config-claude-code.js';
+import { configureClaudeDesktopMcp, type ClaudeDesktopMcpConfigResult } from '../mcp-config-claude-desktop.js';
 import { mcpInstructions } from '../mcp-instructions.js';
 import { printInfo, printJson } from '../output.js';
+import { renderAgentPromptForClient } from './prompt.js';
 import { resolveProjectRoot } from '../../core/config-service.js';
 import { getStorePaths, requiredStoreDirs } from '../../core/store-layout.js';
 import { NotchException } from '../../types/errors.js';
@@ -48,29 +52,33 @@ export function registerOnboardCommand(program: Command): void {
       }
 
       if (configExists && !options.force) {
-        if (context.output.json) {
-          printJson({ alreadyInitialized: true, storePath });
-        } else {
-          printInfo(`3Notch store already initialized at ${storePath}`, context.output);
+        // Existing stores can still use onboard to configure MCP clients.
+      } else {
+        await mkdir(storePath, { recursive: true });
+
+        for (const dir of requiredStoreDirs) {
+          await mkdir(path.join(storePath, dir), { recursive: true });
         }
-        return;
+
+        await writeIfMissing(path.join(storePath, '.gitignore'), 'index/\nlogs/\nprivate/\n');
+        await writeIfMissing(paths.config, `${JSON.stringify(defaultConfig(projectName, projectRoot), null, 2)}\n`);
+        await writeIfMissing(paths.brief, renderMarkdownRecord(defaultProjectBrief(projectName), defaultProjectBriefBody()));
       }
 
-      await mkdir(storePath, { recursive: true });
-
-      for (const dir of requiredStoreDirs) {
-        await mkdir(path.join(storePath, dir), { recursive: true });
-      }
-
-      await writeIfMissing(path.join(storePath, '.gitignore'), 'index/\nlogs/\nprivate/\n');
-      await writeIfMissing(paths.config, `${JSON.stringify(defaultConfig(projectName, projectRoot), null, 2)}\n`);
-      await writeIfMissing(paths.brief, renderMarkdownRecord(defaultProjectBrief(projectName), defaultProjectBriefBody()));
-
+      const mcpClient = options.mcp && options.mcp !== 'none' ? options.mcp : undefined;
+      const mcpConfig = mcpClient
+        ? await configureMcpClient(mcpClient, projectRoot, storePath, Boolean(options.yes), context.output.json)
+        : undefined;
       const output = {
+        alreadyInitialized: configExists && !options.force,
         created: !configExists,
+        agentInstructions: mcpClient ? renderAgentPromptForClient(mcpClient) : undefined,
+        mcpClient,
+        mcpConfig,
         projectName,
+        promptHint: mcpClient ? undefined : 'Run notch prompt --client <client> to print agent instructions.',
         storePath,
-        mcpInstructions: options.mcp && options.mcp !== 'none' ? mcpInstructions(storePath) : undefined,
+        mcpInstructions: mcpClient ? mcpInstructions(mcpClient, storePath, projectRoot) : undefined,
       };
 
       if (context.output.json) {
@@ -78,12 +86,90 @@ export function registerOnboardCommand(program: Command): void {
         return;
       }
 
-      printInfo(`Initialized 3Notch store at ${storePath}`, context.output);
+      printInfo(
+        output.alreadyInitialized
+          ? `3Notch store already initialized at ${storePath}`
+          : `Initialized 3Notch store at ${storePath}`,
+        context.output,
+      );
+
+      if (output.mcpConfig?.wrote) {
+        printInfo(`\nConfigured ${output.mcpClient} MCP server "3notch" at ${output.mcpConfig.configPath}`, context.output);
+
+        if (output.mcpConfig.backupPath) {
+          printInfo(`Backup written to ${output.mcpConfig.backupPath}`, context.output);
+        }
+      }
+
+      if (output.mcpConfig && 'instructions' in output.mcpConfig && output.mcpConfig.instructions) {
+        printInfo(`\n${output.mcpConfig.instructions}`, context.output);
+      }
 
       if (output.mcpInstructions) {
         printInfo(`\n${output.mcpInstructions}`, context.output);
       }
+
+      if (output.agentInstructions) {
+        printInfo(`\nAgent Instructions\n\n${output.agentInstructions}`, context.output);
+      }
+
+      if (output.promptHint) {
+        printInfo(`\n${output.promptHint}`, context.output);
+      }
     });
+}
+
+async function configureMcpClient(
+  client: string,
+  projectRoot: string,
+  storePath: string,
+  yes: boolean,
+  json: boolean,
+): Promise<McpConfigWriteResult | ClaudeDesktopMcpConfigResult | undefined> {
+  if (client === 'claude-code') {
+    return await configureClaudeCodeMcp(projectRoot, storePath);
+  }
+
+  if (client === 'claude-desktop') {
+    await confirmExternalConfigWrite('Claude Desktop', yes, json);
+    return await configureClaudeDesktopMcp(storePath);
+  }
+
+  return undefined;
+}
+
+async function confirmExternalConfigWrite(clientLabel: string, yes: boolean, json: boolean): Promise<void> {
+  if (yes) {
+    return;
+  }
+
+  if (json || !process.stdin.isTTY) {
+    throw new NotchException({
+      code: 'NOTCH_CONFIRMATION_REQUIRED',
+      message: `${clientLabel} MCP config writes require confirmation.`,
+      recovery: 'Re-run with --yes to allow 3Notch to update the client config.',
+      severity: 'error',
+      exitCode: 1,
+    });
+  }
+
+  const readline = createInterface({ input: process.stdin, output: process.stdout });
+
+  try {
+    const answer = await readline.question(`Update ${clientLabel} MCP config for 3Notch? [y/N] `);
+
+    if (!/^y(es)?$/i.test(answer.trim())) {
+      throw new NotchException({
+        code: 'NOTCH_OPERATION_CANCELLED',
+        message: `${clientLabel} MCP config was not changed.`,
+        recovery: 'Re-run with --yes or answer y to update the config.',
+        severity: 'error',
+        exitCode: 1,
+      });
+    }
+  } finally {
+    readline.close();
+  }
 }
 
 async function exists(filePath: string): Promise<boolean> {
