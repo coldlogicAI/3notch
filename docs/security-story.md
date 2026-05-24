@@ -29,7 +29,7 @@ Packets are Markdown files in `.notch/outbox/`, `.notch/inbox/`, or `.notch/priv
 notch packet preview <packet-id>
 ```
 
-Preview shows what an agent will read and re-runs the current scanner so upgraded patterns can warn on older packets.
+Preview shows what an agent will read and re-runs the current scanner so upgraded patterns can warn on imported packets or packets written before newer scanner rules existed. Fresh local packet creation is already blocked by the same scanner before write.
 
 ## Honest Limits
 

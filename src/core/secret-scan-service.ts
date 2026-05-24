@@ -26,7 +26,15 @@ export type SecretScanSource = {
 
 const jwtPattern = /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/;
 const sshPrivateKeyPattern = /-----BEGIN [A-Z ]*PRIVATE KEY-----/;
-const tokenLikePattern = /\b(?=[A-Za-z0-9_=-]{32,}\b)(?=[A-Za-z0-9_=-]*[A-Z])(?=[A-Za-z0-9_=-]*[a-z])(?=[A-Za-z0-9_=-]*\d)[A-Za-z0-9_=-]{32,}\b/g;
+const knownTokenPatterns = [
+  /\bgh[pousr]_[A-Za-z0-9_]{30,}\b/,
+  /\bgithub_pat_[A-Za-z0-9_]{30,}\b/,
+  /\bnpm_[A-Za-z0-9]{30,}\b/,
+  /\bsk_(live|test)_[A-Za-z0-9]{16,}\b/,
+  /\bxox[baprs]-[A-Za-z0-9-]{20,}\b/,
+  /\bglpat-[A-Za-z0-9_-]{20,}\b/,
+];
+const tokenLikePattern = /\b(?=[A-Za-z0-9_=-]{32,}\b)(?=[A-Za-z0-9_=-]*[A-Za-z])(?=[A-Za-z0-9_=-]*\d)[A-Za-z0-9_=-]{32,}\b/g;
 
 export function scanForSecrets(content: string, config?: NotchConfig, source: SecretScanSource = {}): SecretFinding[] {
   const findings: SecretFinding[] = [];
@@ -53,6 +61,7 @@ export function scanForSecrets(content: string, config?: NotchConfig, source: Se
   }
 
   if (config?.privacy.highEntropySecretScan ?? true) {
+    const knownTokenRanges: Array<{ end: number; start: number }> = [];
     const jwtMatch = jwtPattern.exec(content);
 
     if (jwtMatch) {
@@ -79,17 +88,39 @@ export function scanForSecrets(content: string, config?: NotchConfig, source: Se
       }));
     }
 
+    for (const pattern of knownTokenPatterns) {
+      const match = pattern.exec(content);
+
+      if (match) {
+        knownTokenRanges.push({ start: match.index, end: match.index + match[0].length });
+        findings.push(secretFinding({
+          content,
+          index: match.index,
+          length: match[0].length,
+          message: 'Content contains a known access-token format.',
+          pattern: 'known-token',
+          source,
+        }));
+        break;
+      }
+    }
+
     for (const match of content.matchAll(tokenLikePattern)) {
       const value = match[0];
+      const index = match.index ?? 0;
 
       if (isGeneratedNotchToken(value)) {
+        continue;
+      }
+
+      if (knownTokenRanges.some((range) => rangesOverlap(index, index + value.length, range.start, range.end))) {
         continue;
       }
 
       if (uniqueCharRatio(value) > 0.35) {
         findings.push(secretFinding({
           content,
-          index: match.index ?? 0,
+          index,
           length: value.length,
           message: 'Content contains a token-like high-entropy string.',
           pattern: 'token-like',
@@ -217,6 +248,10 @@ function redactMatchedRange(line: string, start: number, length: number): string
 
 function truncate(value: string): string {
   return value.length > 160 ? `${value.slice(0, 157)}...` : value;
+}
+
+function rangesOverlap(start: number, end: number, otherStart: number, otherEnd: number): boolean {
+  return start < otherEnd && otherStart < end;
 }
 
 function uniqueCharRatio(value: string): number {

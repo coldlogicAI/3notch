@@ -17,6 +17,15 @@ describe('secret scan service', () => {
     expect(scanForSecrets('tokenvalue ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef012345')).toEqual(
       expect.arrayContaining([expect.objectContaining({ pattern: 'token-like' })]),
     );
+    expect(scanForSecrets('ghp_aaaabbbbccccddddeeeeffff1234567890aaaa')).toEqual(
+      expect.arrayContaining([expect.objectContaining({ pattern: 'known-token' })]),
+    );
+    expect(scanForSecrets('ghp_aaaabbbbccccddddeeeeffff1234567890aaaa')).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ pattern: 'token-like' })]),
+    );
+    expect(scanForSecrets('abcdefghijklmnopqrstuvwxyzabcdef1234567890')).toEqual(
+      expect.arrayContaining([expect.objectContaining({ pattern: 'token-like' })]),
+    );
   });
 
   it('throws NOTCH_SECRET_DETECTED before writes', () => {

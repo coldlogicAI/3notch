@@ -124,10 +124,10 @@ function claudeDesktopConfigPath(): string {
 
 function codexConfigPath(): string {
   if (process.platform === 'win32') {
-    return path.join(process.env.USERPROFILE ?? '%USERPROFILE%', '.codex', 'config.toml');
+    return path.join('%USERPROFILE%', '.codex', 'config.toml');
   }
 
-  return path.join(os.homedir(), '.codex/config.toml');
+  return '~/.codex/config.toml';
 }
 
 function chatGptDesktopConfigPath(): string {

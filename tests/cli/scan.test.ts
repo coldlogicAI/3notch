@@ -43,4 +43,13 @@ describe('notch scan', () => {
       findings: expect.arrayContaining([expect.objectContaining({ pattern: 'token-like' })]),
     });
   });
+
+  it('flags lowercase GitHub PAT-style tokens from stdin', async () => {
+    const result = await runCli(['scan', '-'], {
+      input: 'ghp_aaaabbbbccccddddeeeeffff1234567890aaaa',
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain('known-token');
+  });
 });
