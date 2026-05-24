@@ -6,6 +6,17 @@ All notable changes to 3Notch will be documented in this file.
 
 - No unreleased changes.
 
+## 0.3.0 - 2026-05-24
+
+- Add `supersedes`, `replyTo`, `replyType`, and reply `status` packet fields.
+- Add deterministic `.notch/index/relationships.json` with explicit relationship edges.
+- Add `notch mark` and MCP `create_mark` for self-addressed private capture.
+- Add `notch reply` and MCP `create_reply` for typed packet replies.
+- Add `notch prompt --client claude-chat` and `notch packet import -` for web-chat packet intake.
+- Add `notch check` and MCP `check_store` for the five V2 structural corpus checks.
+- Surface a corpus-check summary in `notch doctor`.
+- Enforce and document the received-packet immutability guarantee.
+
 ## 0.2.0 - 2026-05-24
 
 - Add `notch prompt --client <client>` agent instruction packs for Claude Code, Claude Desktop, Codex, and Cursor.

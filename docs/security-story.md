@@ -1,6 +1,6 @@
 # Security Story
 
-3Notch's V1.1 security story is concrete: curate, scan, audit, review.
+3Notch's security story is concrete: curate, scan, audit, review, and preserve received packets.
 
 ## Curate
 
@@ -31,9 +31,13 @@ notch packet preview <packet-id>
 
 Preview shows what an agent will read and re-runs the current scanner so upgraded patterns can warn on imported packets or packets written before newer scanner rules existed. Fresh local packet creation is already blocked by the same scanner before write.
 
+## Preserve
+
+Received packets in `.notch/inbox/` and `.notch/private/inbox/` are ground truth. 3Notch refuses overwrite paths that would replace a received packet with different content. When context changes, author a new packet with `supersedes` or a typed reply with `replyTo`; do not mutate the imported packet.
+
 ## Honest Limits
 
 - When an agent reads a packet, that packet content may be sent to the agent's LLM provider by the client.
-- V1.x does not encrypt records at rest. Use OS disk encryption and keep `.notch/private/` ignored.
+- V2 does not encrypt records at rest. Use OS disk encryption and keep `.notch/private/` ignored.
 - 3Notch is not a policy engine, DLP system, hosted audit platform, or remote sync service.
 - The scanner is a guardrail, not a proof that content is safe.

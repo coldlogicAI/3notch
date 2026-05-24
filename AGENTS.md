@@ -2,34 +2,40 @@
 
 ## Purpose
 
-3Notch is a local-first CLI and MCP server for moving project context across boundaries that built-in AI tooling cannot cross — across repos, across AI work surfaces, and into new projects. V1 ships exactly three loops: packet transfer, private context seeding, and targeted briefs. Supporting commands: onboard, status, doctor, mcp serve.
+3Notch is a local-first CLI and MCP server for moving project context across boundaries that built-in AI tooling cannot cross — across repos, across AI work surfaces, web chats, and into new projects. V2 ships packet transfer, private context seeding, targeted briefs, self-addressed marks, typed packet replies, web-chat stdin intake, relationship indexing, and deterministic corpus checks. Supporting commands: onboard, status, doctor, mcp serve.
 
 ## Read First
 
 Active plan:
 
-1. `docs/active-plans/v1.1/3notch-v1.1-plan.md`
+1. `docs/active-plans/v2/3notch-v2-plan.md`
 
-Architecture invariants and product framing (V1 is shipped):
+Architecture invariants and product framing (V1 and V1.1 are shipped and archived):
 
 2. `docs/archived-plans/v1/3notch-v1-technical-spec.md`
-3. `docs/3notch-project-request.md`
-4. `docs/3notch-branding-review.md`
+3. `docs/archived-plans/v1.1/3notch-v1.1-plan.md`
+4. `docs/3notch-project-request.md`
+5. `docs/3notch-branding-review.md`
 
 ## Long-Run Goal
 
-For a persistent V1.1 implementation run, use `Prompts/3notch-v1.1-goal.md` as the paste-ready `/goal` prompt. Append concise progress entries to `docs/active-plans/v1.1/v1.1-implementation-log.md` after each coherent slice or wave. The V1 implementation log is preserved at `docs/archived-plans/v1/v1-implementation-log.md` as historical record.
+For a persistent V2 implementation run, use `Prompts/3notch-v2-goal.md` as the paste-ready `/goal` prompt. Append concise progress entries to `docs/active-plans/v2/v2-implementation-log.md` after each coherent slice or wave. V1 and V1.1 logs are preserved under `docs/archived-plans/` as historical records.
 
 Keep paste-ready `/goal` prompts under 4,000 characters. Move detail into repo docs and have the prompt read those files instead of embedding the full plan.
 
-## V1 Surface (build this, nothing else)
+## Shipped Surface (build this, nothing else)
 
 CLI commands:
 - `notch onboard`
+- `notch mark`
+- `notch reply <id>`
 - `notch brief`, `notch brief create`, `notch brief list`, `notch brief show <id>`
-- `notch packet create`, `notch packet import <file>`, `notch packet list`, `notch packet show <id>`
+- `notch packet create`, `notch packet import <file>`, `notch packet import -`, `notch packet list`, `notch packet show <id>`, `notch packet preview <id>`
 - `notch seed from <repo-or-store-path>`
+- `notch prompt --client <client>`
+- `notch scan <file-or-stdin>`
 - `notch status`
+- `notch check`
 - `notch doctor`
 - `notch mcp serve`
 
@@ -37,6 +43,7 @@ MCP tools:
 - `get_brief`, `create_brief`, `list_briefs`, `get_targeted_brief`
 - `create_packet`, `import_packet`, `list_packets`, `get_packet`
 - `create_seed_packet`, `import_seed_packet`
+- `create_mark`, `create_reply`, `check_store`
 - `get_status`, `run_doctor`
 
 ## Deferred From V1 (do not implement)
@@ -64,6 +71,9 @@ A regression-guard test (`tests/unit/no-deferred-commands.test.ts`) prevents acc
 - Preserve human-readable `.notch/` source files as the source of truth.
 - Use `.notch/outbox/` for created packets, `.notch/inbox/` for imported packets, and ignored `.notch/private/` for user preferences, workflow conventions, and seed packets.
 - Treat `.notch/index/` and `.notch/logs/` as derived/noisy output.
+- Keep `notch check` deterministic and structural only: broken `supersedes`, broken `replyTo`, supersedes cycle, self-reference, supersedes fork.
+- Never ship a `lint` verb in 3Notch OSS.
+- Do not add semantic derivation, auto-tagging, similarity threading, contradiction flagging, wiki UI, graph view, or cross-store aggregation.
 - Do not expose `.notch/private/` through MCP unless the server is started with `--include-private`.
 - Do not expose arbitrary shell execution through MCP.
 - Do not run destructive Git commands or create/push remotes without approval.

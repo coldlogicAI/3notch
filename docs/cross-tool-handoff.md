@@ -38,10 +38,22 @@ notch packet import ../source/.notch/outbox/<packet-file>.md
 
 The packet is portable context, not a live connection to the source tool. The destination agent should rely only on the packet content, source links, exclusions, and next steps.
 
+## Web-Chat Flow
+
+For web chats that cannot call local MCP tools, use the bridge prompt and stdin import:
+
+```bash
+notch prompt --client claude-chat
+pbpaste | notch packet import -
+```
+
+See [Web Chat To Project](prompts/web-chat-to-project.md) for the full walkthrough.
+
 ## Rules Of The Road
 
 - The client must supply the context it wants stored.
 - Source links and exclusions should be explicit.
 - Same-store handoff is best for one project across two tools.
 - Cross-repo handoff still uses packet import.
+- Received inbox packets are ground truth. Do not edit them in place; author a follow-up packet with `supersedes` or `replyTo`.
 - Private seed context is unavailable through MCP unless `--include-private` is used.

@@ -15,7 +15,7 @@ describe('test harness helpers', () => {
 
       expect(result.exitCode).toBe(0);
       expect(result.stderr).toBe('');
-      expect(result.stdout.trim()).toBe('0.2.0');
+      expect(result.stdout.trim()).toBe('0.3.0');
     });
   });
 

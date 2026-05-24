@@ -2,11 +2,13 @@
 
 **Your AI tools will change. Your project context should not have to.**
 
-3Notch is a local-first CLI and MCP server for moving project context across boundaries that built-in AI tooling cannot cross: across repos, across AI work surfaces, and into new projects.
+You are already the bus for your AI context: copying summaries between Claude, Codex, Cursor, ChatGPT, terminals, repos, and new projects. 3Notch is the local packet layer for the context you meant to carry by hand.
 
-It stores explicit, reviewable Markdown/YAML records under `.notch/`. There is no cloud service, account, telemetry, vector database, hidden chat scraping, or remote connector in V1.x.
+3Notch is a local-first CLI and MCP server for moving explicit, reviewable Markdown/YAML records under `.notch/`. There is no cloud service, account, telemetry, vector database, hidden chat scraping, semantic indexing, or remote connector in V2.
 
 ## Quickstart
+
+### 1. Same-Store Cross-Tool
 
 For a project you use from both Claude Code and Claude Desktop, point both clients at the same `.notch/` store:
 
@@ -28,6 +30,31 @@ Inspect the packet before relying on it:
 ```bash
 notch packet list --outbox
 notch packet preview <packet-id>
+```
+
+### 2. Cross-Repo Packet
+
+When the destination is a different repo, create an outbox packet in the source and import it in the destination:
+
+```bash
+notch packet create --title "Auth handoff" --summary "Auth context for the API repo." --to-agent codex --to-repo ../api --file src/auth.ts
+notch packet import ../source/.notch/outbox/<packet-file>.md
+```
+
+### 3. Web-Chat To Project
+
+For Claude.ai or another web chat that cannot call local MCP tools, print the bridge prompt, paste it into the chat, ask for a packet, copy the result, then import stdin:
+
+```bash
+notch prompt --client claude-chat
+pbpaste | notch packet import -
+```
+
+Use `notch mark` when you just want to remember something for yourself:
+
+```bash
+notch mark --summary "Decided to keep browser auth cookie-based" --tags auth
+notch check
 ```
 
 For clients that are not auto-configured yet, print setup instructions and an agent prompt pack:
@@ -69,29 +96,34 @@ Targeting fields such as `--to-agent`, `--to-person`, and `--to-repo` answer "wh
 ```bash
 notch onboard
 notch prompt --client <client>
+notch mark
+notch reply <id>
 notch brief
 notch brief create
 notch brief list
 notch brief show <id>
 notch packet create
 notch packet import <file>
+notch packet import -
 notch packet list
 notch packet show <id>
 notch packet preview <id>
 notch seed from <repo-or-store-path>
 notch scan <file-or-stdin>
 notch status
+notch check
 notch doctor
 notch mcp serve
 ```
 
 ## MCP
 
-`notch mcp serve` exposes the V1 tools over local stdio MCP:
+`notch mcp serve` exposes the shipped tools over local stdio MCP:
 
 - `get_brief`, `create_brief`, `list_briefs`, `get_targeted_brief`
 - `create_packet`, `import_packet`, `list_packets`, `get_packet`
 - `create_seed_packet`, `import_seed_packet`
+- `create_mark`, `create_reply`, `check_store`
 - `get_status`, `run_doctor`
 
 Private records under `.notch/private/` are hidden unless the server starts with `--include-private`.
@@ -102,6 +134,7 @@ Private records under `.notch/private/` are hidden unless the server starts with
 - [Cross-tool handoff](docs/cross-tool-handoff.md)
 - [Private context seeding](docs/private-context-seeding.md)
 - [Targeted briefs](docs/targeted-brief-workflow.md)
+- [Web-chat to project bridge](docs/prompts/web-chat-to-project.md)
 - [MCP setup](docs/mcp-setup.md)
 - [Privacy and security](docs/privacy.md)
 - [Security story](docs/security-story.md)
@@ -117,11 +150,12 @@ node dist/cli/index.js --cwd fixtures/cross-repo-demo/destination-marketing pack
 
 The fixtures cover cross-repo handoff, private context seeding, and cross-tool packet creation from explicitly supplied session context.
 
-## V1.x Boundaries
+## V2 Boundaries
 
 - Local-first files by default. No cloud dependency.
 - No telemetry.
 - No hidden chat/project scraping.
+- No semantic derivation, auto-tagging, similarity threading, contradiction flagging, wiki UI, graph view, hosted sync, or cross-store aggregation.
 - No arbitrary shell execution through MCP.
 - No SQLite or native database dependency.
 - No `notch pass`, `notch send`, decision, question, conflict, or stale commands.

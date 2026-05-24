@@ -53,7 +53,7 @@ The principle: **primitives in; the UX layer earns its way in by being needed.**
 
 Lands the deterministic indexing that makes the inbox queryable as a structured corpus. This is the foundation Waves 2–5 build on top of.
 
-- [ ] **Step 1.1: Add `supersedes` field to packet schema**
+- [x] **Step 1.1: Add `supersedes` field to packet schema**
   - **Files:**
     - `src/schemas/packet.schema.json` — MODIFIED
     - `src/types/records.ts` — MODIFIED
@@ -62,7 +62,7 @@ Lands the deterministic indexing that makes the inbox queryable as a structured 
   - **Implementation:** optional string field; matches existing record-ID format. When a packet declares `supersedes: <id>`, the audit log entry for the write includes the superseded ID. Validation: schema-level format check; existence check only on import into a store (not on create — the predecessor may live in another store).
   - **Verification:** schema rejects malformed IDs; audit log records `supersedes` on create/import.
 
-- [ ] **Step 1.2: `.notch/index/relationships.json` derived index**
+- [x] **Step 1.2: `.notch/index/relationships.json` derived index**
   - **Files:**
     - `src/core/relationships-service.ts` — NEW
     - `src/core/index-service.ts` — MODIFIED (call relationships-service after every index rebuild)
@@ -77,7 +77,7 @@ Lands the deterministic indexing that makes the inbox queryable as a structured 
   - **Performance budget:** for a store with 1,000 records the full rebuild should complete in under 1 second. If the budget breaks, switch to incremental updates in a follow-up; do not pre-optimize.
   - **Verification:** unit tests cover each edge type; rebuild is idempotent (running it twice produces byte-identical output); fixture with 3-packet supersedes chain produces the expected graph.
 
-- [ ] **Step 1.3: Document and enforce inbox immutability**
+- [x] **Step 1.3: Document and enforce inbox immutability**
   - **Files:**
     - `src/core/transfer-service.ts` — MODIFIED
     - `docs/cross-tool-handoff.md` — MODIFIED
@@ -90,7 +90,7 @@ Lands the deterministic indexing that makes the inbox queryable as a structured 
 
 Lowers adoption to "useful from day one even if you never send a packet to anyone."
 
-- [ ] **Step 2.1: `notch mark` CLI command**
+- [x] **Step 2.1: `notch mark` CLI command**
   - **Files:**
     - `src/cli/commands/mark.ts` — NEW
     - `src/cli/program.ts` — MODIFIED
@@ -98,7 +98,7 @@ Lowers adoption to "useful from day one even if you never send a packet to anyon
   - **Implementation:** thin wrapper over `createPacket` with `purpose: 'seed'`, `sensitivity: 'private'`, recipient check skipped (self-addressed). Lands in `.notch/private/inbox/` directly — no outbox step. Required flag: `--summary`. Optional: `--title`, `--supersedes`, `--file`, `--tags`. If `--title` is omitted, derive from the first non-empty line of `--summary` (truncated to 80 chars).
   - **Verification:** `notch mark --summary "Decided to use cookies for auth"` writes a record under `private/inbox/`; audit log entry created; `--supersedes <id>` records the edge.
 
-- [ ] **Step 2.2: `create_mark` MCP tool**
+- [x] **Step 2.2: `create_mark` MCP tool**
   - **Files:**
     - `src/mcp/tools.ts` (or wherever tool registration lives) — MODIFIED
     - `src/schemas/mcp-tools.schema.json` — MODIFIED
@@ -106,7 +106,7 @@ Lowers adoption to "useful from day one even if you never send a packet to anyon
   - **Implementation:** mirrors CLI shape. Same defaults. Same write path.
   - **Verification:** MCP tool list includes `create_mark`; integration test creates a mark via MCP.
 
-- [ ] **Step 2.3: Update agent prompt packs to mention `mark` / `create_mark`**
+- [x] **Step 2.3: Update agent prompt packs to mention `mark` / `create_mark`**
   - **Files:**
     - `src/cli/prompts/claude-code.ts` — MODIFIED
     - `src/cli/prompts/claude-desktop.ts` — MODIFIED
@@ -119,7 +119,7 @@ Lowers adoption to "useful from day one even if you never send a packet to anyon
 
 Schema-and-CLI work that lets agents (and the user) author typed follow-ups against any record. No surfacing UX — that's deferred.
 
-- [ ] **Step 3.1: Add `replyTo`, `replyType`, reply `status` to packet schema**
+- [x] **Step 3.1: Add `replyTo`, `replyType`, reply `status` to packet schema**
   - **Files:**
     - `src/schemas/packet.schema.json` — MODIFIED
     - `src/types/records.ts` — MODIFIED
@@ -131,7 +131,7 @@ Schema-and-CLI work that lets agents (and the user) author typed follow-ups agai
     - `status: "open" | "resolved" | "dismissed"` — defaults to `"open"` when `replyTo` is set; not allowed when `replyTo` is absent.
   - **Verification:** schema rejects `replyType` without `replyTo`; rejects `status` without `replyTo`; accepts valid reply records.
 
-- [ ] **Step 3.2: `notch reply` CLI command**
+- [x] **Step 3.2: `notch reply` CLI command**
   - **Files:**
     - `src/cli/commands/reply.ts` — NEW
     - `src/cli/program.ts` — MODIFIED
@@ -139,7 +139,7 @@ Schema-and-CLI work that lets agents (and the user) author typed follow-ups agai
   - **Implementation:** `notch reply <parent-id> --type <type> --summary "..."`. Optional: `--title`, `--to-agent` / `--to-person` / `--to-repo` (defaults to inheriting the parent's recipient when applicable). Sensitivity inherits from parent unless `--private` is passed. Direction: if parent is in outbox, the reply lands in outbox; if in inbox, lands in private/inbox (you can't author a reply *into* someone else's inbox).
   - **Verification:** `notch reply <id> --type question --summary "..."` writes a packet with `replyTo`, `replyType`, `status: open`; relationships.json gains the edge after rebuild.
 
-- [ ] **Step 3.3: `create_reply` MCP tool**
+- [x] **Step 3.3: `create_reply` MCP tool**
   - **Files:**
     - `src/mcp/tools.ts` — MODIFIED
     - `src/schemas/mcp-tools.schema.json` — MODIFIED
@@ -147,7 +147,7 @@ Schema-and-CLI work that lets agents (and the user) author typed follow-ups agai
   - **Implementation:** mirrors CLI shape.
   - **Verification:** tool surfaces in MCP server; integration test creates a reply via MCP.
 
-- [ ] **Step 3.4: `replyTo` edge in relationships.json**
+- [x] **Step 3.4: `replyTo` edge in relationships.json**
   - **Files:**
     - `src/core/relationships-service.ts` — MODIFIED
     - `tests/unit/relationships-service.test.ts` — MODIFIED
@@ -158,7 +158,7 @@ Schema-and-CLI work that lets agents (and the user) author typed follow-ups agai
 
 Collapses the user-as-bus workflow into a clean import. This is the wave that pays back the most-felt friction.
 
-- [ ] **Step 4.1: `notch prompt --client <web-chat-id>` template**
+- [x] **Step 4.1: `notch prompt --client <web-chat-id>` template**
   - **Files:**
     - `src/cli/prompts/claude-chat.ts` — NEW *(naming: `claude-chat` vs `claude-web` — decide in implementation; whichever doesn't collide with existing `claude-desktop`)*
     - `src/cli/commands/prompt.ts` — MODIFIED
@@ -167,7 +167,7 @@ Collapses the user-as-bus workflow into a clean import. This is the wave that pa
   - **Output:** plain text by default, JSON with `--json` for scripted onboarding.
   - **Verification:** output contains the YAML frontmatter spec, an example packet, the import command (`pbpaste | notch packet import -` macOS, `xclip` Linux equivalents, `Get-Clipboard | notch packet import -` PowerShell), and a one-line "tell the chat to give you a packet when you're done" hint.
 
-- [ ] **Step 4.2: `notch packet import -` stdin path**
+- [x] **Step 4.2: `notch packet import -` stdin path**
   - **Files:**
     - `src/cli/commands/packet.ts` — MODIFIED (accept `-` as the file argument)
     - `src/core/transfer-service.ts` — MODIFIED (factor file-read so it can take a string)
@@ -175,7 +175,7 @@ Collapses the user-as-bus workflow into a clean import. This is the wave that pa
   - **Implementation:** when the file argument is `-`, read stdin until EOF and route through the existing `importPacketFile` validation + write path. Same audit log, same secret scan, same review status defaults.
   - **Verification:** `cat fixture.md | notch packet import -` lands the packet; secret-scan trips correctly on poisoned stdin; audit log records the import.
 
-- [ ] **Step 4.3: Document the web-chat bridge**
+- [x] **Step 4.3: Document the web-chat bridge**
   - **Files:**
     - `docs/prompts/web-chat-to-project.md` — NEW
     - `docs/cross-tool-handoff.md` — MODIFIED (link to the new prompt)
@@ -187,7 +187,7 @@ Collapses the user-as-bus workflow into a clean import. This is the wave that pa
 
 The Karpathy IDE-and-codebase analogy completes here: `relationships.json` is the index; `notch check` is the integrity verifier. Five deterministic structural rules over the corpus + relationships index. No semantic reasoning, no LLM. The verb is deliberately `check`, not `lint` — the word "lint" stays out of 3Notch OSS, permanently, to preserve iPSM patent-claim hygiene.
 
-- [ ] **Step 5.1: `notch check` CLI command and core rules**
+- [x] **Step 5.1: `notch check` CLI command and core rules**
   - **Files:**
     - `src/cli/commands/check.ts` — NEW
     - `src/core/check-service.ts` — NEW
@@ -204,7 +204,7 @@ The Karpathy IDE-and-codebase analogy completes here: `relationships.json` is th
   - **Finding shape:** `{ rule, severity, packetId, message, recovery }`. Recovery hints are short imperative sentences.
   - **Verification:** fixture stores covering each rule produce expected findings; clean store produces zero findings; rule output is deterministic across runs.
 
-- [ ] **Step 5.2: `check_store` MCP tool**
+- [x] **Step 5.2: `check_store` MCP tool**
   - **Files:**
     - `src/mcp/tools.ts` — MODIFIED
     - `src/schemas/mcp-tools.schema.json` — MODIFIED
@@ -212,7 +212,7 @@ The Karpathy IDE-and-codebase analogy completes here: `relationships.json` is th
   - **Implementation:** returns the same finding shape as `notch check --json`. Lets an agent inspect corpus health on session start or after big imports.
   - **Verification:** tool surfaces in MCP server; integration test returns findings in machine-readable form.
 
-- [ ] **Step 5.3: Surface check headline in `notch doctor`**
+- [x] **Step 5.3: Surface check headline in `notch doctor`**
   - **Files:**
     - `src/cli/commands/doctor.ts` — MODIFIED
     - `tests/cli/doctor.test.ts` — MODIFIED
@@ -221,23 +221,23 @@ The Karpathy IDE-and-codebase analogy completes here: `relationships.json` is th
 
 ## Wave 6: Close The Loop
 
-- [ ] **Step 6.1: Update CHANGELOG.md** — `0.3.0` section listing: `notch mark`, `notch reply`, `notch check`, `supersedes`, `replyTo`/`replyType`/`status`, `relationships.json` derived index, web-chat prompt template, `notch packet import -` stdin path, immutability guarantee, doctor check summary.
+- [x] **Step 6.1: Update CHANGELOG.md** — `0.3.0` section listing: `notch mark`, `notch reply`, `notch check`, `supersedes`, `replyTo`/`replyType`/`status`, `relationships.json` derived index, web-chat prompt template, `notch packet import -` stdin path, immutability guarantee, doctor check summary.
 
-- [ ] **Step 6.2: Update README** — frame 3Notch with the user-as-bus narrative ("you're already passing context by hand between AI surfaces — 3Notch is what you wish you'd had"). Show three canonical paths in the quickstart: (a) same-store cross-tool (carried from V1.1), (b) cross-repo handoff packet, (c) web-chat-to-project bridge. Mention `notch mark` as the solo-use entry point and `notch check` as the corpus integrity verifier.
+- [x] **Step 6.2: Update README** — frame 3Notch with the user-as-bus narrative ("you're already passing context by hand between AI surfaces — 3Notch is what you wish you'd had"). Show three canonical paths in the quickstart: (a) same-store cross-tool (carried from V1.1), (b) cross-repo handoff packet, (c) web-chat-to-project bridge. Mention `notch mark` as the solo-use entry point and `notch check` as the corpus integrity verifier.
 
-- [ ] **Step 6.3: Bump package version and run full verification** — lint, type-check, build, test, e2e, plus CLI smokes: `--help`, `--version`, `mark --summary`, `reply <id> --type question --summary`, `packet import -`, `prompt --client claude-chat`, `check`, `check --json`.
+- [x] **Step 6.3: Bump package version and run full verification** — lint, type-check, build, test, e2e, plus CLI smokes: `--help`, `--version`, `mark --summary`, `reply <id> --type question --summary`, `packet import -`, `prompt --client claude-chat`, `check`, `check --json`.
 
 ## Final: E2E Smoke For The New Workflows
 
-- [ ] **Step 7.1: Wiki-use-case smoke** — create three packets where C `supersedes` B `supersedes` A. Assert `relationships.json` contains the chain. Assert a fixture-agent script reading the inbox can walk the chain from A to C and back.
+- [x] **Step 7.1: Wiki-use-case smoke** — create three packets where C `supersedes` B `supersedes` A. Assert `relationships.json` contains the chain. Assert a fixture-agent script reading the inbox can walk the chain from A to C and back.
 
-- [ ] **Step 7.2: Reply-primitive smoke** — create a packet, `notch reply <id> --type question --summary "..."`, assert the reply lands with `replyTo`, `replyType: question`, `status: open`. Author a second reply with `--type clarification` whose summary "answers" the first. Assert `relationships.json` shows both edges.
+- [x] **Step 7.2: Reply-primitive smoke** — create a packet, `notch reply <id> --type question --summary "..."`, assert the reply lands with `replyTo`, `replyType: question`, `status: open`. Author a second reply with `--type clarification` whose summary "answers" the first. Assert `relationships.json` shows both edges.
 
-- [ ] **Step 7.3: Web-chat bridge smoke** — fixture file mimicking the output of `notch prompt --client claude-chat` consumed by Claude.ai. Pipe through `notch packet import -`. Assert the packet lands in private/inbox with audit log entry. Confirm secret scan runs against stdin content.
+- [x] **Step 7.3: Web-chat bridge smoke** — fixture file mimicking the output of `notch prompt --client claude-chat` consumed by Claude.ai. Pipe through `notch packet import -`. Assert the packet lands in private/inbox with audit log entry. Confirm secret scan runs against stdin content.
 
-- [ ] **Step 7.4: Mark smoke** — `notch mark --summary "Decided cookies over JWT" --tags "auth"` lands in private/inbox; `notch mark --supersedes <prev-id>` records the edge in `relationships.json`.
+- [x] **Step 7.4: Mark smoke** — `notch mark --summary "Decided cookies over JWT" --tags "auth"` lands in private/inbox; `notch mark --supersedes <prev-id>` records the edge in `relationships.json`.
 
-- [ ] **Step 7.5: Corpus check smoke** — seed a store with packets exercising each rule (broken supersedes, broken replyTo, cycle, self-reference, fork). Run `notch check`. Assert exit code 1; assert each rule fires exactly once with the expected severity; assert `--json` output matches the documented finding shape; assert a clean store exits 0 with no findings.
+- [x] **Step 7.5: Corpus check smoke** — seed a store with packets exercising each rule (broken supersedes, broken replyTo, cycle, self-reference, fork). Run `notch check`. Assert exit code 1; assert each rule fires exactly once with the expected severity; assert `--json` output matches the documented finding shape; assert a clean store exits 0 with no findings.
 
 ## Out Of V2 Scope (deferred to V2.1 or later)
 

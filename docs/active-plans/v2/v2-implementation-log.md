@@ -14,3 +14,9 @@
 - Added `notch prompt --client claude-chat` and `notch packet import -` for web-chat packet intake through stdin.
 - Added deterministic `notch check` and MCP `check_store` with only the five V2 structural rules: broken `supersedes`, broken `replyTo`, supersedes cycle, self-reference, and supersedes fork. `doctor` now surfaces a one-line check summary without changing doctor exit semantics.
 - Verification: `npm test -- mark create-mark base-schemas prompt no-deferred`; `npm test -- reply create-reply relationships-service packet-schema no-deferred`; `npm test -- prompt packet`; `npm test -- check check-store doctor no-deferred`.
+
+## 2026-05-24 - Closeout docs and E2E coverage
+
+- Updated README, CHANGELOG, AGENTS, security docs, cross-tool docs, and the web-chat bridge walkthrough for V2.
+- Bumped package and CLI version to 0.3.0.
+- Added V2 E2E smokes for supersedes-chain walking, typed replies, web-chat stdin intake, marks, and corpus check rules.
