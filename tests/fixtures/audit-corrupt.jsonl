@@ -1,0 +1,2 @@
+{"schemaVersion":"1.0.0","at":"2026-05-23T18:00:00Z","operation":"create","result":"success","actor":{"actorType":"human","name":"Test User"},"actorNameResolution":"cli-flag","actorTypeResolution":"cli-default","sourceTool":{"name":"notch-cli"}}
+not json

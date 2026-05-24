@@ -35,3 +35,13 @@ Use this file during long-running `/goal` implementation sessions. Keep entries 
 - Commit: pending.
 - Next step: Wave 3, Step 3.1 config/store discovery and CLI output helpers.
 - Blockers or decisions: None.
+
+## 2026-05-23 23:37 EDT
+
+- Goal slice: Add Wave 3 store foundation: config discovery, path safety, actor/ID metadata, atomic record writes, audit log handling, secret scanning, and derived JSON index rebuilds.
+- Plan steps covered: Wave 3, Steps 3.1 through 3.7.
+- Files changed: `src/core/config-service.ts`, `src/core/store-layout.ts`, `src/cli/output.ts`, `src/core/path-safety.ts`, `src/core/id-service.ts`, `src/core/actor-service.ts`, `src/core/record-factory.ts`, `src/core/store-service.ts`, `src/core/audit-service.ts`, `src/core/secret-scan-service.ts`, `src/core/index-service.ts`, Wave 3 unit tests and fixtures.
+- Verification: `npm test -- config-service path-safety record-factory store-service audit-service secret-scan-service index-service`; `npm run lint`; `npm run type-check`; `npm run build`; `npm test`; `node dist/cli/index.js --help`; `node dist/cli/index.js --version`.
+- Commit: pending.
+- Next step: Wave 4, Step 4.1 brief service.
+- Blockers or decisions: None.

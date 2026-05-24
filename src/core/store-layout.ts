@@ -1,0 +1,42 @@
+import path from 'node:path';
+
+export const DEFAULT_STORE_DIR = '.notch';
+
+export type StorePaths = {
+  brief: string;
+  briefs: string;
+  config: string;
+  inbox: string;
+  index: string;
+  logs: string;
+  manifest: string;
+  outbox: string;
+  privateInbox: string;
+  privateOutbox: string;
+  recordsIndex: string;
+  store: string;
+};
+
+export const sourceRecordDirs = ['briefs', 'inbox', 'outbox', 'private/inbox', 'private/outbox'] as const;
+export const requiredStoreDirs = ['briefs', 'inbox', 'outbox', 'private/inbox', 'private/outbox', 'index', 'logs'] as const;
+
+export function getStorePaths(storePath: string): StorePaths {
+  return {
+    brief: path.join(storePath, 'brief.md'),
+    briefs: path.join(storePath, 'briefs'),
+    config: path.join(storePath, 'config.json'),
+    inbox: path.join(storePath, 'inbox'),
+    index: path.join(storePath, 'index'),
+    logs: path.join(storePath, 'logs'),
+    manifest: path.join(storePath, 'index/manifest.json'),
+    outbox: path.join(storePath, 'outbox'),
+    privateInbox: path.join(storePath, 'private/inbox'),
+    privateOutbox: path.join(storePath, 'private/outbox'),
+    recordsIndex: path.join(storePath, 'index/records.json'),
+    store: storePath,
+  };
+}
+
+export function toStoreRelativePath(storePath: string, filePath: string): string {
+  return path.relative(storePath, filePath).split(path.sep).join('/');
+}
