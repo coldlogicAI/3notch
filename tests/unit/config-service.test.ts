@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -24,6 +24,20 @@ describe('config service', () => {
       await expect(loadConfig({ cwd: project.path })).rejects.toMatchObject({
         notchError: { code: 'NOTCH_STORE_NOT_FOUND', exitCode: 2 },
       });
+    });
+  });
+
+  it('prefers a nested .notch store over an outer Git root', async () => {
+    await withTempProject({ git: true }, async (project) => {
+      const nested = path.join(project.path, 'fixtures/nested-app');
+      await mkdir(nested, { recursive: true });
+      await createBareStore(nested, { name: 'nested-app' });
+
+      const loaded = await loadConfig({ cwd: nested });
+
+      expect(loaded.projectRoot).toBe(nested);
+      expect(loaded.storePath).toBe(path.join(nested, '.notch'));
+      expect(loaded.config.project.name).toBe('nested-app');
     });
   });
 

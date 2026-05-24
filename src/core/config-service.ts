@@ -25,6 +25,10 @@ export async function resolveProjectRoot(cwd = process.cwd()): Promise<string> {
   let current = path.resolve(cwd);
 
   while (true) {
+    if (await exists(path.join(current, DEFAULT_STORE_DIR, 'config.json'))) {
+      return current;
+    }
+
     if (await exists(path.join(current, '.git'))) {
       return current;
     }

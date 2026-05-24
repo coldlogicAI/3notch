@@ -1,5 +1,4 @@
 import { readFile } from 'node:fs/promises';
-import path from 'node:path';
 
 import { loadConfig, type LoadedConfig } from './config-service.js';
 import { createPacket, type CreatePacketInput } from './packet-service.js';
@@ -43,7 +42,6 @@ export async function seedFrom(context: LoadedConfig, input: SeedFromInput) {
   const summary = `Reviewed private seed from ${source.config.project.name}.`;
   const result = await createSeedPacket(context, {
     importNotes: 'Imported through notch seed from after explicit review.',
-    outputPath: path.join('.notch/private/outbox', `${source.config.project.name}-seed.notch.md`),
     sourceLinks: [{ kind: 'repo', repoRoot: source.config.project.root, repoName: source.config.project.name }],
     summary,
     title: `Private seed from ${source.config.project.name}`,

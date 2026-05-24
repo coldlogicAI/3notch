@@ -17,6 +17,12 @@ export type DoctorCheck = {
   severity: 'ok' | 'warn' | 'error';
 };
 
+type SeenRecordId = {
+  packetDirection?: 'inbox' | 'outbox';
+  path: string;
+  recordType?: string;
+};
+
 export async function runDoctor(
   context: LoadedConfig,
   options: { fix?: boolean; strict?: boolean } = {},
@@ -63,10 +69,21 @@ export async function runDoctor(
   }
 
   const gitignorePath = path.join(context.storePath, '.gitignore');
-  const gitignore = await readFile(gitignorePath, 'utf8').catch(() => '');
+  let gitignore = await readFile(gitignorePath, 'utf8').catch(() => '');
+  const requiredGitignoreEntries = ['index/', 'logs/', 'private/'];
+  const missingGitignoreEntries = requiredGitignoreEntries.filter((required) => !gitignore.includes(required));
 
-  for (const required of ['index/', 'logs/', 'private/']) {
-    if (!gitignore.includes(required)) {
+  if (options.fix && missingGitignoreEntries.length > 0) {
+    const existing = gitignore.trimEnd();
+    const next = [existing, ...missingGitignoreEntries].filter(Boolean).join('\n');
+    gitignore = `${next}\n`;
+    await writeFile(gitignorePath, gitignore, 'utf8');
+  }
+
+  for (const required of requiredGitignoreEntries) {
+    if (gitignore.includes(required)) {
+      checks.push({ code: 'NOTCH_PRIVATE_IGNORE_PRESENT', message: `.notch/.gitignore includes ${required}`, path: gitignorePath, severity: 'ok' });
+    } else {
       checks.push({ code: 'NOTCH_PRIVATE_IGNORE_MISSING', message: `.notch/.gitignore missing ${required}`, path: gitignorePath, severity: 'warn' });
       errors.push({
         code: 'NOTCH_PRIVATE_IGNORE_MISSING',
@@ -79,12 +96,9 @@ export async function runDoctor(
     }
   }
 
-  if (options.fix && !gitignore.includes('index/')) {
-    await writeFile(gitignorePath, 'index/\nlogs/\nprivate/\n', 'utf8');
-  }
-
   const records = await scanMarkdownRecords(context.storePath, { includeInvalid: true, includePrivate: true });
   const invalidRecords = records.filter((record) => !record.ok);
+  const seenIds = new Map<string, SeenRecordId[]>();
 
   for (const invalid of invalidRecords) {
     checks.push({ code: 'NOTCH_RECORD_INVALID', message: 'Invalid or corrupt record', path: invalid.path, severity: 'error' });
@@ -100,7 +114,35 @@ export async function runDoctor(
 
   for (const record of records) {
     if (record.ok) {
-      const findings = scanForSecrets(JSON.stringify(record.record.metadata), context.config);
+      const recordId = typeof record.record.metadata.id === 'string' ? record.record.metadata.id : undefined;
+
+      if (recordId) {
+        const packetDirection = packetDirectionFor(record.relativePath);
+        const recordType = typeof record.record.metadata.recordType === 'string' ? record.record.metadata.recordType : undefined;
+        const current: SeenRecordId = {
+          path: record.path,
+          ...(packetDirection ? { packetDirection } : {}),
+          ...(recordType ? { recordType } : {}),
+        };
+        const previous = seenIds.get(recordId) ?? [];
+        const firstDisallowed = previous.find((seen) => !isAllowedPacketTransferPair(seen, current));
+
+        if (firstDisallowed) {
+          checks.push({ code: 'NOTCH_RECORD_ID_DUPLICATE', message: `Duplicate record ID ${recordId}`, path: record.path, severity: 'error' });
+          errors.push({
+            code: 'NOTCH_RECORD_ID_DUPLICATE',
+            message: `Duplicate record ID ${recordId}.`,
+            path: record.path,
+            recovery: `Change one duplicate ID. First occurrence: ${firstDisallowed.path}.`,
+            severity: 'error',
+            exitCode: 3,
+          });
+        }
+
+        seenIds.set(recordId, [...previous, current]);
+      }
+
+      const findings = scanForSecrets(`${JSON.stringify(record.record.metadata)}\n${record.record.body}`, context.config);
       if (findings.length > 0) {
         checks.push({ code: 'NOTCH_SECRET_DETECTED', message: findings[0]?.message ?? 'Secret detected', path: record.path, severity: 'error' });
         errors.push({
@@ -140,4 +182,29 @@ export async function runDoctor(
     errors,
     healthy: errors.every((error) => error.severity !== 'error'),
   };
+}
+
+function packetDirectionFor(relativePath: string): 'inbox' | 'outbox' | undefined {
+  if (relativePath.includes('/outbox/') || relativePath.startsWith('outbox/') || relativePath.startsWith('private/outbox/')) {
+    return 'outbox';
+  }
+
+  if (relativePath.includes('/inbox/') || relativePath.startsWith('inbox/') || relativePath.startsWith('private/inbox/')) {
+    return 'inbox';
+  }
+
+  return undefined;
+}
+
+function isAllowedPacketTransferPair(
+  first: SeenRecordId,
+  current: SeenRecordId,
+): boolean {
+  return (
+    first.recordType === 'packet' &&
+    current.recordType === 'packet' &&
+    first.packetDirection !== undefined &&
+    current.packetDirection !== undefined &&
+    first.packetDirection !== current.packetDirection
+  );
 }

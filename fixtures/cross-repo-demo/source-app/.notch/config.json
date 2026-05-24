@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.0.0",
+  "project": {
+    "name": "source-app",
+    "root": "fixtures/cross-repo-demo/source-app"
+  },
+  "store": {
+    "path": ".notch",
+    "recordFormat": "markdown-yaml",
+    "index": {
+      "enabled": true,
+      "engine": "file-scan"
+    }
+  },
+  "privacy": {
+    "telemetry": false,
+    "redactPatterns": [
+      {
+        "kind": "regex",
+        "value": "(api[_-]?key|secret|password|token)",
+        "flags": "i"
+      }
+    ],
+    "secretScan": true,
+    "highEntropySecretScan": true
+  },
+  "defaults": {
+    "allowedMcpWriteTools": [
+      "create_brief",
+      "create_packet",
+      "import_packet",
+      "create_seed_packet",
+      "import_seed_packet"
+    ]
+  }
+}

@@ -1,63 +1,122 @@
 # 3Notch
 
-**Your AI tools will change. Your project context shouldn't have to.**
+**Your AI tools will change. Your project context should not have to.**
 
-3Notch is a local-first CLI and MCP server for moving project context across boundaries that built-in AI tooling cannot cross — across repos, across AI work surfaces (Claude Desktop, Claude Code, Codex, Cursor, ChatGPT), and across the start of new projects.
+3Notch is a local-first CLI and MCP server for moving project context across boundaries that built-in AI tooling cannot cross: across repos, across AI work surfaces, and into new projects.
 
-It packages selected, source-linked context into inspectable Markdown packets that another repo or tool can import. No copy-paste. No full chat-history sharing. No vendor lock-in.
+V1 ships three loops:
 
-## The killer demo
+- Packet transfer between repos or tools.
+- Private context seeding from prior work into a new repo.
+- Targeted briefs for scoped agent work.
 
-You're writing marketing copy in Claude Desktop. The copy depends on what actually shipped in the repo — Claude Code knows the repo, Claude Desktop doesn't. Without 3Notch you copy-paste back and forth and the marketing drifts out of date.
+It stores explicit, reviewable Markdown/YAML records under `.notch/`. There is no cloud service, account, telemetry, vector database, hidden chat scraping, or remote connector in V1.
 
-With 3Notch:
+## Quickstart
 
-1. In Claude Code, ask the agent to create a packet from current repo state.
-2. The agent calls `create_packet` with a summary, links to relevant files, and exclusions.
-3. The packet lands in `.notch/outbox/` as a reviewable Markdown file.
-4. In Claude Desktop, ask the agent to import the packet (or pass it via the CLI).
-5. Marketing copy stays grounded in what actually shipped.
-
-The same loop works for any cross-boundary handoff: planning repo → implementation repo, contractor → in-house team, Claude Desktop → Codex CLI, prior project → new project.
-
-## V1 target flow
+From an installed package:
 
 ```bash
-npx @3notch/cli onboard
-notch seed from ../old-project --include preferences --include workflow --review
-notch packet create --to-agent claude --to-person marketing --summary "Current shipped features and constraints"
-notch packet import ../source-app/.notch/outbox/<packet-file>.md
-notch brief
-notch status
-notch mcp serve --include-private
+npx @3notch/cli onboard --yes --name source-app
+npx @3notch/cli brief
+npx @3notch/cli brief create --title "Marketing context" --to claude --goal "Draft launch copy from shipped repo state" --topic launch
+npx @3notch/cli packet create --title "Current repo state" --summary "Checkout and admin settings changed." --to-agent claude --to-person marketing --file README.md
+npx @3notch/cli status
+npx @3notch/cli doctor --fix --yes
+npx @3notch/cli mcp serve
 ```
 
-## Status
+From a fresh clone of this repository:
 
-3Notch is in bootstrap. This repository currently contains V1 planning docs, contributor scaffolding, and a runnable CLI skeleton for `notch --help` and `notch --version`. The full command set is not yet implemented.
+```bash
+npm install
+npm run build
+WORKDIR="$(mktemp -d)"
+mkdir -p "$WORKDIR/source-app" "$WORKDIR/destination-app" "$WORKDIR/old-project" "$WORKDIR/new-project"
+node dist/cli/index.js --cwd "$WORKDIR/source-app" onboard --yes --name source-app
+node dist/cli/index.js --cwd "$WORKDIR/destination-app" onboard --yes --name destination-app
+node dist/cli/index.js --cwd "$WORKDIR/old-project" onboard --yes --name old-project
+node dist/cli/index.js --cwd "$WORKDIR/new-project" onboard --yes --name new-project
+node dist/cli/index.js --cwd "$WORKDIR/source-app" brief create --title "Marketing context" --to claude --goal "Draft launch copy from shipped repo state" --topic launch
+PACKET="$(node dist/cli/index.js --cwd "$WORKDIR/source-app" --json packet create --title "Current repo state" --summary "Checkout and admin settings changed." --to-agent claude --to-repo "$WORKDIR/destination-app" --file README.md | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).outboxPath))")"
+node dist/cli/index.js --cwd "$WORKDIR/destination-app" packet import "$PACKET"
+node dist/cli/index.js --cwd "$WORKDIR/new-project" seed from "$WORKDIR/old-project" --review
+node dist/cli/index.js --cwd "$WORKDIR/destination-app" packet list --inbox
+node dist/cli/index.js --cwd "$WORKDIR/new-project" packet list --private --purpose seed --inbox
+node dist/cli/index.js --cwd "$WORKDIR/destination-app" doctor --fix --yes
+```
 
-Start future implementation work with:
+The packet is a normal Markdown file in `.notch/outbox/`; importing it writes a reviewed copy to the destination `.notch/inbox/`.
 
-- [`docs/3notch-v1-technical-spec.md`](docs/3notch-v1-technical-spec.md)
-- [`docs/3notch-v1-implementation-plan.md`](docs/3notch-v1-implementation-plan.md)
-- [`docs/3notch-project-request.md`](docs/3notch-project-request.md)
-- [`docs/3notch-branding-review.md`](docs/3notch-branding-review.md)
-
-## How the handoff model works
+## How The Handoff Model Works
 
 The loop is explicit and reviewable:
 
-1. A user asks an AI work surface to create a 3Notch packet from selected project/session context.
-2. The agent calls a local 3Notch MCP tool and supplies the selected or summarized context.
-3. 3Notch writes a local packet under `.notch/outbox/` or `.notch/private/`.
-4. The user can inspect the packet before moving it.
+1. A user asks an AI client or CLI session to create a 3Notch packet from selected context.
+2. The client supplies a summary, source links, exclusions, recipient metadata, and next steps through CLI or MCP.
+3. 3Notch validates the record and writes a Markdown packet under `.notch/outbox/` or `.notch/private/`.
+4. The user can inspect the packet before moving or importing it.
 5. Another repo or tool imports the packet and reads it through CLI or MCP.
 
-V1 implements the local CLI plus local MCP loop. A Claude Desktop DXT package is the likely later packaging layer for easier local install. Remote connectors are a later hosted path with a different trust model.
+Targeting fields such as `--to-agent`, `--to-person`, and `--to-repo` answer "who is this packet for?" They are routing and review metadata in V1. They are not identity, authentication, or delivery controls.
 
-## Why a third party
+## Core Commands
 
-Incumbents have a structural anti-incentive to make context portable. Anthropic will not ship "easily move your context to Codex." OpenAI will not ship "easily move to Claude." Cursor will not ship "easily move to Windsurf." A vendor-neutral, locally-owned packet format is the only place this problem can be solved.
+```bash
+notch onboard
+notch brief
+notch brief create
+notch brief list
+notch brief show <id>
+notch packet create
+notch packet import <file>
+notch packet list
+notch packet show <id>
+notch seed from <repo-or-store-path>
+notch status
+notch doctor
+notch mcp serve
+```
+
+## MCP
+
+`notch mcp serve` exposes the V1 tools over local stdio MCP:
+
+- `get_brief`, `create_brief`, `list_briefs`, `get_targeted_brief`
+- `create_packet`, `import_packet`, `list_packets`, `get_packet`
+- `create_seed_packet`, `import_seed_packet`
+- `get_status`, `run_doctor`
+
+Private records under `.notch/private/` are hidden unless the server starts with `--include-private`.
+
+## Docs
+
+- [Cross-repo packets](docs/cross-repo-packets.md)
+- [Cross-tool handoff](docs/cross-tool-handoff.md)
+- [Private context seeding](docs/private-context-seeding.md)
+- [Targeted briefs](docs/targeted-brief-workflow.md)
+- [MCP setup](docs/mcp-setup.md)
+- [Privacy and security](docs/privacy.md)
+
+## Demo Fixtures
+
+```bash
+node dist/cli/index.js --cwd fixtures/cross-repo-demo/source-app doctor --fix --yes
+node dist/cli/index.js --cwd fixtures/cross-repo-demo/destination-marketing doctor --fix --yes
+node dist/cli/index.js --cwd fixtures/context-seed-demo/new-project doctor --fix --yes
+node dist/cli/index.js --cwd fixtures/cross-repo-demo/destination-marketing packet list --inbox
+```
+
+The fixtures cover cross-repo handoff, private context seeding, and cross-tool packet creation from explicitly supplied session context.
+
+## V1 Boundaries
+
+- Local-first files by default. No cloud dependency in V1.
+- No telemetry.
+- No hidden chat/project scraping.
+- No arbitrary shell execution through MCP.
+- No SQLite or native database dependency.
+- No `notch pass`, `notch send`, decision, question, conflict, or stale commands in V1.
 
 ## Development
 
@@ -67,23 +126,10 @@ npm run lint
 npm run type-check
 npm run build
 npm test
+npm run test:e2e
 node dist/cli/index.js --help
+node dist/cli/index.js --version
 ```
-
-## V1 boundaries
-
-- Local-first by default. No cloud dependency in V1.
-- Cross-repo packets are a V1 core feature, not a later export.
-- Private context seeding is a V1 core feature.
-- Cross-tool handoff is the product direction.
-- No telemetry.
-- No hidden chat or project scraping. Agents and users supply selected context to 3Notch through CLI or MCP.
-- No SQLite or native database dependency in V1.
-- Human-readable `.notch/` source files are the source of truth.
-- Created packets live in `.notch/outbox/`; imported packets live in `.notch/inbox/`.
-- Private seed packets live in `.notch/private/` and are ignored by Git by default.
-- Derived `.notch/index/` and `.notch/logs/` files are rebuildable and ignored by Git.
-- No session-end pass workflow, decision records, open question records, conflict records, or stale-marking commands in V1. Same-repo same-session continuity is solved by CLAUDE.md, native tool memory, and `git commit`. 3Notch focuses on what those tools cannot do: cross-boundary transport.
 
 ## License
 

@@ -23,6 +23,8 @@
   },
   "files": [
     "dist",
+    "docs",
+    "fixtures",
     "README.md",
     "LICENSE"
   ],

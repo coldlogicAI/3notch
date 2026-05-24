@@ -21,4 +21,9 @@ describe('secret scan service', () => {
   it('throws NOTCH_SECRET_DETECTED before writes', () => {
     expect(() => assertNoSecrets('password: abc')).toThrow('Content matched configured secret pattern');
   });
+
+  it('does not flag generated 3Notch identifiers as token-like secrets', () => {
+    expect(scanForSecrets('packet_20260524T040512Z_repo_state')).toEqual([]);
+    expect(scanForSecrets('20260524T040512Z-repo-state-to-codex')).toEqual([]);
+  });
 });

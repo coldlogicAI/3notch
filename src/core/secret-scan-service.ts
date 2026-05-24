@@ -1,5 +1,13 @@
+import { appendAuditEntry } from './audit-service.js';
 import { NotchException, type NotchError } from '../types/errors.js';
-import type { NotchConfig } from '../types/records.js';
+import type {
+  Actor,
+  ActorNameResolution,
+  ActorTypeResolution,
+  NotchConfig,
+  RecordType,
+  SourceTool,
+} from '../types/records.js';
 
 export type SecretFinding = {
   code: 'NOTCH_SECRET_DETECTED';
@@ -47,7 +55,7 @@ export function scanForSecrets(content: string, config?: NotchConfig): SecretFin
     for (const match of content.matchAll(tokenLikePattern)) {
       const value = match[0];
 
-      if (isGeneratedNotchId(value)) {
+      if (isGeneratedNotchToken(value)) {
         continue;
       }
 
@@ -73,6 +81,44 @@ export function assertNoSecrets(content: string, config?: NotchConfig): void {
   }
 }
 
+export async function assertNoSecretsWithAudit(
+  content: string,
+  config: NotchConfig,
+  audit: {
+    actor: Actor;
+    actorNameResolution: ActorNameResolution;
+    actorTypeResolution: ActorTypeResolution;
+    logsDir: string;
+    recordId?: string;
+    recordType: RecordType;
+    sourceTool: SourceTool;
+  },
+): Promise<void> {
+  const findings = scanForSecrets(content, config);
+
+  if (findings.length === 0) {
+    return;
+  }
+
+  const error = findingToError(findings[0]);
+
+  await appendAuditEntry(audit.logsDir, {
+    schemaVersion: '1.0.0',
+    at: new Date().toISOString(),
+    operation: 'secret-blocked',
+    result: 'blocked',
+    actor: audit.actor,
+    actorNameResolution: audit.actorNameResolution,
+    actorTypeResolution: audit.actorTypeResolution,
+    sourceTool: audit.sourceTool,
+    recordType: audit.recordType,
+    ...(audit.recordId ? { recordId: audit.recordId } : {}),
+    errorCode: error.code,
+  });
+
+  throw new NotchException(error);
+}
+
 export function findingToError(finding: SecretFinding | undefined): NotchError {
   return {
     code: 'NOTCH_SECRET_DETECTED',
@@ -87,6 +133,9 @@ function uniqueCharRatio(value: string): number {
   return new Set(value.split('')).size / value.length;
 }
 
-function isGeneratedNotchId(value: string): boolean {
-  return /^(project_brief|brief|packet)_\d{8}T\d{6}Z_[a-z0-9_]+$/.test(value);
+function isGeneratedNotchToken(value: string): boolean {
+  return (
+    /^(project_brief|brief|packet)_\d{8}T\d{6}Z_[a-z0-9_]+$/.test(value) ||
+    /^\d{8}T\d{6}Z-[a-z0-9-]+$/.test(value)
+  );
 }

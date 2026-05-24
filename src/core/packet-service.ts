@@ -5,7 +5,7 @@ import { appendAuditEntry } from './audit-service.js';
 import { assertSafeRelativePath } from './path-safety.js';
 import { createRecordMeta } from './record-factory.js';
 import { parseAndValidateRecord } from './record-parser.js';
-import { assertNoSecrets } from './secret-scan-service.js';
+import { assertNoSecretsWithAudit } from './secret-scan-service.js';
 import { rebuildIndex } from './index-service.js';
 import { atomicWriteFile, isValidScannedRecord, renderMarkdownRecord, scanMarkdownRecords, writeRecordWithCollisionHandling } from './store-service.js';
 import { toSlug } from './id-service.js';
@@ -99,7 +99,15 @@ export async function createPacket(
   const directory = sensitivity === 'private' || purpose === 'seed' ? context.paths.privateOutbox : context.paths.outbox;
   const slug = `${created.filenameBase}-to-${toSlug(input.toAgent ?? input.toPerson ?? input.toRepo ?? 'seed')}`;
 
-  assertNoSecrets(markdown, context.config);
+  await assertNoSecretsWithAudit(markdown, context.config, {
+    actor: packet.createdBy,
+    actorNameResolution: 'cli-flag',
+    actorTypeResolution: packet.createdBy.actorType === 'agent' ? 'cli-agent-flag' : 'cli-default',
+    logsDir: context.paths.logs,
+    recordId: packet.id,
+    recordType: 'packet',
+    sourceTool: packet.sourceTool,
+  });
 
   const validation = parseAndValidateRecord<NotchPacket>(markdown);
 

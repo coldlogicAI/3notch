@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 
 import { appendAuditEntry } from './audit-service.js';
 import { parseAndValidateRecord } from './record-parser.js';
+import { assertNoSecretsWithAudit } from './secret-scan-service.js';
 import { rebuildIndex } from './index-service.js';
 import { renderMarkdownRecord, writeRecordWithCollisionHandling } from './store-service.js';
 import { createDatedFilename, toSlug } from './id-service.js';
@@ -49,6 +50,15 @@ export async function importPacketFile(
   };
   const body = parsed.body ?? '';
   const rendered = renderMarkdownRecord(imported, body);
+  await assertNoSecretsWithAudit(rendered, context.config, {
+    actor: imported.createdBy,
+    actorNameResolution: 'cli-flag',
+    actorTypeResolution: imported.createdBy.actorType === 'agent' ? 'cli-agent-flag' : 'cli-default',
+    logsDir: context.paths.logs,
+    recordId: imported.id,
+    recordType: 'packet',
+    sourceTool: imported.sourceTool,
+  });
   const privateImport = options.forcePrivate || imported.sensitivity === 'private' || imported.purpose === 'seed';
   const directory = privateImport ? context.paths.privateInbox : context.paths.inbox;
   const from = toSlug(imported.origin.projectName);

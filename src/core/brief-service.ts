@@ -5,7 +5,7 @@ import { appendAuditEntry } from './audit-service.js';
 import { assertSafeRelativePath } from './path-safety.js';
 import { createRecordMeta } from './record-factory.js';
 import { parseAndValidateRecord } from './record-parser.js';
-import { assertNoSecrets } from './secret-scan-service.js';
+import { assertNoSecretsWithAudit } from './secret-scan-service.js';
 import { rebuildIndex } from './index-service.js';
 import { isValidScannedRecord, renderMarkdownRecord, scanMarkdownRecords, writeRecordWithCollisionHandling } from './store-service.js';
 import { toSlug } from './id-service.js';
@@ -97,7 +97,15 @@ export async function createTargetedBrief(
   const body = renderTargetedBriefBody(brief);
   const markdown = renderMarkdownRecord(brief, body);
 
-  assertNoSecrets(markdown, context.config);
+  await assertNoSecretsWithAudit(markdown, context.config, {
+    actor: brief.createdBy,
+    actorNameResolution: 'cli-flag',
+    actorTypeResolution: brief.createdBy.actorType === 'agent' ? 'cli-agent-flag' : 'cli-default',
+    logsDir: context.paths.logs,
+    recordId: brief.id,
+    recordType: 'brief',
+    sourceTool: brief.sourceTool,
+  });
 
   const validation = parseAndValidateRecord<NotchBrief>(markdown);
 
