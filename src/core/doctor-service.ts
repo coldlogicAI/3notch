@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { readAuditLog } from './audit-service.js';
@@ -27,7 +27,14 @@ export async function runDoctor(
   for (const dir of requiredStoreDirs) {
     const dirPath = path.join(context.storePath, dir);
     try {
-      await mkdir(dirPath, { recursive: Boolean(options.fix) });
+      if (options.fix) {
+        await mkdir(dirPath, { recursive: true });
+      } else {
+        const dirStat = await stat(dirPath);
+        if (!dirStat.isDirectory()) {
+          throw new Error(`${dirPath} is not a directory`);
+        }
+      }
       checks.push({ code: 'NOTCH_DIR_PRESENT', message: `${dir} exists`, path: dirPath, severity: 'ok' });
     } catch {
       checks.push({ code: 'NOTCH_DIR_MISSING', message: `${dir} is missing`, path: dirPath, severity: 'error' });

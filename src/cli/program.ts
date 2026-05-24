@@ -3,6 +3,7 @@ import { Command } from 'commander';
 import { VERSION } from '../core/version.js';
 import { registerBriefCommand } from './commands/brief.js';
 import { registerDoctorCommand } from './commands/doctor.js';
+import { registerMcpCommand } from './commands/mcp.js';
 import { registerOnboardCommand } from './commands/onboard.js';
 import { registerPacketCommand } from './commands/packet.js';
 import { registerSeedCommand } from './commands/seed.js';
@@ -29,10 +30,11 @@ Examples:
   $ notch --help
   $ notch --version
   $ notch onboard --yes
+  $ notch mcp serve
 
 V1 implementation note:
-  Command mcp serve is being implemented
-  from docs/3notch-v1-implementation-plan.md. Deferred surfaces like pass and send are out of scope.
+  V1 command and MCP surfaces are implemented from docs/3notch-v1-implementation-plan.md.
+  Deferred surfaces like pass and send are out of scope.
 `,
     );
 
@@ -42,6 +44,7 @@ V1 implementation note:
   registerSeedCommand(program);
   registerStatusCommand(program);
   registerDoctorCommand(program);
+  registerMcpCommand(program);
 
   return program;
 }

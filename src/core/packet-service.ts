@@ -14,21 +14,21 @@ import type { LoadedConfig } from './config-service.js';
 import type { NotchPacket, PacketPurpose, PacketRecordRef, Sensitivity, SourceLink } from '../types/records.js';
 
 export type CreatePacketInput = {
-  actor?: string;
-  agent?: string;
+  actor?: string | undefined;
+  agent?: string | undefined;
   includedRecords?: PacketRecordRef[];
-  importNotes?: string;
-  outputPath?: string;
-  purpose?: PacketPurpose;
-  sensitivity?: Sensitivity;
+  importNotes?: string | undefined;
+  outputPath?: string | undefined;
+  purpose?: PacketPurpose | undefined;
+  sensitivity?: Sensitivity | undefined;
   sourceLinks?: SourceLink[];
-  sourceTool?: NotchPacket['sourceTool']['name'];
+  sourceTool?: NotchPacket['sourceTool']['name'] | undefined;
   summary: string;
-  task?: string;
+  task?: string | undefined;
   title: string;
-  toAgent?: string;
-  toPerson?: string;
-  toRepo?: string;
+  toAgent?: string | undefined;
+  toPerson?: string | undefined;
+  toRepo?: string | undefined;
 };
 
 export async function createPacket(
@@ -144,7 +144,12 @@ export async function createPacket(
 
 export async function listPackets(
   context: LoadedConfig,
-  filters: { direction?: 'inbox' | 'outbox' | 'both'; includePrivate?: boolean; limit?: number; purpose?: PacketPurpose } = {},
+  filters: {
+    direction?: 'inbox' | 'outbox' | 'both' | undefined;
+    includePrivate?: boolean | undefined;
+    limit?: number | undefined;
+    purpose?: PacketPurpose | undefined;
+  } = {},
 ): Promise<Array<{ direction: 'inbox' | 'outbox'; packet: NotchPacket; path: string }>> {
   const records = await scanMarkdownRecords(context.storePath, {
     ...(filters.includePrivate === undefined ? {} : { includePrivate: filters.includePrivate }),

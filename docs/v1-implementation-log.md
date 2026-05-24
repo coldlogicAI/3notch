@@ -75,3 +75,13 @@ Use this file during long-running `/goal` implementation sessions. Keep entries 
 - Commit: pending.
 - Next step: Wave 6, Step 6.1 stdio MCP server foundation.
 - Blockers or decisions: None.
+
+## 2026-05-24 00:01 EDT
+
+- Goal slice: Add local MCP server, `notch mcp serve`, all V1 MCP tools, read-only enforcement, and private packet read gating.
+- Plan steps covered: Wave 6, Steps 6.1 through 6.4.
+- Files changed: `src/mcp/server.ts`, `src/mcp/errors.ts`, `src/cli/commands/mcp.ts`, `src/cli/program.ts`, `src/core/doctor-service.ts`, `src/core/brief-service.ts`, `src/core/packet-service.ts`, MCP tests for startup, brief tools, packet tools, status/doctor tools, and read-only mode.
+- Verification: `npm test -- server-start brief-tools packet-tools status-doctor-tools read-only-mode doctor-service doctor`; `npm test`; `npm run lint`; `npm run type-check`; `npm run build`; `node dist/cli/index.js --help`; `node dist/cli/index.js --version`.
+- Commit: pending.
+- Next step: Wave 7 hardening, fixtures, docs, CI, telemetry/deferred-surface guards.
+- Blockers or decisions: None.
