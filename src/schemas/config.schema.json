@@ -1,0 +1,81 @@
+{
+  "$id": "https://3notch.dev/schemas/config.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schemaVersion", "project", "store", "privacy", "defaults"],
+  "properties": {
+    "schemaVersion": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/schemaVersion" },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "root"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "root": { "type": "string", "minLength": 1 },
+        "defaultBranch": { "type": "string", "minLength": 1 }
+      }
+    },
+    "store": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "recordFormat", "index"],
+      "properties": {
+        "path": { "const": ".notch" },
+        "recordFormat": { "const": "markdown-yaml" },
+        "index": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled", "engine"],
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "engine": { "const": "file-scan" }
+          }
+        }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["telemetry", "redactPatterns", "secretScan", "highEntropySecretScan"],
+      "properties": {
+        "telemetry": { "const": false },
+        "redactPatterns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "value"],
+            "properties": {
+              "kind": { "const": "regex" },
+              "value": { "type": "string", "minLength": 1 },
+              "flags": { "type": "string" }
+            }
+          }
+        },
+        "secretScan": { "type": "boolean" },
+        "highEntropySecretScan": { "type": "boolean" }
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowedMcpWriteTools"],
+      "properties": {
+        "allowedMcpWriteTools": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "create_brief",
+              "create_packet",
+              "import_packet",
+              "create_seed_packet",
+              "import_seed_packet"
+            ]
+          },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

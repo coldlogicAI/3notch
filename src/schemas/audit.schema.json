@@ -1,0 +1,31 @@
+{
+  "$id": "https://3notch.dev/schemas/audit.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "at",
+    "operation",
+    "result",
+    "actor",
+    "actorNameResolution",
+    "actorTypeResolution",
+    "sourceTool"
+  ],
+  "properties": {
+    "schemaVersion": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/schemaVersion" },
+    "at": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/timestamp" },
+    "operation": { "enum": ["create", "import", "rebuild-index", "secret-blocked", "validation-failed"] },
+    "result": { "enum": ["success", "blocked", "failed"] },
+    "actor": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/actor" },
+    "actorNameResolution": { "enum": ["cli-flag", "git-config", "environment", "unknown", "mcp-client"] },
+    "actorTypeResolution": { "enum": ["cli-default", "cli-agent-flag", "mcp-default"] },
+    "sourceTool": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceTool" },
+    "recordType": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordType" },
+    "recordId": { "type": "string", "minLength": 1 },
+    "recordPath": { "type": "string", "minLength": 1 },
+    "importedFrom": { "type": "string", "minLength": 1 },
+    "errorCode": { "type": "string", "minLength": 1 }
+  }
+}

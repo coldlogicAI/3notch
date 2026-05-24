@@ -1,0 +1,128 @@
+{
+  "$id": "https://3notch.dev/schemas/packet.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordMeta" },
+    {
+      "if": { "properties": { "purpose": { "const": "handoff" } }, "required": ["purpose"] },
+      "then": {
+        "properties": {
+          "recipient": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": { "targetAgent": { "type": "string", "minLength": 1 } },
+                "required": ["targetAgent"]
+              },
+              {
+                "type": "object",
+                "properties": { "targetPerson": { "type": "string", "minLength": 1 } },
+                "required": ["targetPerson"]
+              },
+              {
+                "type": "object",
+                "properties": { "targetRepo": { "type": "string", "minLength": 1 } },
+                "required": ["targetRepo"]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "purpose": { "const": "seed" } }, "required": ["purpose"] },
+      "then": {
+        "properties": {
+          "sensitivity": { "const": "private" }
+        }
+      }
+    }
+  ],
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "schemaVersion",
+    "recordType",
+    "status",
+    "title",
+    "purpose",
+    "sensitivity",
+    "transferStatus",
+    "origin",
+    "recipient",
+    "summary",
+    "includedRecords",
+    "includedSourceLinks",
+    "createdAt",
+    "createdBy",
+    "sourceTool",
+    "tags",
+    "sourceLinks",
+    "reviewStatus"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "schemaVersion": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/schemaVersion" },
+    "recordType": { "const": "packet" },
+    "status": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordStatus" },
+    "title": { "type": "string", "minLength": 1 },
+    "purpose": { "enum": ["handoff", "seed"] },
+    "sensitivity": { "enum": ["project", "private"] },
+    "transferStatus": { "enum": ["draft", "outbox", "imported", "archived"] },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectName", "storePath"],
+      "properties": {
+        "projectName": { "type": "string", "minLength": 1 },
+        "storePath": { "type": "string", "minLength": 1 },
+        "repoRoot": { "type": "string", "minLength": 1 },
+        "repoRemote": { "type": "string", "minLength": 1 },
+        "commit": { "type": "string", "minLength": 1 },
+        "branch": { "type": "string", "minLength": 1 }
+      }
+    },
+    "recipient": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "targetAgent": { "type": "string", "minLength": 1 },
+        "targetPerson": { "type": "string", "minLength": 1 },
+        "targetRepo": { "type": "string", "minLength": 1 },
+        "targetStore": { "type": "string", "minLength": 1 }
+      }
+    },
+    "summary": { "type": "string", "minLength": 1 },
+    "privateContextSummary": { "type": "string", "minLength": 1 },
+    "includedRecords": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "recordType", "title", "path"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "recordType": { "enum": ["project_brief", "brief"] },
+          "title": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "summary": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "includedSourceLinks": {
+      "type": "array",
+      "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLink" }
+    },
+    "importNotes": { "type": "string", "minLength": 1 },
+    "importedFrom": { "type": "string", "minLength": 1 },
+    "importedAt": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/timestamp" },
+    "createdAt": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/timestamp" },
+    "updatedAt": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/timestamp" },
+    "createdBy": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/actor" },
+    "sourceTool": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceTool" },
+    "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags" },
+    "sourceLinks": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLinks" },
+    "reviewStatus": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/reviewStatus" }
+  }
+}

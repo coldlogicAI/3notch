@@ -1,0 +1,64 @@
+{
+  "$id": "https://3notch.dev/schemas/brief.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [{ "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordMeta" }],
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "schemaVersion",
+    "recordType",
+    "status",
+    "title",
+    "targetAgent",
+    "goal",
+    "scope",
+    "exclusions",
+    "relevantFiles",
+    "designBasis",
+    "priorReasoningSummary",
+    "constraints",
+    "recommendedNextSteps",
+    "createdAt",
+    "createdBy",
+    "sourceTool",
+    "tags",
+    "sourceLinks",
+    "reviewStatus"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "schemaVersion": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/schemaVersion" },
+    "recordType": { "const": "brief" },
+    "status": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordStatus" },
+    "title": { "type": "string", "minLength": 1 },
+    "targetAgent": { "type": "string", "minLength": 1 },
+    "goal": { "type": "string", "minLength": 1 },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["topics", "files"],
+      "properties": {
+        "topics": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "files": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "timeframe": { "type": "string", "minLength": 1 }
+      }
+    },
+    "exclusions": { "type": "array", "items": { "type": "string" } },
+    "relevantFiles": {
+      "type": "array",
+      "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLink" }
+    },
+    "designBasis": { "type": "string", "minLength": 1 },
+    "priorReasoningSummary": { "type": "string", "minLength": 1 },
+    "constraints": { "type": "array", "items": { "type": "string" } },
+    "recommendedNextSteps": { "type": "array", "items": { "type": "string" } },
+    "createdAt": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/timestamp" },
+    "updatedAt": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/timestamp" },
+    "createdBy": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/actor" },
+    "sourceTool": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceTool" },
+    "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags" },
+    "sourceLinks": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLinks" },
+    "reviewStatus": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/reviewStatus" }
+  }
+}

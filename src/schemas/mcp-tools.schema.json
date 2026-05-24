@@ -1,0 +1,182 @@
+{
+  "$id": "https://3notch.dev/schemas/mcp-tools.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "get_brief": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "includeMarkdown": { "type": "boolean" }
+      }
+    },
+    "create_brief": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "targetAgent", "goal", "scope", "exclusions", "designBasis", "priorReasoningSummary"],
+      "properties": {
+        "actorName": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "targetAgent": { "type": "string", "minLength": 1 },
+        "goal": { "type": "string", "minLength": 1 },
+        "scope": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["topics", "files"],
+          "properties": {
+            "topics": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+            "files": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+            "timeframe": { "type": "string", "minLength": 1 }
+          }
+        },
+        "exclusions": { "type": "array", "items": { "type": "string" } },
+        "relevantFiles": {
+          "type": "array",
+          "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLink" }
+        },
+        "designBasis": { "type": "string", "minLength": 1 },
+        "priorReasoningSummary": { "type": "string", "minLength": 1 },
+        "constraints": { "type": "array", "items": { "type": "string" } },
+        "recommendedNextSteps": { "type": "array", "items": { "type": "string" } },
+        "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags" }
+      }
+    },
+    "list_briefs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "targetAgent": { "type": "string", "minLength": 1 },
+        "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags" },
+        "status": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordStatus" },
+        "since": { "type": "string", "minLength": 1 },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 50 }
+      }
+    },
+    "get_targeted_brief": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "includeMarkdown": { "type": "boolean" }
+      }
+    },
+    "create_packet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "summary"],
+      "properties": {
+        "actorName": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "purpose": { "enum": ["handoff", "seed"] },
+        "sensitivity": { "enum": ["project", "private"] },
+        "toAgent": { "type": "string", "minLength": 1 },
+        "toPerson": { "type": "string", "minLength": 1 },
+        "toRepo": { "type": "string", "minLength": 1 },
+        "task": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string", "minLength": 1 },
+        "include": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "recordType", "title", "path"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "recordType": { "enum": ["project_brief", "brief"] },
+              "title": { "type": "string", "minLength": 1 },
+              "path": { "type": "string", "minLength": 1 },
+              "summary": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "sourceLinks": {
+          "type": "array",
+          "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLink" }
+        },
+        "importNotes": { "type": "string", "minLength": 1 },
+        "outputPath": { "type": "string", "minLength": 1 }
+      }
+    },
+    "import_packet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["packetPath"],
+      "properties": {
+        "actorName": { "type": "string", "minLength": 1 },
+        "packetPath": { "type": "string", "minLength": 1 },
+        "asReviewed": { "type": "boolean" }
+      }
+    },
+    "list_packets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "direction": { "enum": ["inbox", "outbox", "both"] },
+        "includePrivate": { "type": "boolean" },
+        "purpose": { "enum": ["handoff", "seed"] },
+        "to": { "type": "string", "minLength": 1 },
+        "fromProject": { "type": "string", "minLength": 1 },
+        "since": { "type": "string", "minLength": 1 },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 50 }
+      }
+    },
+    "get_packet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "direction": { "enum": ["inbox", "outbox", "both"] },
+        "includePrivate": { "type": "boolean" },
+        "includeMarkdown": { "type": "boolean" }
+      }
+    },
+    "create_seed_packet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "summary"],
+      "properties": {
+        "actorName": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "sourceStorePath": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string", "minLength": 1 },
+        "userPreferences": { "type": "array", "items": { "type": "string" } },
+        "workflowConventions": { "type": "array", "items": { "type": "string" } },
+        "lessons": { "type": "array", "items": { "type": "string" } },
+        "prompts": { "type": "array", "items": { "type": "string" } },
+        "sourceLinks": {
+          "type": "array",
+          "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLink" }
+        },
+        "outputPath": { "type": "string", "minLength": 1 }
+      }
+    },
+    "import_seed_packet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["packetPath"],
+      "properties": {
+        "actorName": { "type": "string", "minLength": 1 },
+        "packetPath": { "type": "string", "minLength": 1 },
+        "asReviewed": { "type": "boolean" }
+      }
+    },
+    "get_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "includeWarnings": { "type": "boolean" }
+      }
+    },
+    "run_doctor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "strict": { "type": "boolean" },
+        "fixDerivedState": { "type": "boolean" }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false
+}

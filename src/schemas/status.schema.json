@@ -1,0 +1,58 @@
+{
+  "$id": "https://3notch.dev/schemas/status.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "generatedAt", "projectName", "storePath", "counts", "recentInboxPackets", "openBriefs", "warnings"],
+  "properties": {
+    "schemaVersion": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/schemaVersion" },
+    "generatedAt": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/timestamp" },
+    "projectName": { "type": "string", "minLength": 1 },
+    "storePath": { "type": "string", "minLength": 1 },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["targetedBriefs", "inboxPackets", "outboxPackets", "privateSeedPackets", "validationIssues"],
+      "properties": {
+        "targetedBriefs": { "type": "integer", "minimum": 0 },
+        "inboxPackets": { "type": "integer", "minimum": 0 },
+        "outboxPackets": { "type": "integer", "minimum": 0 },
+        "privateSeedPackets": { "type": "integer", "minimum": 0 },
+        "validationIssues": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "recentInboxPackets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "summary"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "originProject": { "type": "string", "minLength": 1 },
+          "importedAt": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/timestamp" },
+          "summary": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "openBriefs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "targetAgent", "tags"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "targetAgent": { "type": "string", "minLength": 1 },
+          "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags" }
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/notchError" }
+    }
+  }
+}
