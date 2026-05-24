@@ -5,7 +5,7 @@ import { printInfo, printJson } from '../output.js';
 import { loadConfig } from '../../core/config-service.js';
 import { createPacket, getPacket, listPackets } from '../../core/packet-service.js';
 import { scanForSecrets, type SecretFinding } from '../../core/secret-scan-service.js';
-import { importPacketFile } from '../../core/transfer-service.js';
+import { importPacketFile, importPacketMarkdown } from '../../core/transfer-service.js';
 import type { PacketPurpose, Sensitivity, SourceLink } from '../../types/records.js';
 
 type CreatePacketOptions = {
@@ -105,13 +105,16 @@ export function registerPacketCommand(program: Command): void {
         ...(options.into ? { cwd: options.into } : context.cwd ? { cwd: context.cwd } : {}),
         ...(context.store ? { store: context.store } : {}),
       });
-      const result = await importPacketFile(loaded, file, {
+      const importOptions = {
         ...(context.actor ? { actor: context.actor } : {}),
         ...(context.agent ? { agent: context.agent } : {}),
         ...(options.asReviewed ? { asReviewed: true } : {}),
         ...(options.private ? { forcePrivate: true } : {}),
         ...(context.sourceTool ? { sourceTool: context.sourceTool } : {}),
-      });
+      };
+      const result = file === '-'
+        ? await importPacketMarkdown(loaded, await readStdin(), 'stdin', importOptions)
+        : await importPacketFile(loaded, file, importOptions);
 
       if (context.output.json) {
         printJson(result);
@@ -241,4 +244,14 @@ function renderPacketPreview(markdown: string, scannerFindings: SecretFinding[])
     '',
     markdown,
   ].join('\n');
+}
+
+async function readStdin(): Promise<string> {
+  const chunks: Buffer[] = [];
+
+  for await (const chunk of process.stdin) {
+    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+  }
+
+  return Buffer.concat(chunks).toString('utf8');
 }

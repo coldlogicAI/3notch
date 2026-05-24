@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { runCli } from '../helpers/run-cli.js';
 
 const clients = ['claude-code', 'claude-desktop', 'codex', 'cursor'];
-const v1Tools = [
+const v2Tools = [
   'get_brief',
   'create_brief',
   'list_briefs',
@@ -14,10 +14,13 @@ const v1Tools = [
   'get_packet',
   'create_seed_packet',
   'import_seed_packet',
+  'create_mark',
+  'create_reply',
+  'check_store',
   'get_status',
   'run_doctor',
 ];
-const deferredSurface = ['pass', 'send', 'decision', 'question', 'conflict', 'stale'];
+const deferredSurface = ['pass', 'send', 'conflict', 'stale'];
 
 describe('notch prompt', () => {
   it.each(clients)('prints agent instructions for %s', async (client) => {
@@ -27,7 +30,7 @@ describe('notch prompt', () => {
     expect(result.stderr).toBe('');
     expect(result.stdout).toContain('3Notch Agent Instructions');
 
-    for (const tool of v1Tools) {
+    for (const tool of v2Tools) {
       expect(result.stdout).toContain(tool);
     }
 
@@ -42,7 +45,19 @@ describe('notch prompt', () => {
     expect(result.exitCode).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({
       client: 'claude-code',
-      tools: v1Tools,
+      tools: v2Tools,
     });
+  });
+
+  it('prints a web-chat packet bridge prompt for claude-chat', async () => {
+    const result = await runCli(['prompt', '--client', 'claude-chat']);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('3Notch Claude Chat Packet Bridge');
+    expect(result.stdout).toContain('YAML frontmatter');
+    expect(result.stdout).toContain('purpose: seed');
+    expect(result.stdout).toContain('pbpaste | notch packet import -');
+    expect(result.stdout).toContain('xclip -selection clipboard -o | notch packet import -');
+    expect(result.stdout).toContain('Get-Clipboard | notch packet import -');
   });
 });

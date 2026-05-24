@@ -16,7 +16,10 @@ describe('notch doctor', () => {
       expect(result.exitCode).toBe(0);
       expect(JSON.parse(result.stdout)).toMatchObject({
         healthy: true,
-        checks: expect.arrayContaining([expect.objectContaining({ code: 'NOTCH_INDEX_REBUILT' })]),
+        checks: expect.arrayContaining([
+          expect.objectContaining({ code: 'NOTCH_INDEX_REBUILT' }),
+          expect.objectContaining({ code: 'NOTCH_CHECK_SUMMARY' }),
+        ]),
       });
     });
   });

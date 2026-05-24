@@ -107,6 +107,43 @@
         "asReviewed": { "type": "boolean" }
       }
     },
+    "create_mark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary"],
+      "properties": {
+        "actorName": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string", "minLength": 1 },
+        "supersedes": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordId" },
+        "sourceLinks": {
+          "type": "array",
+          "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLink" }
+        },
+        "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags" }
+      }
+    },
+    "create_reply": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parentId", "replyType", "summary"],
+      "properties": {
+        "actorName": { "type": "string", "minLength": 1 },
+        "parentId": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordId" },
+        "replyType": { "enum": ["question", "clarification", "counter-decision", "objection", "confirmation"] },
+        "summary": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "toAgent": { "type": "string", "minLength": 1 },
+        "toPerson": { "type": "string", "minLength": 1 },
+        "toRepo": { "type": "string", "minLength": 1 },
+        "private": { "type": "boolean" },
+        "sourceLinks": {
+          "type": "array",
+          "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLink" }
+        },
+        "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags" }
+      }
+    },
     "list_packets": {
       "type": "object",
       "additionalProperties": false,
@@ -167,6 +204,11 @@
       "properties": {
         "includeWarnings": { "type": "boolean" }
       }
+    },
+    "check_store": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
     },
     "run_doctor": {
       "type": "object",

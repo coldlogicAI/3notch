@@ -2,6 +2,7 @@ import type { Command } from 'commander';
 
 import { getCliContext } from '../context.js';
 import { printInfo, printJson } from '../output.js';
+import { claudeChatPromptClient } from '../prompts/claude-chat.js';
 import { claudeCodePromptClient } from '../prompts/claude-code.js';
 import { claudeDesktopPromptClient } from '../prompts/claude-desktop.js';
 import { codexPromptClient } from '../prompts/codex.js';
@@ -14,6 +15,7 @@ type PromptOptions = {
 };
 
 const promptClients = new Map<PromptClientId, PromptClient>([
+  [claudeChatPromptClient.id, claudeChatPromptClient],
   [claudeCodePromptClient.id, claudeCodePromptClient],
   [claudeDesktopPromptClient.id, claudeDesktopPromptClient],
   [codexPromptClient.id, codexPromptClient],
@@ -24,7 +26,7 @@ export function registerPromptCommand(program: Command): void {
   program
     .command('prompt')
     .description('print paste-ready agent instructions for a client')
-    .requiredOption('--client <client>', 'client: claude-code, claude-desktop, codex, or cursor')
+    .requiredOption('--client <client>', 'client: claude-chat, claude-code, claude-desktop, codex, or cursor')
     .action((options: PromptOptions, command: Command) => {
       const context = getCliContext(command);
       const client = resolvePromptClient(options.client);

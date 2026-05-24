@@ -45,6 +45,8 @@ export async function createBareStore(
             'create_brief',
             'create_packet',
             'import_packet',
+            'create_mark',
+            'create_reply',
             'create_seed_packet',
             'import_seed_packet',
           ],

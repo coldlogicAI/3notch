@@ -2,6 +2,7 @@ import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { readAuditLog } from './audit-service.js';
+import { checkStore } from './check-service.js';
 import { assertNoSymlinksInside } from './path-safety.js';
 import { scanForSecrets } from './secret-scan-service.js';
 import { rebuildIndex } from './index-service.js';
@@ -176,6 +177,13 @@ export async function runDoctor(
     await rebuildIndex(context.storePath);
     checks.push({ code: 'NOTCH_INDEX_REBUILT', message: 'Derived index rebuilt', severity: 'ok' });
   }
+
+  const check = await checkStore(context);
+  checks.push({
+    code: 'NOTCH_CHECK_SUMMARY',
+    message: `3notch check: ${check.summary.errors} errors, ${check.summary.warnings} warnings - run "notch check" for details`,
+    severity: check.summary.errors > 0 || check.summary.warnings > 0 ? 'warn' : 'ok',
+  });
 
   return {
     checks,

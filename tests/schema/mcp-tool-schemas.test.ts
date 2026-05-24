@@ -9,7 +9,10 @@ const expectedTools = [
   'create_brief',
   'list_briefs',
   'get_targeted_brief',
+  'check_store',
+  'create_mark',
   'create_packet',
+  'create_reply',
   'import_packet',
   'list_packets',
   'get_packet',
@@ -20,7 +23,7 @@ const expectedTools = [
 ];
 
 describe('MCP tool input schemas', () => {
-  it('exports only the V1 MCP tools', () => {
+  it('exports only the shipped MCP tools', () => {
     expect(Object.keys(mcpToolInputSchemas).sort()).toEqual([...expectedTools].sort());
     expect(Object.keys(mcpToolInputSchemas)).not.toContain('create_pass');
     expect(Object.keys(mcpToolInputSchemas)).not.toContain('record_decision');

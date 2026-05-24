@@ -100,4 +100,67 @@ describe('notch packet', () => {
       expect(warned.stdout).toContain('scanner warning');
     });
   });
+
+  it('imports packet markdown from stdin', async () => {
+    await withTempProject({ prefix: 'notch-source-' }, async (source) => {
+      await withTempProject({ prefix: 'notch-dest-' }, async (destination) => {
+        await runCli(['onboard', '--yes', '--name', 'stdin-source'], { cwd: source.path });
+        await runCli(['onboard', '--yes', '--name', 'stdin-destination'], { cwd: destination.path });
+        const create = await runCli([
+          '--json',
+          'packet',
+          'create',
+          '--title',
+          'Clipboard packet',
+          '--summary',
+          'Context copied out of a web chat.',
+          '--to-agent',
+          'codex',
+        ], { cwd: source.path });
+        const created = JSON.parse(create.stdout) as { outboxPath: string; packet: { id: string } };
+        const markdown = await readFile(created.outboxPath, 'utf8');
+        const imported = await runCli(['--json', 'packet', 'import', '-'], {
+          cwd: destination.path,
+          input: markdown,
+        });
+        const importedData = JSON.parse(imported.stdout) as { inboxPath: string; packet: { id: string; importedFrom: string } };
+
+        expect(imported.exitCode).toBe(0);
+        expect(importedData.inboxPath).toContain(path.join('.notch', 'inbox'));
+        expect(importedData.packet.id).toBe(created.packet.id);
+        expect(importedData.packet.importedFrom).toBe('stdin');
+      });
+    });
+  });
+
+  it('runs the secret scanner against stdin imports', async () => {
+    await withTempProject({ prefix: 'notch-source-' }, async (source) => {
+      await withTempProject({ prefix: 'notch-dest-' }, async (destination) => {
+        await runCli(['onboard', '--yes', '--name', 'scanner-source'], { cwd: source.path });
+        await runCli(['onboard', '--yes', '--name', 'scanner-destination'], { cwd: destination.path });
+        const create = await runCli([
+          '--json',
+          'packet',
+          'create',
+          '--title',
+          'Scanner packet',
+          '--summary',
+          'Context copied out of a web chat.',
+          '--to-agent',
+          'codex',
+        ], { cwd: source.path });
+        const created = JSON.parse(create.stdout) as { outboxPath: string };
+        const markdown = `${await readFile(created.outboxPath, 'utf8')}\napi_key=abc123\n`;
+        const imported = await runCli(['--json', 'packet', 'import', '-'], {
+          cwd: destination.path,
+          input: markdown,
+        });
+
+        expect(imported.exitCode).toBe(5);
+        expect(JSON.parse(imported.stderr)).toMatchObject({
+          error: { code: 'NOTCH_SECRET_DETECTED' },
+        });
+      });
+    });
+  });
 });

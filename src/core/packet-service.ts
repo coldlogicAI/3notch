@@ -7,7 +7,7 @@ import { createRecordMeta } from './record-factory.js';
 import { parseAndValidateRecord } from './record-parser.js';
 import { assertNoSecretsWithAudit } from './secret-scan-service.js';
 import { rebuildIndex } from './index-service.js';
-import { atomicWriteFile, isValidScannedRecord, renderMarkdownRecord, scanMarkdownRecords, writeRecordWithCollisionHandling } from './store-service.js';
+import { atomicWriteFile, isValidScannedRecord, renderMarkdownRecord, scanMarkdownRecords, writeRecordWithCollisionHandling, type ValidScannedRecord } from './store-service.js';
 import { toSlug } from './id-service.js';
 import { NotchException, type NotchError } from '../types/errors.js';
 import type { LoadedConfig } from './config-service.js';
@@ -34,6 +34,36 @@ export type CreatePacketInput = {
   tags?: string[] | undefined;
   task?: string | undefined;
   title: string;
+  toAgent?: string | undefined;
+  toPerson?: string | undefined;
+  toRepo?: string | undefined;
+};
+
+export type CreateMarkInput = {
+  actor?: string | undefined;
+  agent?: string | undefined;
+  mcp?: boolean | undefined;
+  sourceLinks?: SourceLink[];
+  sourceTool?: NotchPacket['sourceTool']['name'] | undefined;
+  summary: string;
+  supersedes?: string | undefined;
+  tags?: string[] | undefined;
+  title?: string | undefined;
+};
+
+export type CreateReplyInput = {
+  actor?: string | undefined;
+  agent?: string | undefined;
+  mcp?: boolean | undefined;
+  parentId: string;
+  private?: boolean | undefined;
+  replyStatus?: ReplyStatus | undefined;
+  replyType: ReplyType;
+  sourceLinks?: SourceLink[];
+  sourceTool?: NotchPacket['sourceTool']['name'] | undefined;
+  summary: string;
+  tags?: string[] | undefined;
+  title?: string | undefined;
   toAgent?: string | undefined;
   toPerson?: string | undefined;
   toRepo?: string | undefined;
@@ -184,6 +214,69 @@ export async function createPacket(
   };
 }
 
+export async function createMark(
+  context: LoadedConfig,
+  input: CreateMarkInput,
+): Promise<{ packet: NotchPacket; path: string; warnings: NotchError[] }> {
+  const result = await createPacket(context, {
+    ...(input.actor ? { actor: input.actor } : {}),
+    ...(input.agent ? { agent: input.agent } : {}),
+    destination: 'private-inbox',
+    importNotes: 'Self-addressed permanent capture.',
+    ...(input.mcp ? { mcp: true } : {}),
+    purpose: 'seed',
+    requireRecipient: false,
+    sensitivity: 'private',
+    sourceLinks: input.sourceLinks ?? [],
+    ...(input.sourceTool ? { sourceTool: input.sourceTool } : {}),
+    summary: input.summary,
+    ...(input.supersedes ? { supersedes: input.supersedes } : {}),
+    tags: input.tags ?? [],
+    title: input.title ?? titleFromSummary(input.summary),
+  });
+
+  return { packet: result.packet, path: result.outboxPath, warnings: result.warnings };
+}
+
+export async function createReply(
+  context: LoadedConfig,
+  input: CreateReplyInput,
+): Promise<{ packet: NotchPacket; path: string; warnings: NotchError[] }> {
+  const parent = await findRecordById(context, input.parentId);
+  const parentPacket = parent.record.metadata.recordType === 'packet'
+    ? parent.record.metadata as NotchPacket
+    : undefined;
+  const parentIsOutbox = isOutboxPath(parent.relativePath);
+  const destination = parentIsOutbox ? 'outbox' : 'private-inbox';
+  const toAgent = input.toAgent ?? parentPacket?.recipient.targetAgent;
+  const toPerson = input.toPerson ?? parentPacket?.recipient.targetPerson;
+  const toRepo = input.toRepo ?? parentPacket?.recipient.targetRepo;
+  const privateReply = input.private || destination === 'private-inbox';
+  const result = await createPacket(context, {
+    ...(input.actor ? { actor: input.actor } : {}),
+    ...(input.agent ? { agent: input.agent } : {}),
+    destination,
+    importNotes: `Reply to ${input.parentId}.`,
+    ...(input.mcp ? { mcp: true } : {}),
+    purpose: destination === 'private-inbox' ? 'seed' : 'handoff',
+    replyStatus: input.replyStatus ?? 'open',
+    replyTo: input.parentId,
+    replyType: input.replyType,
+    requireRecipient: destination === 'outbox',
+    sensitivity: privateReply ? 'private' : parentPacket?.sensitivity ?? 'project',
+    sourceLinks: input.sourceLinks ?? [],
+    ...(input.sourceTool ? { sourceTool: input.sourceTool } : {}),
+    summary: input.summary,
+    tags: input.tags ?? [],
+    title: input.title ?? `Reply to ${parentTitle(parent.record.metadata)}`,
+    ...(toAgent ? { toAgent } : {}),
+    ...(toPerson ? { toPerson } : {}),
+    ...(toRepo ? { toRepo } : {}),
+  });
+
+  return { packet: result.packet, path: result.outboxPath, warnings: result.warnings };
+}
+
 export async function listPackets(
   context: LoadedConfig,
   filters: {
@@ -317,4 +410,64 @@ function invalidRecordError(message: string): NotchError {
     severity: 'error',
     exitCode: 1,
   };
+}
+
+function titleFromSummary(summary: string): string {
+  const firstLine = summary
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find(Boolean);
+
+  return (firstLine ?? 'Untitled mark').slice(0, 80);
+}
+
+async function findRecordById(context: LoadedConfig, id: string): Promise<ValidScannedRecord> {
+  const records = await scanMarkdownRecords(context.storePath, { includePrivate: true });
+  const matches = records
+    .filter(isValidScannedRecord)
+    .filter((record) => record.record.metadata.id === id);
+
+  if (matches.length === 0) {
+    throw new NotchException({
+      code: 'NOTCH_RECORD_NOT_FOUND',
+      message: `No record matched ${id}.`,
+      recovery: 'Run notch packet list or notch brief list to find record IDs.',
+      severity: 'error',
+      exitCode: 1,
+    });
+  }
+
+  if (matches.length > 1) {
+    throw new NotchException({
+      code: 'NOTCH_RECORD_ID_AMBIGUOUS',
+      message: `More than one record matched ${id}.`,
+      recovery: 'Reply to a record ID that is unique in this store.',
+      severity: 'error',
+      exitCode: 1,
+    });
+  }
+
+  const match = matches[0];
+
+  if (!match) {
+    throw new NotchException(invalidRecordError('Record lookup failed.'));
+  }
+
+  return match;
+}
+
+function isOutboxPath(relativePath: string): boolean {
+  return relativePath.startsWith('outbox/') || relativePath.startsWith('private/outbox/');
+}
+
+function parentTitle(metadata: Record<string, unknown>): string {
+  if (typeof metadata.title === 'string') {
+    return metadata.title.slice(0, 80);
+  }
+
+  if (typeof metadata.projectName === 'string') {
+    return metadata.projectName.slice(0, 80);
+  }
+
+  return String(metadata.id ?? 'record').slice(0, 80);
 }

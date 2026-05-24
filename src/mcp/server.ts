@@ -6,9 +6,10 @@ import { CallToolRequestSchema, ListToolsRequestSchema, type CallToolResult } fr
 import { Ajv2020 } from 'ajv/dist/2020.js';
 
 import { createTargetedBrief, getProjectBrief, getTargetedBrief, listTargetedBriefs } from '../core/brief-service.js';
+import { checkStore } from '../core/check-service.js';
 import { loadConfig } from '../core/config-service.js';
 import { runDoctor } from '../core/doctor-service.js';
-import { createPacket, getPacket, listPackets } from '../core/packet-service.js';
+import { createMark, createPacket, createReply, getPacket, listPackets } from '../core/packet-service.js';
 import { createSeedPacket, importSeedPacket } from '../core/seed-service.js';
 import { getStatus } from '../core/status-service.js';
 import { importPacketFile } from '../core/transfer-service.js';
@@ -18,7 +19,7 @@ import { getMcpToolInputSchema, mcpToolInputSchemas } from './tool-schemas.js';
 import { assertMcpWritable, mcpErrorResult } from './errors.js';
 import { NotchException } from '../types/errors.js';
 import type { LoadedConfig } from '../core/config-service.js';
-import type { PacketPurpose, Sensitivity, SourceLink } from '../types/records.js';
+import type { PacketPurpose, ReplyType, Sensitivity, SourceLink } from '../types/records.js';
 
 export type NotchMcpServerOptions = {
   cwd?: string;
@@ -40,12 +41,15 @@ const toolDefinitions: ToolDefinition[] = [
   { name: 'list_briefs', description: 'List targeted briefs.', readOnly: true },
   { name: 'get_targeted_brief', description: 'Read a targeted brief by ID or slug.', readOnly: true },
   { name: 'create_packet', description: 'Create a packet from explicitly supplied context.', readOnly: false },
+  { name: 'create_mark', description: 'Create a self-addressed private packet from explicit input.', readOnly: false },
+  { name: 'create_reply', description: 'Create a typed packet reply to an existing record.', readOnly: false },
   { name: 'import_packet', description: 'Import an explicit packet file into the current store.', readOnly: false },
   { name: 'list_packets', description: 'List inbox and outbox packets.', readOnly: true },
   { name: 'get_packet', description: 'Read a packet by ID or slug.', readOnly: true },
   { name: 'create_seed_packet', description: 'Create a private seed packet from explicit input.', readOnly: false },
   { name: 'import_seed_packet', description: 'Import an explicit private seed packet file.', readOnly: false },
   { name: 'get_status', description: 'Return 3Notch project status.', readOnly: true },
+  { name: 'check_store', description: 'Return deterministic corpus integrity findings.', readOnly: true },
   { name: 'run_doctor', description: 'Run 3Notch store diagnostics.', readOnly: true },
 ];
 
@@ -191,6 +195,35 @@ async function executeTool(
         ...(stringArg(args.toRepo) ? { toRepo: stringArg(args.toRepo) } : {}),
       }) as unknown as Record<string, unknown>;
     }
+    case 'create_mark': {
+      return await createMark(context, {
+        agent: mcpActorName(args, options),
+        mcp: true,
+        sourceLinks: arrayArg<SourceLink>(args.sourceLinks),
+        sourceTool: 'notch-mcp',
+        summary: requiredString(args.summary, 'summary'),
+        ...(stringArg(args.supersedes) ? { supersedes: stringArg(args.supersedes) } : {}),
+        tags: stringArray(args.tags),
+        ...(stringArg(args.title) ? { title: stringArg(args.title) } : {}),
+      }) as unknown as Record<string, unknown>;
+    }
+    case 'create_reply': {
+      return await createReply(context, {
+        agent: mcpActorName(args, options),
+        mcp: true,
+        parentId: requiredString(args.parentId, 'parentId'),
+        private: Boolean(args.private),
+        replyType: requiredString(args.replyType, 'replyType') as ReplyType,
+        sourceLinks: arrayArg<SourceLink>(args.sourceLinks),
+        sourceTool: 'notch-mcp',
+        summary: requiredString(args.summary, 'summary'),
+        tags: stringArray(args.tags),
+        ...(stringArg(args.title) ? { title: stringArg(args.title) } : {}),
+        ...(stringArg(args.toAgent) ? { toAgent: stringArg(args.toAgent) } : {}),
+        ...(stringArg(args.toPerson) ? { toPerson: stringArg(args.toPerson) } : {}),
+        ...(stringArg(args.toRepo) ? { toRepo: stringArg(args.toRepo) } : {}),
+      }) as unknown as Record<string, unknown>;
+    }
     case 'import_packet': {
       return await importPacketFile(context, await assertSafeMcpPacketPath(requiredString(args.packetPath, 'packetPath')), {
         actor: mcpActorName(args, options),
@@ -245,6 +278,9 @@ async function executeTool(
     }
     case 'get_status': {
       return await getStatus(context) as unknown as Record<string, unknown>;
+    }
+    case 'check_store': {
+      return await checkStore(context, { includePrivate: Boolean(options.includePrivate) }) as unknown as Record<string, unknown>;
     }
     case 'run_doctor': {
       return await runDoctor(context, {

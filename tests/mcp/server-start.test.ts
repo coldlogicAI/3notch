@@ -10,7 +10,7 @@ import { withTempProject } from '../helpers/temp-project.js';
 const fixturesDir = path.resolve(import.meta.dirname, '../fixtures');
 
 describe('MCP server foundation', () => {
-  it('initializes and lists exactly the V1 tools', async () => {
+  it('initializes and lists exactly the shipped tools', async () => {
     await withTempProject({}, async (project) => {
       const storePath = await createBareStore(project.path, { name: 'mcp-app' });
       await writeFile(
@@ -24,8 +24,11 @@ describe('MCP server foundation', () => {
       try {
         const tools = await harness.listTools();
         expect(tools.sort()).toEqual([
+          'check_store',
           'create_brief',
+          'create_mark',
           'create_packet',
+          'create_reply',
           'create_seed_packet',
           'get_brief',
           'get_packet',
