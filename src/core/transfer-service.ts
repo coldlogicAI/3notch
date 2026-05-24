@@ -3,18 +3,27 @@ import { readFile } from 'node:fs/promises';
 
 import { appendAuditEntry } from './audit-service.js';
 import { parseAndValidateRecord } from './record-parser.js';
+import { resolveActor } from './actor-service.js';
 import { assertNoSecretsWithAudit } from './secret-scan-service.js';
 import { rebuildIndex } from './index-service.js';
 import { renderMarkdownRecord, writeRecordWithCollisionHandling } from './store-service.js';
 import { createDatedFilename, toSlug } from './id-service.js';
 import { NotchException } from '../types/errors.js';
 import type { LoadedConfig } from './config-service.js';
-import type { NotchPacket } from '../types/records.js';
+import type { NotchPacket, SourceTool } from '../types/records.js';
 
 export async function importPacketFile(
   context: LoadedConfig,
   packetPath: string,
-  options: { asReviewed?: boolean; forcePrivate?: boolean; seedOnly?: boolean } = {},
+  options: {
+    actor?: string;
+    agent?: string;
+    asReviewed?: boolean;
+    forcePrivate?: boolean;
+    mcp?: boolean;
+    seedOnly?: boolean;
+    sourceTool?: SourceTool['name'];
+  } = {},
 ): Promise<{ inboxPath: string; packet: NotchPacket }> {
   const markdown = await readFile(packetPath, 'utf8');
   const parsed = parseAndValidateRecord<NotchPacket>(markdown, packetPath);
@@ -50,14 +59,21 @@ export async function importPacketFile(
   };
   const body = parsed.body ?? '';
   const rendered = renderMarkdownRecord(imported, body);
+  const importer = resolveActor({
+    ...(options.actor ? { actor: options.actor } : {}),
+    ...(options.agent ? { agent: options.agent } : {}),
+    cwd: context.projectRoot,
+    ...(options.mcp ? { mcp: true } : {}),
+    ...(options.sourceTool ? { sourceTool: options.sourceTool } : {}),
+  });
   await assertNoSecretsWithAudit(rendered, context.config, {
-    actor: imported.createdBy,
-    actorNameResolution: 'cli-flag',
-    actorTypeResolution: imported.createdBy.actorType === 'agent' ? 'cli-agent-flag' : 'cli-default',
+    actor: importer.actor,
+    actorNameResolution: importer.actorNameResolution,
+    actorTypeResolution: importer.actorTypeResolution,
     logsDir: context.paths.logs,
     recordId: imported.id,
     recordType: 'packet',
-    sourceTool: imported.sourceTool,
+    sourceTool: importer.sourceTool,
   });
   const privateImport = options.forcePrivate || imported.sensitivity === 'private' || imported.purpose === 'seed';
   const directory = privateImport ? context.paths.privateInbox : context.paths.inbox;
@@ -76,10 +92,10 @@ export async function importPacketFile(
     at: new Date().toISOString(),
     operation: 'import',
     result: 'success',
-    actor: imported.createdBy,
-    actorNameResolution: 'cli-flag',
-    actorTypeResolution: imported.createdBy.actorType === 'agent' ? 'cli-agent-flag' : 'cli-default',
-    sourceTool: imported.sourceTool,
+    actor: importer.actor,
+    actorNameResolution: importer.actorNameResolution,
+    actorTypeResolution: importer.actorTypeResolution,
+    sourceTool: importer.sourceTool,
     recordType: 'packet',
     recordId: imported.id,
     recordPath: written.relativePath,

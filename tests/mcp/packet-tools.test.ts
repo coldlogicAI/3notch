@@ -1,3 +1,5 @@
+import { symlink, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { createNotchMcpServer } from '../../src/mcp/server.js';
@@ -72,6 +74,75 @@ describe('MCP packet tools', () => {
         });
       } finally {
         await reader.close();
+      }
+    });
+  });
+
+  it('rejects MCP packet output paths outside the project root', async () => {
+    await withTempProject({}, async (project) => {
+      await createBareStore(project.path, { name: 'mcp-output-guard' });
+      const harness = await createMcpHarness(createNotchMcpServer({ cwd: project.path }));
+
+      try {
+        await expect(harness.callTool('create_packet', {
+          outputPath: '../escape.md',
+          summary: 'Reject escaping output path.',
+          title: 'Escaping packet',
+          toAgent: 'codex',
+        })).resolves.toMatchObject({
+          isError: true,
+          structuredContent: { error: { code: 'NOTCH_PATH_OUTSIDE_PROJECT' } },
+        });
+        await expect(harness.callTool('create_seed_packet', {
+          outputPath: path.join(project.path, '../seed-escape.md'),
+          summary: 'Reject escaping seed output path.',
+          title: 'Escaping seed packet',
+        })).resolves.toMatchObject({
+          isError: true,
+          structuredContent: { error: { code: 'NOTCH_PATH_OUTSIDE_PROJECT' } },
+        });
+      } finally {
+        await harness.close();
+      }
+    });
+  });
+
+  it('rejects relative MCP import paths', async () => {
+    await withTempProject({}, async (project) => {
+      await createBareStore(project.path, { name: 'mcp-import-guard' });
+      const harness = await createMcpHarness(createNotchMcpServer({ cwd: project.path }));
+
+      try {
+        await expect(harness.callTool('import_packet', { packetPath: '../packet.md' })).resolves.toMatchObject({
+          isError: true,
+          structuredContent: { error: { code: 'NOTCH_MCP_PACKET_PATH_INVALID' } },
+        });
+        await expect(harness.callTool('import_seed_packet', { packetPath: '../seed.md' })).resolves.toMatchObject({
+          isError: true,
+          structuredContent: { error: { code: 'NOTCH_MCP_PACKET_PATH_INVALID' } },
+        });
+      } finally {
+        await harness.close();
+      }
+    });
+  });
+
+  it.skipIf(process.platform === 'win32')('rejects MCP import symlinks', async () => {
+    await withTempProject({}, async (project) => {
+      await createBareStore(project.path, { name: 'mcp-symlink-guard' });
+      const packetPath = path.join(project.path, 'packet.md');
+      const linkPath = path.join(project.path, 'packet-link.md');
+      await writeFile(packetPath, 'not a packet', 'utf8');
+      await symlink(packetPath, linkPath);
+      const harness = await createMcpHarness(createNotchMcpServer({ cwd: project.path }));
+
+      try {
+        await expect(harness.callTool('import_packet', { packetPath: linkPath })).resolves.toMatchObject({
+          isError: true,
+          structuredContent: { error: { code: 'NOTCH_SYMLINK_REJECTED' } },
+        });
+      } finally {
+        await harness.close();
       }
     });
   });

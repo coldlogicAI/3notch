@@ -56,6 +56,33 @@ describe('notch path traversal guard', () => {
     });
   });
 
+  it('rejects packet output paths outside the project root', async () => {
+    await withTempProject({}, async (project) => {
+      await runCli(['onboard', '--yes', '--name', 'output-guard'], { cwd: project.path });
+
+      for (const outputPath of ['../escape.md', path.join(project.path, '../abs-escape.md')]) {
+        const result = await runCli([
+          '--json',
+          'packet',
+          'create',
+          '--title',
+          'Escaping packet',
+          '--summary',
+          'Reject escaping output path.',
+          '--to-agent',
+          'codex',
+          '--out',
+          outputPath,
+        ], { cwd: project.path });
+
+        expect(result.exitCode).toBe(5);
+        expect(JSON.parse(result.stderr)).toMatchObject({
+          error: { code: 'NOTCH_PATH_OUTSIDE_PROJECT' },
+        });
+      }
+    });
+  });
+
   it.skipIf(process.platform === 'win32')('reports symlinks inside .notch during doctor', async () => {
     await withTempProject({}, async (project) => {
       await runCli(['onboard', '--yes', '--name', 'symlink-guard'], { cwd: project.path });

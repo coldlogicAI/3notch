@@ -40,13 +40,15 @@ node dist/cli/index.js --cwd "$WORKDIR/new-project" onboard --yes --name new-pro
 node dist/cli/index.js --cwd "$WORKDIR/source-app" brief create --title "Marketing context" --to claude --goal "Draft launch copy from shipped repo state" --topic launch
 PACKET="$(node dist/cli/index.js --cwd "$WORKDIR/source-app" --json packet create --title "Current repo state" --summary "Checkout and admin settings changed." --to-agent claude --to-repo "$WORKDIR/destination-app" --file README.md | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).outboxPath))")"
 node dist/cli/index.js --cwd "$WORKDIR/destination-app" packet import "$PACKET"
-node dist/cli/index.js --cwd "$WORKDIR/new-project" seed from "$WORKDIR/old-project" --review
+node dist/cli/index.js --cwd "$WORKDIR/new-project" seed from "$WORKDIR/old-project" --review --file README.md
 node dist/cli/index.js --cwd "$WORKDIR/destination-app" packet list --inbox
 node dist/cli/index.js --cwd "$WORKDIR/new-project" packet list --private --purpose seed --inbox
 node dist/cli/index.js --cwd "$WORKDIR/destination-app" doctor --fix --yes
 ```
 
 The packet is a normal Markdown file in `.notch/outbox/`; importing it writes a reviewed copy to the destination `.notch/inbox/`.
+
+`seed from --review` opens the generated seed packet in `$EDITOR`. Save a real edit before closing; non-interactive runs must set an editor command.
 
 ## How The Handoff Model Works
 

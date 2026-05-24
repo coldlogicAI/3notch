@@ -46,4 +46,47 @@ describe('notch audit integration', () => {
       });
     });
   });
+
+  it('attributes packet imports to the local importing actor', async () => {
+    await withTempProject({ prefix: 'notch-audit-source-' }, async (source) => {
+      await withTempProject({ prefix: 'notch-audit-dest-' }, async (destination) => {
+        await runCli(['onboard', '--yes', '--name', 'audit-source'], { cwd: source.path });
+        await runCli(['onboard', '--yes', '--name', 'audit-destination'], { cwd: destination.path });
+        const created = await runCli([
+          '--json',
+          '--actor',
+          'Source Author',
+          'packet',
+          'create',
+          '--title',
+          'Import audit packet',
+          '--summary',
+          'Packet for import attribution.',
+          '--to-agent',
+          'codex',
+        ], { cwd: source.path });
+        const { outboxPath } = JSON.parse(created.stdout) as { outboxPath: string };
+
+        const imported = await runCli(['--actor', 'Local Importer', 'packet', 'import', outboxPath], {
+          cwd: destination.path,
+        });
+        expect(imported.exitCode).toBe(0);
+
+        const auditLines = (await readFile(path.join(destination.path, '.notch/logs/audit.jsonl'), 'utf8'))
+          .trim()
+          .split('\n')
+          .map((line) => JSON.parse(line) as { actor: { name: string }; actorNameResolution: string; operation: string });
+        expect(auditLines).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              actor: expect.objectContaining({ name: 'Local Importer' }),
+              actorNameResolution: 'cli-flag',
+              operation: 'import',
+            }),
+          ]),
+        );
+        expect(auditLines.find((line) => line.operation === 'import')?.actor.name).not.toBe('Source Author');
+      });
+    });
+  });
 });

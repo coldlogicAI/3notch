@@ -1,3 +1,6 @@
+import { lstat } from 'node:fs/promises';
+import path from 'node:path';
+
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { CallToolRequestSchema, ListToolsRequestSchema, type CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { Ajv2020 } from 'ajv/dist/2020.js';
@@ -13,6 +16,7 @@ import { VERSION } from '../core/version.js';
 import sharedSchema from '../schemas/shared.schema.json' with { type: 'json' };
 import { getMcpToolInputSchema, mcpToolInputSchemas } from './tool-schemas.js';
 import { assertMcpWritable, mcpErrorResult } from './errors.js';
+import { NotchException } from '../types/errors.js';
 import type { LoadedConfig } from '../core/config-service.js';
 import type { PacketPurpose, Sensitivity, SourceLink } from '../types/records.js';
 
@@ -139,6 +143,7 @@ async function executeTool(
         designBasis: requiredString(args.designBasis, 'designBasis'),
         exclusions: stringArray(args.exclusions),
         goal: requiredString(args.goal, 'goal'),
+        mcp: true,
         priorReasoningSummary: requiredString(args.priorReasoningSummary, 'priorReasoningSummary'),
         recommendedNextSteps: stringArray(args.recommendedNextSteps),
         relevantFiles: arrayArg<SourceLink>(args.relevantFiles),
@@ -173,6 +178,7 @@ async function executeTool(
         includedRecords: arrayArg(args.include),
         ...(stringArg(args.importNotes) ? { importNotes: stringArg(args.importNotes) } : {}),
         ...(stringArg(args.outputPath) ? { outputPath: stringArg(args.outputPath) } : {}),
+        mcp: true,
         ...(enumArg<PacketPurpose>(args.purpose) ? { purpose: enumArg<PacketPurpose>(args.purpose) } : {}),
         ...(enumArg<Sensitivity>(args.sensitivity) ? { sensitivity: enumArg<Sensitivity>(args.sensitivity) } : {}),
         sourceLinks: arrayArg<SourceLink>(args.sourceLinks),
@@ -186,8 +192,11 @@ async function executeTool(
       }) as unknown as Record<string, unknown>;
     }
     case 'import_packet': {
-      return await importPacketFile(context, requiredString(args.packetPath, 'packetPath'), {
+      return await importPacketFile(context, await assertSafeMcpPacketPath(requiredString(args.packetPath, 'packetPath')), {
+        actor: mcpActorName(args, options),
         asReviewed: Boolean(args.asReviewed),
+        mcp: true,
+        sourceTool: 'notch-mcp',
       }) as unknown as Record<string, unknown>;
     }
     case 'list_packets': {
@@ -218,6 +227,7 @@ async function executeTool(
       return await createSeedPacket(context, {
         agent: mcpActorName(args, options),
         importNotes: 'Created from MCP create_seed_packet.',
+        mcp: true,
         ...(stringArg(args.outputPath) ? { outputPath: stringArg(args.outputPath) } : {}),
         sourceLinks: arrayArg<SourceLink>(args.sourceLinks),
         sourceTool: 'notch-mcp',
@@ -226,8 +236,11 @@ async function executeTool(
       }) as unknown as Record<string, unknown>;
     }
     case 'import_seed_packet': {
-      return await importSeedPacket(context, requiredString(args.packetPath, 'packetPath'), {
+      return await importSeedPacket(context, await assertSafeMcpPacketPath(requiredString(args.packetPath, 'packetPath')), {
+        actor: mcpActorName(args, options),
         asReviewed: Boolean(args.asReviewed),
+        mcp: true,
+        sourceTool: 'notch-mcp',
       }) as unknown as Record<string, unknown>;
     }
     case 'get_status': {
@@ -293,4 +306,32 @@ function enumArg<T extends string>(value: unknown): T | undefined {
 
 function mcpActorName(args: Record<string, unknown>, options: NotchMcpServerOptions): string {
   return stringArg(args.actorName) ?? options.defaultActor ?? 'mcp-client';
+}
+
+async function assertSafeMcpPacketPath(packetPath: string): Promise<string> {
+  if (!path.isAbsolute(packetPath)) {
+    throw new NotchException({
+      code: 'NOTCH_MCP_PACKET_PATH_INVALID',
+      message: 'MCP packet imports require an absolute packet path.',
+      path: packetPath,
+      recovery: 'Pass an absolute path to a packet Markdown file selected by the user.',
+      severity: 'error',
+      exitCode: 4,
+    });
+  }
+
+  const stat = await lstat(packetPath);
+
+  if (stat.isSymbolicLink()) {
+    throw new NotchException({
+      code: 'NOTCH_SYMLINK_REJECTED',
+      message: `MCP packet imports do not follow symlinks: ${packetPath}`,
+      path: packetPath,
+      recovery: 'Pass the real packet file path instead of a symlink.',
+      severity: 'error',
+      exitCode: 5,
+    });
+  }
+
+  return packetPath;
 }

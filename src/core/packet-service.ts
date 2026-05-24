@@ -18,6 +18,7 @@ export type CreatePacketInput = {
   agent?: string | undefined;
   includedRecords?: PacketRecordRef[];
   importNotes?: string | undefined;
+  mcp?: boolean | undefined;
   outputPath?: string | undefined;
   purpose?: PacketPurpose | undefined;
   sensitivity?: Sensitivity | undefined;
@@ -68,6 +69,7 @@ export async function createPacket(
     ...(input.actor ? { actor: input.actor } : {}),
     ...(input.agent ? { agent: input.agent } : {}),
     cwd: context.projectRoot,
+    ...(input.mcp ? { mcp: true } : {}),
     recordType: 'packet',
     ...(input.sourceTool ? { sourceTool: input.sourceTool } : {}),
     title: input.title,
@@ -78,7 +80,7 @@ export async function createPacket(
     title: input.title,
     purpose,
     sensitivity,
-    transferStatus: sensitivity === 'private' || purpose === 'seed' ? 'outbox' : 'outbox',
+    transferStatus: 'outbox',
     origin: {
       projectName: context.config.project.name,
       storePath: context.storePath,
@@ -101,8 +103,8 @@ export async function createPacket(
 
   await assertNoSecretsWithAudit(markdown, context.config, {
     actor: packet.createdBy,
-    actorNameResolution: 'cli-flag',
-    actorTypeResolution: packet.createdBy.actorType === 'agent' ? 'cli-agent-flag' : 'cli-default',
+    actorNameResolution: created.actorNameResolution,
+    actorTypeResolution: created.actorTypeResolution,
     logsDir: context.paths.logs,
     recordId: packet.id,
     recordType: 'packet',
@@ -123,7 +125,7 @@ export async function createPacket(
   let outputPath: string | undefined;
 
   if (input.outputPath) {
-    outputPath = path.resolve(context.projectRoot, input.outputPath);
+    outputPath = assertSafeRelativePath(input.outputPath, context.projectRoot).absolutePath;
     await atomicWriteFile(outputPath, markdown);
   }
 
@@ -133,8 +135,8 @@ export async function createPacket(
     operation: 'create',
     result: 'success',
     actor: packet.createdBy,
-    actorNameResolution: 'cli-flag',
-    actorTypeResolution: packet.createdBy.actorType === 'agent' ? 'cli-agent-flag' : 'cli-default',
+    actorNameResolution: created.actorNameResolution,
+    actorTypeResolution: created.actorTypeResolution,
     sourceTool: packet.sourceTool,
     recordType: 'packet',
     recordId: packet.id,
@@ -190,7 +192,7 @@ export async function getPacket(
   });
   const matches = packets.filter((entry) => {
     const stem = path.basename(entry.path, '.md');
-    return entry.packet.id === idOrSlug || stem === idOrSlug || stem.includes(idOrSlug);
+    return entry.packet.id === idOrSlug || stem === idOrSlug;
   });
 
   if (matches.length === 0) {

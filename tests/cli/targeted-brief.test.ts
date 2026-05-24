@@ -49,6 +49,12 @@ describe('notch brief create/list/show', () => {
       expect(show.exitCode).toBe(0);
       expect(show.stdout).toContain('## Goal For codex');
       expect(show.stdout).toContain('Implement packet transfer services');
+
+      const partialShow = await runCli(['--json', 'brief', 'show', 'packet'], { cwd: project.path });
+      expect(partialShow.exitCode).toBe(1);
+      expect(JSON.parse(partialShow.stderr)).toMatchObject({
+        error: { code: 'NOTCH_RECORD_NOT_FOUND' },
+      });
     });
   });
 

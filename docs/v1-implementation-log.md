@@ -105,3 +105,13 @@ Use this file during long-running `/goal` implementation sessions. Keep entries 
 - Commit: pending.
 - Next step: Commit the audit hardening and complete final acceptance verification.
 - Blockers or decisions: The lockfile contains an optional Vitest peer reference to `@opentelemetry/api`, but `npm ls @opentelemetry/api` proves it is not installed. The guard checks installed lockfile package keys rather than raw optional peer text.
+
+## 2026-05-24 01:15 EDT
+
+- Goal slice: Address V1 review findings before tagging: output path traversal, real seed content/review, audit attribution fidelity, exact lookups, MCP import path validation, and cleanup items.
+- Plan steps covered: Review items 1 through 10 from the 2026-05-24 V1 review.
+- Files changed: `src/core/{packet-service,seed-service,transfer-service,record-factory,brief-service}.ts`, `src/cli/commands/{packet,seed}.ts`, `src/mcp/server.ts`, review-focused CLI/MCP/unit/e2e tests, README/docs updates, `Prompts/sample-project-request.md`.
+- Verification: `npm test -- path-traversal packet-tools seed seed-service packet targeted-brief audit-integration record-factory private-context-seed-smoke`; `npm run lint`; `npm run type-check`; `npm run build`; `npm test`; `npm run test:e2e`; `node dist/cli/index.js --help`; `node dist/cli/index.js --version`; built CLI `--out ../sibling/leaked.md` escape smoke rejected with `NOTCH_PATH_OUTSIDE_PROJECT`; README-style fresh-clone smoke with fake editor passed.
+- Commit: pending.
+- Next step: Run `npm run lint`, `npm run type-check`, `npm run build`, `npm test`, `npm run test:e2e`, built CLI smokes, then commit if clean.
+- Blockers or decisions: Seed review now requires an editor edit or explicit TTY confirmation. In non-interactive runs without `EDITOR`, `--review` correctly rejects with `NOTCH_SEED_REVIEW_REQUIRED`.

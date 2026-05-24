@@ -102,8 +102,11 @@ export function registerPacketCommand(program: Command): void {
         ...(context.store ? { store: context.store } : {}),
       });
       const result = await importPacketFile(loaded, file, {
+        ...(context.actor ? { actor: context.actor } : {}),
+        ...(context.agent ? { agent: context.agent } : {}),
         ...(options.asReviewed ? { asReviewed: true } : {}),
         ...(options.private ? { forcePrivate: true } : {}),
+        ...(context.sourceTool ? { sourceTool: context.sourceTool } : {}),
       });
 
       if (context.output.json) {

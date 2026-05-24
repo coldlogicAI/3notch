@@ -20,6 +20,7 @@ export type CreateBriefInput = {
   designBasis: string;
   exclusions: string[];
   goal: string;
+  mcp?: boolean;
   priorReasoningSummary: string;
   recommendedNextSteps?: string[];
   relevantFiles?: SourceLink[];
@@ -75,6 +76,7 @@ export async function createTargetedBrief(
     ...(input.actor ? { actor: input.actor } : {}),
     ...(input.agent ? { agent: input.agent } : {}),
     cwd: context.projectRoot,
+    ...(input.mcp ? { mcp: true } : {}),
     recordType: 'brief',
     ...(input.sourceTool ? { sourceTool: input.sourceTool } : {}),
     ...(input.tags ? { tags: input.tags } : {}),
@@ -99,8 +101,8 @@ export async function createTargetedBrief(
 
   await assertNoSecretsWithAudit(markdown, context.config, {
     actor: brief.createdBy,
-    actorNameResolution: 'cli-flag',
-    actorTypeResolution: brief.createdBy.actorType === 'agent' ? 'cli-agent-flag' : 'cli-default',
+    actorNameResolution: created.actorNameResolution,
+    actorTypeResolution: created.actorTypeResolution,
     logsDir: context.paths.logs,
     recordId: brief.id,
     recordType: 'brief',
@@ -127,8 +129,8 @@ export async function createTargetedBrief(
     operation: 'create',
     result: 'success',
     actor: brief.createdBy,
-    actorNameResolution: 'cli-flag',
-    actorTypeResolution: brief.createdBy.actorType === 'agent' ? 'cli-agent-flag' : 'cli-default',
+    actorNameResolution: created.actorNameResolution,
+    actorTypeResolution: created.actorTypeResolution,
     sourceTool: brief.sourceTool,
     recordType: 'brief',
     recordId: brief.id,
@@ -168,7 +170,7 @@ export async function getTargetedBrief(
 
     const brief = record.record.metadata as NotchBrief;
     const stem = path.basename(record.path, '.md');
-    return brief.id === idOrSlug || stem === idOrSlug || stem.includes(idOrSlug);
+    return brief.id === idOrSlug || stem === idOrSlug;
   });
 
   if (matches.length === 0) {

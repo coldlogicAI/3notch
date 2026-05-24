@@ -7,8 +7,10 @@ Use this only for reviewed user preferences, workflow conventions, and lessons t
 Preferred CLI flow:
 
 ```bash
-notch seed from <old-repo-or-store-path> --review
+notch seed from <old-repo-or-store-path> --review --include preferences --include workflow
 ```
+
+The CLI opens the draft seed packet in `$EDITOR`; save a real edit before import.
 
 Preferred MCP flow:
 

@@ -1,6 +1,6 @@
 import { createDatedFilename, createRecordId, toSlug } from './id-service.js';
 import { resolveActor, type ResolveActorOptions } from './actor-service.js';
-import type { RecordMeta, RecordStatus, RecordType, ReviewStatus } from '../types/records.js';
+import type { ActorNameResolution, ActorTypeResolution, RecordMeta, RecordStatus, RecordType, ReviewStatus } from '../types/records.js';
 
 export type CreateRecordMetaOptions = ResolveActorOptions & {
   date?: Date;
@@ -11,6 +11,8 @@ export type CreateRecordMetaOptions = ResolveActorOptions & {
 };
 
 export type CreatedRecordMeta = {
+  actorNameResolution: ActorNameResolution;
+  actorTypeResolution: ActorTypeResolution;
   filenameBase: string;
   meta: RecordMeta;
   slug: string;
@@ -24,6 +26,8 @@ export function createRecordMeta(options: CreateRecordMetaOptions): CreatedRecor
   const idPrefix = options.recordType === 'project_brief' ? 'project_brief' : options.recordType;
 
   return {
+    actorNameResolution: actor.actorNameResolution,
+    actorTypeResolution: actor.actorTypeResolution,
     filenameBase: createDatedFilename(options.title, '', date),
     meta: {
       id: createRecordId(idPrefix, options.title, date),

@@ -56,6 +56,14 @@ describe('notch packet', () => {
         expect(JSON.parse(destinationList.stdout)).toMatchObject({
           packets: [expect.objectContaining({ packet: expect.objectContaining({ id: created.packet.id }) })],
         });
+
+        const partialShow = await runCli(['--json', 'packet', 'show', 'source-app', '--inbox'], {
+          cwd: destination.path,
+        });
+        expect(partialShow.exitCode).toBe(1);
+        expect(JSON.parse(partialShow.stderr)).toMatchObject({
+          error: { code: 'NOTCH_RECORD_NOT_FOUND' },
+        });
       });
     });
   }, 15_000);
