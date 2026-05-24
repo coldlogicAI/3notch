@@ -55,3 +55,13 @@ Use this file during long-running `/goal` implementation sessions. Keep entries 
 - Commit: pending.
 - Next step: Wave 5, Step 5.1 global CLI runtime plumbing.
 - Blockers or decisions: None.
+
+## 2026-05-23 23:51 EDT
+
+- Goal slice: Add global CLI context/error plumbing, `notch onboard`, MCP setup instructions, and an initial `notch status` adapter for store-load/error coverage.
+- Plan steps covered: Wave 5, Steps 5.1 and 5.2, plus a narrow part of Step 5.5 for `status`.
+- Files changed: `src/cli/context.ts`, `src/cli/errors.ts`, `src/cli/formatters.ts`, `src/cli/mcp-instructions.ts`, `src/cli/commands/onboard.ts`, `src/cli/commands/status.ts`, `src/cli/program.ts`, `src/cli/index.ts`, CLI tests and `.notch/.gitignore` fixture.
+- Verification: `npm test -- help global-flags onboard status-service`; `npm run lint`; `npm run type-check`; `npm run build`; `npm test`; `node dist/cli/index.js --help`; `node dist/cli/index.js --version`.
+- Commit: pending.
+- Next step: Wave 5, Step 5.3 `notch brief` command family.
+- Blockers or decisions: None.

@@ -1,9 +1,11 @@
 import { Command } from 'commander';
 
 import { VERSION } from '../core/version.js';
+import { registerOnboardCommand } from './commands/onboard.js';
+import { registerStatusCommand } from './commands/status.js';
 
 export function createProgram(): Command {
-  return new Command()
+  const program = new Command()
     .name('notch')
     .description('Local-first private context packets across repos and AI tools.')
     .version(VERSION, '-v, --version', 'print the 3Notch version')
@@ -11,6 +13,10 @@ export function createProgram(): Command {
     .option('--store <path>', 'use a specific .notch store path')
     .option('--json', 'emit machine-readable JSON where supported')
     .option('-q, --quiet', 'reduce non-essential output')
+    .option('--no-color', 'disable color output')
+    .option('--actor <name>', 'display name for the writer')
+    .option('--agent <name>', 'mark CLI writes as agent-authored and unreviewed')
+    .option('--source-tool <name>', 'tool creating the record')
     .showHelpAfterError()
     .addHelpText(
       'after',
@@ -18,10 +24,16 @@ export function createProgram(): Command {
 Examples:
   $ notch --help
   $ notch --version
+  $ notch onboard --yes
 
 V1 implementation note:
-  Commands like onboard, seed, packet, brief, status, doctor, and mcp serve are planned
-  but not implemented in this bootstrap slice. See docs/3notch-v1-implementation-plan.md.
+  Commands like seed, packet, brief, status, doctor, and mcp serve are being implemented
+  from docs/3notch-v1-implementation-plan.md. Deferred surfaces like pass and send are out of scope.
 `,
     );
+
+  registerOnboardCommand(program);
+  registerStatusCommand(program);
+
+  return program;
 }
