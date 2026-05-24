@@ -95,3 +95,13 @@ Use this file during long-running `/goal` implementation sessions. Keep entries 
 - Commit: `693ff79`.
 - Next step: Stage and commit this coherent slice, then run final acceptance audit against the spec and plan.
 - Blockers or decisions: Corrected store discovery to prefer a nested `.notch/config.json` before an outer Git root so documented fixture and nested-project commands work. Removed the extra private seed output copy and allowed doctor to treat packet inbox/outbox transfer pairs as one packet identity while still detecting true duplicate source records. Confirmed npm package `send` is only a transitive Express dependency through the MCP SDK, not a 3Notch command surface.
+
+## 2026-05-24 00:28 EDT
+
+- Goal slice: Tighten telemetry-denylist coverage during final acceptance audit.
+- Plan steps covered: Wave 7, Step 7.5.
+- Files changed: `tests/unit/no-telemetry-deps.test.ts`.
+- Verification: `npm test -- no-telemetry-deps`.
+- Commit: pending.
+- Next step: Commit the audit hardening and complete final acceptance verification.
+- Blockers or decisions: The lockfile contains an optional Vitest peer reference to `@opentelemetry/api`, but `npm ls @opentelemetry/api` proves it is not installed. The guard checks installed lockfile package keys rather than raw optional peer text.

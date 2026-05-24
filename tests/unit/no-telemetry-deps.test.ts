@@ -3,6 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { readJsonRepoFile, readRepoFile } from '../helpers/package-inspection.js';
 
 const forbiddenDirectDeps = ['analytics', 'mixpanel', 'posthog', 'segment', 'sentry', '@sentry/node'];
+const forbiddenInstalledPackages = [
+  ...forbiddenDirectDeps,
+  '@opentelemetry/api',
+  'analytics-node',
+  'posthog-node',
+  'segmentio',
+];
 const forbiddenSourceUsages = ['mixpanel', 'posthog', 'segment.com', '@sentry', 'sentry.init', 'analytics.track'];
 
 describe('telemetry dependency guard', () => {
@@ -18,6 +25,17 @@ describe('telemetry dependency guard', () => {
 
     for (const forbidden of forbiddenDirectDeps) {
       expect(Object.keys(directDeps)).not.toContain(forbidden);
+    }
+  });
+
+  it('does not install telemetry packages in the lockfile', async () => {
+    const packageLock = await readJsonRepoFile<{
+      packages?: Record<string, unknown>;
+    }>('package-lock.json');
+    const lockedPackagePaths = new Set(Object.keys(packageLock.packages ?? {}));
+
+    for (const forbidden of forbiddenInstalledPackages) {
+      expect(lockedPackagePaths).not.toContain(`node_modules/${forbidden}`);
     }
   });
 
