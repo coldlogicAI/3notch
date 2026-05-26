@@ -78,6 +78,7 @@ export async function writePacketBundleWithCollisionHandling(
 ): Promise<WrittenRecord> {
   const folderName = await uniquePacketFolderName(options.directory, options.slug, options.explicitSlug ?? false);
   const folderPath = packetFolderPath(options.directory, folderName);
+  await assertImmutablePacketFolder(folderPath);
   const tempFolderPath = path.join(options.directory, `.${folderName}.${process.pid}.${Date.now()}.tmp`);
   const markdownPath = packetMarkdownPath(tempFolderPath);
 
@@ -105,6 +106,47 @@ export async function writePacketBundleWithCollisionHandling(
     rootPath: folderPath,
     rootRelativePath: toStoreRelativePath(storePath, folderPath),
   };
+}
+
+export async function assertImmutablePacketFolder(folderPath: string): Promise<void> {
+  const folderStat = await stat(folderPath).catch(() => undefined);
+
+  if (!folderStat?.isDirectory()) {
+    return;
+  }
+
+  const sealedFiles = ['packet.md', 'manifest.json'];
+
+  for (const name of sealedFiles) {
+    const fileStat = await stat(path.join(folderPath, name)).catch(() => undefined);
+
+    if (fileStat?.isFile()) {
+      throw immutableFolderError(path.join(folderPath, name));
+    }
+  }
+
+  const artifactsPath = path.join(folderPath, 'artifacts');
+  const artifactsStat = await stat(artifactsPath).catch(() => undefined);
+
+  if (artifactsStat?.isDirectory()) {
+    const entries = await readdir(artifactsPath, { withFileTypes: true }).catch(() => []);
+    const firstFile = entries.find((entry) => entry.isFile());
+
+    if (firstFile) {
+      throw immutableFolderError(path.join(artifactsPath, firstFile.name));
+    }
+  }
+}
+
+function immutableFolderError(filePath: string): NotchException {
+  return new NotchException({
+    code: 'NOTCH_RECORD_IMMUTABLE',
+    message: `Refusing to overwrite sealed packet bundle file: ${filePath}`,
+    path: filePath,
+    recovery: 'Imported packet bundles are immutable. Author a successor packet with supersedes instead of overwriting.',
+    severity: 'error',
+    exitCode: 6,
+  });
 }
 
 export async function scanMarkdownRecords(

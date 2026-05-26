@@ -22,7 +22,7 @@ export async function createPacketArchive(input: { markdownPath: string; rootPat
     zeroBlock,
   ]);
 
-  return gzipSync(tar, { level: 9, mtime: 0 } as unknown as Parameters<typeof gzipSync>[1]);
+  return gzipSync(tar, { level: 9 });
 }
 
 export async function unpackPacketArchiveToTemp(archive: Buffer): Promise<{ cleanup: () => Promise<void>; packetFolderPath: string }> {

@@ -1,8 +1,8 @@
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { scanMarkdownRecords, writePacketBundleWithCollisionHandling, writeRecordWithCollisionHandling } from '../../src/core/store-service.js';
+import { assertImmutablePacketFolder, scanMarkdownRecords, writePacketBundleWithCollisionHandling, writeRecordWithCollisionHandling } from '../../src/core/store-service.js';
 import { createBareStore } from '../helpers/store-fixtures.js';
 import { withTempProject } from '../helpers/temp-project.js';
 
@@ -51,6 +51,35 @@ describe('store service', () => {
           slug: 'packet',
         }),
       ).rejects.toMatchObject({ notchError: { code: 'NOTCH_WRITE_FAILED' } });
+    });
+  });
+
+  it('seals imported packet folders against packet.md, manifest.json, and artifact overwrites', async () => {
+    await withTempProject({}, async (project) => {
+      const folderPath = path.join(project.path, 'inbox', 'sealed-packet');
+
+      await expect(assertImmutablePacketFolder(folderPath)).resolves.toBeUndefined();
+
+      await mkdir(folderPath, { recursive: true });
+      await expect(assertImmutablePacketFolder(folderPath)).resolves.toBeUndefined();
+
+      await writeFile(path.join(folderPath, 'packet.md'), 'sealed\n', 'utf8');
+      await expect(assertImmutablePacketFolder(folderPath)).rejects.toMatchObject({
+        notchError: { code: 'NOTCH_RECORD_IMMUTABLE', path: path.join(folderPath, 'packet.md') },
+      });
+
+      await rm(path.join(folderPath, 'packet.md'));
+      await writeFile(path.join(folderPath, 'manifest.json'), '{}\n', 'utf8');
+      await expect(assertImmutablePacketFolder(folderPath)).rejects.toMatchObject({
+        notchError: { code: 'NOTCH_RECORD_IMMUTABLE', path: path.join(folderPath, 'manifest.json') },
+      });
+
+      await rm(path.join(folderPath, 'manifest.json'));
+      await mkdir(path.join(folderPath, 'artifacts'), { recursive: true });
+      await writeFile(path.join(folderPath, 'artifacts/asset.bin'), Buffer.from([0x00]));
+      await expect(assertImmutablePacketFolder(folderPath)).rejects.toMatchObject({
+        notchError: { code: 'NOTCH_RECORD_IMMUTABLE', path: path.join(folderPath, 'artifacts/asset.bin') },
+      });
     });
   });
 
