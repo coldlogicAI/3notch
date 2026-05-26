@@ -8,20 +8,30 @@
 
 Active plan:
 
-1. `docs/active-plans/v2/3notch-v2-plan.md`
+1. `docs/active-plans/v3/3notch-v3-plan.md`
 
-Architecture invariants and product framing (V1 and V1.1 are shipped and archived):
+Substrate that V3 builds on (V1 and V1.1 are shipped and archived; V2 is shipped, plan stays in `active-plans/` until V3 archives it):
 
 2. `docs/archived-plans/v1/3notch-v1-technical-spec.md`
 3. `docs/archived-plans/v1.1/3notch-v1.1-plan.md`
-4. `docs/3notch-project-request.md`
-5. `docs/3notch-branding-review.md`
+4. `docs/active-plans/v2/3notch-v2-plan.md`
+5. `docs/archived-plans/3notch-project-request.md`
+
+Brand system (read before generating any user-facing copy, marketing artifact, or visual asset):
+
+6. `docs/website-branding/3notch-brand-system.html`
 
 ## Long-Run Goal
 
-For a persistent V2 implementation run, use `Prompts/3notch-v2-goal.md` as the paste-ready `/goal` prompt. Append concise progress entries to `docs/active-plans/v2/v2-implementation-log.md` after each coherent slice or wave. V1 and V1.1 logs are preserved under `docs/archived-plans/` as historical records.
+`/goal` prompts are an end-of-session deliverable, not a repo artifact. At the close of a planning or build session, when the next logical build is in view, produce a comprehensive paste-ready `/goal` prompt for that next session and deliver it inline in the chat as a copy-paste Markdown block. Do not write `/goal` prompts to files in the repo — the user copies them into the next session manually.
 
-Keep paste-ready `/goal` prompts under 4,000 characters. Move detail into repo docs and have the prompt read those files instead of embedding the full plan.
+Constraints on the prompt:
+
+- Keep it under 4,000 characters.
+- Reference the relevant repo docs (the active plan, schemas, services) by path rather than embedding the full plan inline.
+- Include only the load-bearing framing the next session needs to act on, not the reasoning that produced the plan.
+
+During an active implementation run, append concise progress entries to the active plan's implementation log (e.g., `docs/active-plans/v2/v2-implementation-log.md`) after each coherent slice or wave. V1 and V1.1 logs are preserved under `docs/archived-plans/` as historical records.
 
 ## Shipped Surface (build this, nothing else)
 

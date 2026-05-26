@@ -41,14 +41,16 @@ notch packet create --title "Auth handoff" --summary "Auth context for the API r
 notch packet import ../source/.notch/outbox/<packet-file>.md
 ```
 
-### 3. Web-Chat To Project
+### Fallback: Web Chats Without MCP
 
-For Claude.ai or another web chat that cannot call local MCP tools, print the bridge prompt, paste it into the chat, ask for a packet, copy the result, then import stdin:
+Claude.ai and other browser-only chats cannot reach local MCP tools today. In that case 3Notch falls back to a clipboard-mediated text ingest — print the bridge prompt, paste it into the chat, ask for a packet, copy the result, then pipe stdin:
 
 ```bash
 notch prompt --client claude-chat
 pbpaste | notch packet import -
 ```
+
+This is an escape hatch, not a peer of the MCP-native paths above. The structurally honest replacement is custom connectors / remote MCP — see [Where We Want Help](#where-we-want-help).
 
 Use `notch mark` when you just want to remember something for yourself:
 
@@ -149,6 +151,45 @@ node dist/cli/index.js --cwd fixtures/cross-repo-demo/destination-marketing pack
 ```
 
 The fixtures cover cross-repo handoff, private context seeding, and cross-tool packet creation from explicitly supplied session context.
+
+## Where We Want Help
+
+3Notch is open source because the cross-vendor handoff problem can only be solved neutrally. The list below is the set of known gaps and adjacent surfaces where we want contributor input. It is not exhaustive — propose additions via issue or PR.
+
+**Reaching more surfaces**
+
+- **Web-chat ingest via custom connectors / remote MCP.** The clipboard fallback above exists because browser chats can't reach local MCP. The structurally honest fix is shipping an optional HTTP/SSE MCP mode that a user wires to Claude.ai (or any connector-capable surface) via Anthropic's custom-connector flow plus a user-controlled tunnel (Tailscale, Cloudflare). No hosted relay required.
+- **Onboarding for additional clients** beyond the V2 set — Gemini CLI, other MCP-capable agents, future surfaces.
+- **Mobile / voice intake** — surface bridges for the cases that aren't a desktop terminal.
+- **Claude Code → web-chat sharing** (the reverse direction of the current bridge).
+
+**Moving packets between machines and people**
+
+- **Cross-machine transport recipes** — opinionated adapter docs and scripts for Tailscale, iCloud, Syncthing, git-based, scp/rsync. 3Notch will not ship its own transport; community recipes are the right layer.
+- **Cross-user / teammate workflows** — conventions and adapter docs for handing packets to a teammate over whatever channel a team already uses.
+
+**Distribution polish**
+
+- **DXT packaging for Claude Desktop** (one-click MCP install).
+- **Notarized / signed installers** across operating systems.
+
+**Capture ergonomics**
+
+- **Agent prompt packs / skills** that wrap the "save artifact to disk, then create_packet" sequence for specific clients.
+- **Per-language / per-framework brief templates.**
+
+**Surfaces on top of the stable substrate**
+
+- **Reply-surfacing UX patterns.** V2 shipped the schema primitives (`replyTo`, `replyType`, `status`); the surfacing layer is deliberately deferred so contributors can experiment with what their agent and workflow actually want.
+- **Wiki / browse / graph views over `relationships.json`.** Out of OSS core scope by design, but contributor surfaces over the stable substrate are welcome.
+- **Additional `notch check` rules.** Stale open replies, broken source-links, tag drift, orphan detection — contribute when you've hit the pain rather than speculatively.
+
+**Hardening**
+
+- **Encryption at rest for `.notch/private/`** — forward-committed since V1.1, deferred again in V2.
+- **Scanner rule contributions** — org-specific, industry-specific, or platform-specific secret/PII patterns.
+
+If you're considering a contribution that fits one of these, open an issue first so we can align on the boundary between OSS core and contributor ecosystem.
 
 ## V2 Boundaries
 
