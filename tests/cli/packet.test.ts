@@ -34,7 +34,7 @@ describe('notch packet', () => {
         packet: {
           artifacts: [
             expect.objectContaining({
-              path: 'artifacts/icon.svg',
+              path: 'artifacts/src/app/icon.svg',
               purpose: 'asset',
             }),
           ],
@@ -73,6 +73,25 @@ describe('notch packet', () => {
           recovery: expect.stringContaining('asset'),
         },
       });
+    });
+  });
+
+  it('prints a private packet hint after creating private packets', async () => {
+    await withTempProject({ prefix: 'notch-private-hint-' }, async (project) => {
+      await runCli(['onboard', '--yes', '--name', 'private-hint-app'], { cwd: project.path });
+
+      const result = await runCli([
+        'packet',
+        'create',
+        '--title',
+        'Private seed',
+        '--summary',
+        'Private context for a new repo.',
+        '--private',
+      ], { cwd: project.path });
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('Private packet: use --private with packet list, show, and preview.');
     });
   });
 

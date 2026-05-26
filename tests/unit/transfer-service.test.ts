@@ -67,7 +67,7 @@ describe('transfer service', () => {
           toRepo: destination.path,
         });
         const packetRoot = path.dirname(created.outboxPath);
-        await writeFile(path.join(packetRoot, 'artifacts/context.txt'), 'Tampered context.\n', 'utf8');
+        await writeFile(path.join(packetRoot, 'artifacts/assets/context.txt'), 'Tampered context.\n', 'utf8');
 
         await expect(importPacketFile(destinationContext, packetRoot)).rejects.toMatchObject({
           notchError: { code: 'NOTCH_ARTIFACT_HASH_MISMATCH' },

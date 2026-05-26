@@ -174,7 +174,7 @@ export async function preparePacketArtifacts(
     }
 
     const content = await readFile(safe.absolutePath);
-    const artifactPath = uniqueArtifactPath(path.basename(safe.relativePath), usedArtifactPaths);
+    const artifactPath = uniqueArtifactPath(safe.relativePath, usedArtifactPaths);
 
     await assertNoSecretsInArtifactWithAudit(content, context.config, {
       actor: input.actor,
@@ -324,13 +324,13 @@ export function assertSafeArtifactPath(relativePath: string): void {
   if (
     !normalized.startsWith('artifacts/')
     || normalized.includes('\\')
-    || parts.some((part) => part.length === 0 || part === '.' || part === '..' || part.startsWith('.'))
+    || parts.some((part) => part.length === 0 || part === '.' || part === '..')
   ) {
     throw new NotchException({
       code: 'NOTCH_ARTIFACT_PATH_INVALID',
       message: `Artifact path is unsafe: ${relativePath}`,
       path: relativePath,
-      recovery: 'Artifact paths must be relative paths under artifacts/ without dot-prefixed components.',
+      recovery: 'Artifact paths must be relative paths under artifacts/ without empty, current-directory, or parent-directory components.',
       severity: 'error',
       exitCode: 1,
     });
@@ -348,32 +348,33 @@ function artifactLimits(config: NotchConfig): { maxArtifactBytes: number; maxPac
   };
 }
 
-function uniqueArtifactPath(basename: string, used: Set<string>): string {
-  const normalizedBase = normalizePortablePath(basename);
+function uniqueArtifactPath(relativePath: string, used: Set<string>): string {
+  const normalizedRelativePath = normalizePortablePath(relativePath);
+  const parts = normalizedRelativePath.split('/');
 
   if (
-    normalizedBase.length === 0
-    || normalizedBase.includes('/')
-    || normalizedBase.startsWith('.')
-    || normalizedBase === '.'
-    || normalizedBase === '..'
+    normalizedRelativePath.length === 0
+    || normalizedRelativePath.startsWith('/')
+    || normalizedRelativePath.includes('\\')
+    || parts.some((part) => part.length === 0 || part === '.' || part === '..')
   ) {
     throw new NotchException({
       code: 'NOTCH_ARTIFACT_PATH_INVALID',
-      message: `Artifact filename is unsafe: ${basename}`,
-      path: basename,
-      recovery: 'Use a regular filename that does not start with a dot.',
+      message: `Artifact path is unsafe: ${relativePath}`,
+      path: relativePath,
+      recovery: 'Attach a project-relative file path without empty, current-directory, or parent-directory components.',
       severity: 'error',
       exitCode: 1,
     });
   }
 
-  const parsed = path.posix.parse(normalizedBase);
-  let candidate = `artifacts/${normalizedBase}`;
+  const parsed = path.posix.parse(normalizedRelativePath);
+  const directory = parsed.dir ? `${parsed.dir}/` : '';
+  let candidate = `artifacts/${normalizedRelativePath}`;
   let suffix = 2;
 
   while (used.has(candidate)) {
-    candidate = `artifacts/${parsed.name}-${suffix}${parsed.ext}`;
+    candidate = `artifacts/${directory}${parsed.name}-${suffix}${parsed.ext}`;
     suffix += 1;
   }
 

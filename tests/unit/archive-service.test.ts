@@ -28,14 +28,14 @@ describe('archive service', () => {
 
       expect(first.equals(second)).toBe(true);
       expect(readArchiveEntries(first).map((entry) => entry.path)).toEqual([
-        'artifacts/showcase.html',
+        'artifacts/assets/showcase.html',
         'manifest.json',
         'packet.md',
       ]);
 
       const unpacked = await unpackPacketArchiveToTemp(first);
       try {
-        expect(await readFile(path.join(unpacked.packetFolderPath, 'artifacts/showcase.html'), 'utf8')).toBe('<main>3Notch</main>\n');
+        expect(await readFile(path.join(unpacked.packetFolderPath, 'artifacts/assets/showcase.html'), 'utf8')).toBe('<main>3Notch</main>\n');
       } finally {
         await unpacked.cleanup();
       }

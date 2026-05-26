@@ -62,6 +62,10 @@ describe('packet schema', () => {
         '    sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
         '    bytes: 42',
         '    purpose: source',
+        '  - path: artifacts/.claude/skills/session-start/skill.md',
+        '    sha256: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+        '    bytes: 24',
+        '    purpose: reference',
       ].join('\n'),
     );
     const result = parseAndValidateRecord<NotchPacket>(bundled, 'artifact-packet.md');

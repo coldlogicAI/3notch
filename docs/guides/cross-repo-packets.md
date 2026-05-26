@@ -15,13 +15,13 @@ notch packet create \
   --next-steps "Build apps/brand-site/ using showcase.html as the layout and mascot.jpg in the hero."
 ```
 
-The packet is written to `.notch/outbox/`. When `--file` is used, it lands as a folder containing `packet.md`, `manifest.json`, and copied bytes under `artifacts/`. Without `--file`, it lands as a single `.md` file.
+The packet is written to `.notch/outbox/`. When `--file` is used, it lands as a folder containing `packet.md`, `manifest.json`, and copied bytes under `artifacts/`, preserving each file's project-relative path. Without `--file`, it lands as a single `.md` file.
 
 Recipient fields (`--to-agent`, `--to-person`, `--to-repo`) label intent. They do not authenticate or deliver anything — local filesystems and your own transport (scp, rsync, iCloud, Tailscale, email, git) move the bytes.
 
 ## File vs Reference
 
-- `--file <path>` copies the file's bytes into the packet's `artifacts/` directory and records a SHA-256 hash. Use this when the receiver does not share your filesystem.
+- `--file <path>` copies the file's bytes into the packet's `artifacts/` directory, preserves its project-relative path, and records a SHA-256 hash. Use this when the receiver does not share your filesystem.
 - `--ref <path>` records a pointer only. Use this when the receiver shares the same workspace path (sibling repo on the same machine).
 
 Append `:asset`, `:source`, `:reference`, or `:output` to a `--file` arg to tag its purpose. Default is `asset`; when unsure, omit the suffix. Common human labels like `:favicon`, `:icon`, `:logo`, `:image`, and `:screenshot` are accepted as `asset`.

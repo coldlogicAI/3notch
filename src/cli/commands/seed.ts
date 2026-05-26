@@ -2,6 +2,7 @@ import type { Command } from 'commander';
 
 import { getCliContext } from '../context.js';
 import { printInfo, printJson } from '../output.js';
+import { printPrivatePacketHint } from '../private-hints.js';
 import { loadConfig } from '../../core/config-service.js';
 import { seedFrom } from '../../core/seed-service.js';
 
@@ -44,6 +45,7 @@ export function registerSeedCommand(program: Command): void {
 
       printInfo(`Imported private seed packet ${result.packet.id}`, context.output);
       printInfo(result.inboxPath, context.output);
+      printPrivatePacketHint(result.packet, context.output);
     });
 }
 

@@ -4,6 +4,7 @@ import type { Command } from 'commander';
 
 import { getCliContext } from '../context.js';
 import { printInfo, printJson } from '../output.js';
+import { printPrivatePacketHint } from '../private-hints.js';
 import { createPacketArchive, unpackPacketArchiveToTemp } from '../../core/archive-service.js';
 import { parseArtifactFileSpec, type ArtifactFileInput } from '../../core/artifact-service.js';
 import { loadConfig } from '../../core/config-service.js';
@@ -107,6 +108,7 @@ export function registerPacketCommand(program: Command): void {
 
       printInfo(`Created packet ${result.packet.id}`, context.output);
       printInfo(result.outboxPath, context.output);
+      printPrivatePacketHint(result.packet, context.output);
     });
 
   packet
@@ -183,6 +185,7 @@ export function registerPacketCommand(program: Command): void {
 
         printInfo(`Unpacked packet ${result.packet.id}`, context.output);
         printInfo(result.inboxPath, context.output);
+        printPrivatePacketHint(result.packet, context.output);
       } finally {
         await unpacked.cleanup();
       }
@@ -219,6 +222,7 @@ export function registerPacketCommand(program: Command): void {
 
       printInfo(`Imported packet ${result.packet.id}`, context.output);
       printInfo(result.inboxPath, context.output);
+      printPrivatePacketHint(result.packet, context.output);
     });
 
   packet

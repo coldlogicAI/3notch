@@ -2,6 +2,7 @@ import type { Command } from 'commander';
 
 import { getCliContext } from '../context.js';
 import { printInfo, printJson } from '../output.js';
+import { printPrivatePacketHint } from '../private-hints.js';
 import { parseArtifactFileSpec, type ArtifactFileInput } from '../../core/artifact-service.js';
 import { loadConfig } from '../../core/config-service.js';
 import { createReply } from '../../core/packet-service.js';
@@ -70,6 +71,7 @@ export function registerReplyCommand(program: Command): void {
 
       printInfo(`Replied with ${result.packet.id}`, context.output);
       printInfo(result.path, context.output);
+      printPrivatePacketHint(result.packet, context.output);
     });
 }
 

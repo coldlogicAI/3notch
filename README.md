@@ -41,7 +41,7 @@ notch packet create \
   --next-steps "Build apps/brand-site/ using showcase.html as the layout and mascot.jpg in the hero."
 ```
 
-The packet lands as a folder in `.notch/outbox/` with `packet.md`, `manifest.json`, and copied bytes under `artifacts/`. The destination imports the folder:
+The packet lands as a folder in `.notch/outbox/` with `packet.md`, `manifest.json`, and copied bytes under `artifacts/`. Copied files keep their project-relative paths, so `src/app/icon.svg` lands at `artifacts/src/app/icon.svg`. The destination imports the folder:
 
 ```bash
 notch packet import ../source/.notch/outbox/<packet-folder>/packet.md

@@ -2,6 +2,7 @@ import type { Command } from 'commander';
 
 import { getCliContext } from '../context.js';
 import { printInfo, printJson } from '../output.js';
+import { printPrivatePacketHint } from '../private-hints.js';
 import { loadConfig } from '../../core/config-service.js';
 import { createMark } from '../../core/packet-service.js';
 import type { SourceLink } from '../../types/records.js';
@@ -48,6 +49,7 @@ export function registerMarkCommand(program: Command): void {
 
       printInfo(`Marked ${result.packet.id}`, context.output);
       printInfo(result.path, context.output);
+      printPrivatePacketHint(result.packet, context.output);
     });
 }
 

@@ -23,9 +23,9 @@ describe('MCP packet tools', () => {
           toAgent: 'codex',
           files: ['src/index.ts:source'],
           refs: ['src/index.ts'],
-          nextSteps: 'Read artifacts/index.ts.',
+          nextSteps: 'Read artifacts/src/index.ts.',
         }) as { structuredContent: { outboxPath: string; packet: { id: string } } };
-        expect(await readFile(path.join(path.dirname(created.structuredContent.outboxPath), 'artifacts/index.ts'), 'utf8')).toBe('export const mcp = true;\n');
+        expect(await readFile(path.join(path.dirname(created.structuredContent.outboxPath), 'artifacts/src/index.ts'), 'utf8')).toBe('export const mcp = true;\n');
 
         await expect(harness.callTool('list_packets', { direction: 'outbox' })).resolves.toMatchObject({
           structuredContent: { packets: [expect.objectContaining({ packet: expect.objectContaining({ id: created.structuredContent.packet.id }) })] },

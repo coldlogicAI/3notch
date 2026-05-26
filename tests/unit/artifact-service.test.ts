@@ -66,21 +66,50 @@ describe('artifact service integration', () => {
       };
 
       expect(created.packet.artifacts).toEqual([
-        expect.objectContaining({ path: 'artifacts/context.md', purpose: 'source' }),
-        expect.objectContaining({ path: 'artifacts/mascot.jpg', purpose: 'asset' }),
+        expect.objectContaining({ path: 'artifacts/assets/context.md', purpose: 'source' }),
+        expect.objectContaining({ path: 'artifacts/assets/mascot.jpg', purpose: 'asset' }),
       ]);
-      expect(await readFile(path.join(packetRoot, 'artifacts/context.md'), 'utf8')).toBe('Selected implementation notes.\n');
+      expect(await readFile(path.join(packetRoot, 'artifacts/assets/context.md'), 'utf8')).toBe('Selected implementation notes.\n');
       expect(manifest.artifacts).toEqual(created.packet.artifacts?.map(({ path: artifactPath, sha256: hash, bytes }) => ({
         path: artifactPath,
         sha256: hash,
         bytes,
       })));
-      expect(manifest.artifacts.find((artifact) => artifact.path === 'artifacts/context.md')?.sha256).toBe(
+      expect(manifest.artifacts.find((artifact) => artifact.path === 'artifacts/assets/context.md')?.sha256).toBe(
         sha256(await readFile(markdownPath)),
       );
       expect(await readAuditLog(context.paths.logs)).toEqual(expect.arrayContaining([
-        expect.objectContaining({ operation: 'scan-skip', path: 'artifacts/mascot.jpg' }),
+        expect.objectContaining({ operation: 'scan-skip', path: 'artifacts/assets/mascot.jpg' }),
       ]));
+    });
+  });
+
+  it('preserves source-relative artifact paths, including dot-prefixed tool directories', async () => {
+    await withTempProject({}, async (project) => {
+      await createBareStore(project.path, { name: 'artifact-path-app' });
+      await mkdir(path.join(project.path, '.claude/skills/session-start'), { recursive: true });
+      await mkdir(path.join(project.path, '.claude/skills/review'), { recursive: true });
+      await writeFile(path.join(project.path, '.claude/skills/session-start/skill.md'), '# Session start\n', 'utf8');
+      await writeFile(path.join(project.path, '.claude/skills/review/skill.md'), '# Review\n', 'utf8');
+      const context = await loadConfig({ cwd: project.path });
+
+      const created = await createPacket(context, {
+        files: [
+          { path: '.claude/skills/session-start/skill.md', purpose: 'reference' },
+          { path: '.claude/skills/review/skill.md', purpose: 'reference' },
+        ],
+        summary: 'Tooling context bundle.',
+        title: 'Tooling context',
+        toAgent: 'codex',
+      });
+      const packetRoot = path.dirname(created.outboxPath);
+
+      expect(created.packet.artifacts?.map((artifact) => artifact.path)).toEqual([
+        'artifacts/.claude/skills/review/skill.md',
+        'artifacts/.claude/skills/session-start/skill.md',
+      ]);
+      expect(await readFile(path.join(packetRoot, 'artifacts/.claude/skills/session-start/skill.md'), 'utf8')).toBe('# Session start\n');
+      expect(await readFile(path.join(packetRoot, 'artifacts/.claude/skills/review/skill.md'), 'utf8')).toBe('# Review\n');
     });
   });
 
