@@ -61,6 +61,7 @@ export function registerOnboardCommand(program: Command): void {
         }
 
         await writeIfMissing(path.join(storePath, '.gitignore'), 'index/\nlogs/\nprivate/\n');
+        await writeIfMissing(path.join(storePath, 'README.md'), defaultStoreReadme());
         await writeIfMissing(paths.config, `${JSON.stringify(defaultConfig(projectName, projectRoot), null, 2)}\n`);
         await writeIfMissing(paths.brief, renderMarkdownRecord(defaultProjectBrief(projectName), defaultProjectBriefBody()));
       }
@@ -76,7 +77,10 @@ export function registerOnboardCommand(program: Command): void {
         mcpClient,
         mcpConfig,
         projectName,
-        promptHint: mcpClient ? undefined : 'Run notch prompt --client <client> to print agent instructions.',
+        promptHint: mcpClient ? undefined : [
+          'Next: ask your agent to read .notch/README.md, then use notch packet for handoffs.',
+          'For web chats or copy-paste setup, run: notch prompt --client claude-chat',
+        ].join('\n'),
         storePath,
         mcpInstructions: mcpClient ? mcpInstructions(mcpClient, storePath, projectRoot) : undefined,
       };
@@ -268,5 +272,42 @@ function defaultProjectBriefBody(): string {
 ## Warnings
 
 - None.
+`;
+}
+
+function defaultStoreReadme(): string {
+  return `# 3Notch Store
+
+This project uses 3Notch for explicit, reviewable context handoffs between AI tools, repos, and machines. Treat this directory as a local packet store, not as hidden memory or a background sync service.
+
+## Agent Quickstart
+
+1. Read \`brief.md\` for the project baseline.
+2. Use \`notch packet list\`, \`notch packet show <id>\`, and \`notch packet preview <id>\` to inspect existing handoffs.
+3. When the user asks you to hand context to another repo, person, or tool, create a packet with \`notch packet create\`.
+4. Use \`--file <path[:purpose]>\` when the receiver needs copied bytes. Use \`--ref <path>\` only when the receiver shares the same filesystem path.
+5. Use \`notch packet pack <id>\` and \`notch packet unpack <archive>\` when a packet needs to move between machines.
+6. Run \`notch check\` after imports or relationship-heavy changes. Run \`notch doctor\` when the store seems unhealthy.
+
+## Boundaries
+
+- Work only from context the user explicitly supplies or asks you to inspect.
+- Do not scrape hidden chat history or private project files.
+- Do not expose \`.notch/private/\` unless the user intentionally enables private context.
+- Do not edit imported inbox packets in place. Create a successor packet or a typed reply instead.
+- 3Notch does not send packets over a network. The user chooses how packet files move.
+
+## Useful Commands
+
+\`\`\`bash
+notch packet create --title "Handoff" --summary "..." --to-agent codex --file path/to/file --next-steps "Review and continue."
+notch packet preview <packet-id>
+notch packet pack <packet-id>
+notch packet unpack <packet-id>.notchpkt
+notch check
+notch doctor
+\`\`\`
+
+For web chats or tools that cannot read local project files, use \`notch prompt --client claude-chat\` and import the returned packet with \`notch packet import -\`.
 `;
 }

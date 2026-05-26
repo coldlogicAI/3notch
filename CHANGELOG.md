@@ -9,11 +9,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 - Repo hygiene: expanded `.gitignore` for IDE state, vim swap, Vitest cache, Windows OS junk, and per-developer AI assistant directories.
 - Documentation index at `docs/README.md`; restructured guides under `docs/guides/` and reference docs under `docs/reference/`.
+- `notch onboard` now creates `.notch/README.md` with durable agent-facing handoff instructions.
 - Unit coverage for V3 packet folder immutability (`packet.md`, `manifest.json`, `artifacts/*` overwrite attempts) and for hostile `.notchpkt` archives (path traversal, absolute paths, unexpected top-level entries).
 - Unit coverage for V2 single-file `pack` / `unpack` round-trip.
 
 ### Changed
 - `assertImmutablePacketFolder` is now called before bundle writes so the "sealed folder" contract is enforced at write time, not just implied by collision suffixing.
+- `notch onboard` now points users to `.notch/README.md` first and keeps `notch prompt` as a web-chat / copy-paste fallback.
 - All user-facing docs rewritten to be version-agnostic and current to V3 (artifact bundling, `nextSteps`, pack/unpack, full MCP tool surface).
 
 ### Removed

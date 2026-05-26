@@ -5,13 +5,13 @@
   "type": "module",
   "license": "MIT",
   "author": "3Notch contributors",
-  "homepage": "https://github.com/OWNER/REPO#readme",
+  "homepage": "https://github.com/coldlogicAI/3notch#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OWNER/REPO.git"
+    "url": "git+https://github.com/coldlogicAI/3notch.git"
   },
   "bugs": {
-    "url": "https://github.com/OWNER/REPO/issues"
+    "url": "https://github.com/coldlogicAI/3notch/issues"
   },
   "keywords": [
     "ai",

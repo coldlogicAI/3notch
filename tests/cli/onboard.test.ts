@@ -21,6 +21,7 @@ describe('notch onboard', () => {
       };
       const gitignore = await readFile(path.join(storePath, '.gitignore'), 'utf8');
       const brief = await readFile(path.join(storePath, 'brief.md'), 'utf8');
+      const readme = await readFile(path.join(storePath, 'README.md'), 'utf8');
 
       expect(config.project.name).toBe('starter-app');
       expect(await realpath(config.project.root)).toBe(await realpath(project.path));
@@ -30,6 +31,8 @@ describe('notch onboard', () => {
       expect(gitignore).toContain('private/');
       expect(brief).toContain('recordType: project_brief');
       expect(brief).toContain('## Current Focus');
+      expect(readme).toContain('Agent Quickstart');
+      expect(readme).toContain('notch packet create');
     });
   });
 
@@ -64,7 +67,9 @@ describe('notch onboard', () => {
       const result = await runCli(['onboard', '--yes'], { cwd: project.path });
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('notch prompt --client <client>');
+      expect(result.stdout).toContain('ask your agent to read .notch/README.md');
+      expect(result.stdout).toContain('notch prompt --client claude-chat');
+      expect(result.stdout).not.toContain('notch prompt --client <client>');
     });
   });
 

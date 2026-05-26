@@ -56,7 +56,7 @@ type PackPacketOptions = {
 type UnpackPacketOptions = ImportPacketOptions;
 
 export function registerPacketCommand(program: Command): void {
-  const packet = program.command('packet').description('create, import, list, and show context packets');
+  const packet = program.command('packet').description('create, import, pack, preview, and manage context packets');
 
   packet
     .command('create')

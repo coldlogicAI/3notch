@@ -2,8 +2,7 @@
 
 **Your AI tools will change. Your project context should not have to.**
 
-<!-- Badge URLs assume the repo lives at github.com/OWNER/REPO. Update after first push. -->
-[![CI](https://img.shields.io/github/actions/workflow/status/OWNER/REPO/ci.yml?branch=main&style=flat-square)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/coldlogicAI/3notch/ci.yml?branch=main&style=flat-square)](https://github.com/coldlogicAI/3notch/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@3notch/cli?style=flat-square)](https://www.npmjs.com/package/@3notch/cli)
 [![Node](https://img.shields.io/node/v/@3notch/cli?style=flat-square)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
@@ -22,6 +21,8 @@ Install once:
 npm install -g @3notch/cli
 notch onboard
 ```
+
+Onboard creates `.notch/README.md` so local agents have a durable place to learn the project handoff rules. The default next step is to ask your agent to read `.notch/README.md`, explain its understanding, and then create or inspect packets as needed. Use `notch prompt` only for web chats or copy-paste setup when an agent cannot read local files.
 
 Then pick the flow that matches your situation.
 
@@ -117,7 +118,7 @@ Targeting fields (`--to-agent`, `--to-person`, `--to-repo`) answer "who is this 
 ## Core Commands
 
 ```text
-notch onboard                       initialize .notch/ and configure MCP clients
+notch onboard                       initialize .notch/, .notch/README.md, and MCP setup
 notch packet create                 create a packet (--file, --ref, --next-steps)
 notch packet import <file-or-folder>  import a packet into .notch/inbox/
 notch packet preview <id>           show what an agent will read
@@ -128,7 +129,7 @@ notch reply <id>                    typed reply to a packet
 notch mark                          self-addressed private capture
 notch brief / brief create / list / show   scoped task briefs
 notch seed from <path>              private context seeding
-notch prompt --client <client>      print agent instruction pack
+notch prompt --client <client>      optional copy-paste agent instruction pack
 notch scan <file-or-stdin>          standalone secret scanner
 notch check                         deterministic corpus integrity checks
 notch doctor                        store diagnostics

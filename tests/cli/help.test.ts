@@ -59,7 +59,7 @@ describe('CLI skeleton', () => {
     expect(result.stdout).toContain('--cwd <path>');
     expect(result.stdout).toContain('--store <path>');
     expect(result.stdout).toContain('seed');
-    expect(result.stdout).toContain('packet');
+    expect(result.stdout).toContain('create, import, pack, preview, and manage context');
     expect(result.stdout).toContain('mcp serve');
   });
 
