@@ -173,14 +173,27 @@ Private records under `.notch/private/` are hidden unless the server starts with
 
 ## Docs
 
-- [Cross-repo packets](docs/cross-repo-packets.md)
-- [Cross-tool handoff](docs/cross-tool-handoff.md)
-- [Private context seeding](docs/private-context-seeding.md)
-- [Targeted briefs](docs/targeted-brief-workflow.md)
+Full index: [docs/README.md](docs/README.md).
+
+Guides:
+
+- [Cross-repo packets](docs/guides/cross-repo-packets.md)
+- [Cross-tool handoff](docs/guides/cross-tool-handoff.md)
+- [Private context seeding](docs/guides/private-context-seeding.md)
+- [Targeted briefs](docs/guides/targeted-brief-workflow.md)
+- [MCP setup](docs/guides/mcp-setup.md)
+
+Reference:
+
+- [Privacy](docs/reference/privacy.md)
+- [Security story](docs/reference/security-story.md)
+
+Agent prompts:
+
 - [Web-chat to project bridge](docs/prompts/web-chat-to-project.md)
-- [MCP setup](docs/mcp-setup.md)
-- [Privacy and security](docs/privacy.md)
-- [Security story](docs/security-story.md)
+- [Claude Desktop → Claude Code](docs/prompts/claude-desktop-to-claude-code.md)
+- [Cross-repo handoff](docs/prompts/cross-repo-handoff.md)
+- [Private seed from prior work](docs/prompts/private-seed-from-prior-work.md)
 
 ## Demo Fixtures
 

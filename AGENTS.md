@@ -6,20 +6,15 @@
 
 ## Read First
 
-Active plan:
+V3 is shipped. Version plans are archived under `docs/archived-plans/` as historical record:
 
-1. `docs/active-plans/v3/3notch-v3-plan.md`
+1. `docs/archived-plans/v3/3notch-v3-plan.md` — current architecture (folder-canonical packets, artifact bundles, `nextSteps`, pack/unpack).
+2. `docs/archived-plans/v2/3notch-v2-plan.md` — V2 substrate (marks, replies, `supersedes`, relationships, check, web-chat bridge).
+3. `docs/archived-plans/v1.1/3notch-v1.1-plan.md` — V1.1 hardening.
+4. `docs/archived-plans/v1/3notch-v1-technical-spec.md` — V1 architecture and contract.
+5. `docs/archived-plans/3notch-project-request.md` — original project framing.
 
-Substrate that V3 builds on (V1 and V1.1 are shipped and archived; V2 is shipped, plan stays in `active-plans/` until V3 archives it):
-
-2. `docs/archived-plans/v1/3notch-v1-technical-spec.md`
-3. `docs/archived-plans/v1.1/3notch-v1.1-plan.md`
-4. `docs/active-plans/v2/3notch-v2-plan.md`
-5. `docs/archived-plans/3notch-project-request.md`
-
-Brand system (read before generating any user-facing copy, marketing artifact, or visual asset):
-
-6. `docs/website-branding/3notch-brand-system.html`
+Future version plans land under `docs/active-plans/<version>/` during development and move to `docs/archived-plans/` when shipped.
 
 ## Long-Run Goal
 
@@ -31,7 +26,7 @@ Constraints on the prompt:
 - Reference the relevant repo docs (the active plan, schemas, services) by path rather than embedding the full plan inline.
 - Include only the load-bearing framing the next session needs to act on, not the reasoning that produced the plan.
 
-During an active implementation run, append concise progress entries to the active plan's implementation log (e.g., `docs/active-plans/v2/v2-implementation-log.md`) after each coherent slice or wave. V1 and V1.1 logs are preserved under `docs/archived-plans/` as historical records.
+During an active implementation run, append concise progress entries to the active plan's implementation log (e.g., `docs/active-plans/v4/v4-implementation-log.md`) after each coherent slice or wave. Past version logs are preserved under `docs/archived-plans/` as historical records.
 
 ## Shipped Surface (build this, nothing else)
 

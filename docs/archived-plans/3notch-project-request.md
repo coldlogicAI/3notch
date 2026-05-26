@@ -183,7 +183,7 @@ Canonical forms (hard rules; enforce in every surface):
 
 Visual mark: three parallel horizontal mark-red lines (`#E04E2C`) on ink (`#0B0A08`). Wordmark in Geist 600 with `-0.025em` tracking and the leading `3` colored mark-red. Tagline: **Mark your trail.**
 
-Brand system source of truth: `docs/website-branding/3notch-brand-system.html`. The brand system locks the palette, typography, mascot surface-restriction rules, and the canonical form rules above.
+Brand system (palette, typography, mascot surface-restriction rules, canonical-form rules) is maintained outside this repo.
 
 ## Success Signals
 
@@ -201,10 +201,9 @@ The product is succeeding when:
 ## Reference Documents
 
 - `AGENTS.md` — shipping conventions, boundaries, the lint-verb permanent hold, deferred-verb regression guard.
-- `docs/active-plans/v3/3notch-v3-plan.md` — current active implementation plan (folder-canonical packets with artifacts).
-- `docs/active-plans/v2/3notch-v2-plan.md` — V2 substrate (mark, reply, check, relationships, web-chat bridge); shipped, plan stays in `active-plans/` until V3 archives it.
-- `docs/archived-plans/v1/3notch-v1-technical-spec.md` — V1 architecture and contract (shipped).
-- `docs/archived-plans/v1.1/3notch-v1.1-plan.md` — V1.1 plan (shipped).
-- `docs/website-branding/3notch-brand-system.html` — brand system source of truth.
-- `docs/privacy.md`, `docs/security-story.md` — privacy posture and security model.
+- `docs/archived-plans/v3/3notch-v3-plan.md` — V3 plan (folder-canonical packets with artifacts); shipped.
+- `docs/archived-plans/v2/3notch-v2-plan.md` — V2 substrate (mark, reply, check, relationships, web-chat bridge); shipped.
+- `docs/archived-plans/v1.1/3notch-v1.1-plan.md` — V1.1 plan; shipped.
+- `docs/archived-plans/v1/3notch-v1-technical-spec.md` — V1 architecture and contract; shipped.
+- `docs/reference/privacy.md`, `docs/reference/security-story.md` — privacy posture and security model.
 - `README.md` — public-facing quickstart, command reference, and "Where We Want Help" section.

@@ -1,23 +1,26 @@
-# Claude Desktop To Claude Code Packet Prompt
+# Claude Desktop To Claude Code
 
 Ask Claude Desktop:
 
 ```text
-Package the selected context from this conversation for Claude Code. Include a concise task summary, source labels, assumptions, exclusions, and recommended next steps. Use 3Notch so Claude Code can review the packet before working.
+Package the selected context from this conversation for Claude Code. Include a concise task summary, source labels, assumptions, exclusions, and recommended next steps. Carry any referenced files as artifacts. Use 3Notch so Claude Code can review the packet before working.
 ```
 
-The agent should create a packet only from context you explicitly provide or summarize. It should not claim access to hidden chat history, project files, or external systems.
+The agent should:
 
-After creation, ask it to show the `.notch/outbox/` path and remind you to run:
+- Create the packet only from context you explicitly provided or summarized.
+- Set `nextSteps` to a short, imperative description of what Claude Code should do.
+- Use `files` for bytes that need to travel; use `refs` only for paths both tools share.
+- Avoid claims about hidden chat history, project files, or external systems.
+
+After creation, ask for the outbox path and run:
 
 ```bash
 notch packet preview <packet-id>
 ```
 
-Agent tool reference:
+Tools the agent uses:
 
-- `create_packet`
-- `list_packets`
-- `get_packet`
-- `get_status`
-- `run_doctor`
+- `create_packet` (accepts `files`, `refs`, `nextSteps`)
+- `list_packets`, `get_packet`
+- `get_status`, `run_doctor`

@@ -1,4 +1,4 @@
-# Private Seed From Prior Work Prompt
+# Private Seed From Prior Work
 
 Ask the agent:
 
@@ -6,21 +6,20 @@ Ask the agent:
 Create a private 3Notch seed packet from the reviewed workflow conventions and user preferences I provide here. Keep it limited to context that should carry forward into this repo.
 ```
 
-Use this only for reviewed user preferences, workflow conventions, and lessons from prior work. Do not include credentials, raw chat history, or unreviewed private material.
+Only for reviewed preferences, conventions, and lessons. Do not include credentials, raw chat history, or unreviewed private material.
 
-Preferred CLI flow:
+CLI flow (preferred):
 
 ```bash
 notch seed from <old-repo-or-store-path> --review --include preferences --include workflow
 ```
 
-The CLI opens the draft seed packet in `$EDITOR`; save a real edit before import.
+`--review` opens the draft in `$EDITOR`. Save a real edit before closing. Non-interactive runs without an editor are rejected.
 
-Agent tool reference:
+Tools the agent uses:
 
 - `create_seed_packet`
 - `import_seed_packet`
-- `list_packets`
-- `get_packet`
+- `list_packets`, `get_packet`
 
-After import, confirm that the seed is private and that MCP will not expose it unless the server starts with `--include-private`.
+After import, confirm the seed is private and that MCP will not expose it unless the server is started with `--include-private`.
