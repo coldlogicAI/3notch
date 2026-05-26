@@ -80,6 +80,28 @@
       "items": { "$ref": "#/$defs/sourceLink" },
       "default": []
     },
+    "artifactEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes", "purpose"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^artifacts/(?!.*(?:^|/)\\.)(?!.*(?:^|/)\\.\\.?(?:/|$))[^/\\\\]+(?:/[^/\\\\]+)*$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "purpose": {
+          "enum": ["asset", "source", "reference", "output"]
+        }
+      }
+    },
     "tags": {
       "type": "array",
       "items": { "$ref": "#/$defs/tag" },

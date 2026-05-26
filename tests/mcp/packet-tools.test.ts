@@ -1,4 +1,4 @@
-import { symlink, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, symlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -11,6 +11,8 @@ describe('MCP packet tools', () => {
   it('creates, imports, lists, and gets packets without exposing private packets by default', async () => {
     await withTempProject({}, async (project) => {
       await createBareStore(project.path, { name: 'mcp-packet-app' });
+      await mkdir(path.join(project.path, 'src'), { recursive: true });
+      await writeFile(path.join(project.path, 'src/index.ts'), 'export const mcp = true;\n', 'utf8');
       const server = createNotchMcpServer({ cwd: project.path });
       const harness = await createMcpHarness(server);
 
@@ -19,8 +21,11 @@ describe('MCP packet tools', () => {
           title: 'MCP packet',
           summary: 'Explicit MCP supplied context.',
           toAgent: 'codex',
-          sourceLinks: [{ kind: 'file', path: 'src/index.ts' }],
+          files: ['src/index.ts:source'],
+          refs: ['src/index.ts'],
+          nextSteps: 'Read artifacts/index.ts.',
         }) as { structuredContent: { outboxPath: string; packet: { id: string } } };
+        expect(await readFile(path.join(path.dirname(created.structuredContent.outboxPath), 'artifacts/index.ts'), 'utf8')).toBe('export const mcp = true;\n');
 
         await expect(harness.callTool('list_packets', { direction: 'outbox' })).resolves.toMatchObject({
           structuredContent: { packets: [expect.objectContaining({ packet: expect.objectContaining({ id: created.structuredContent.packet.id }) })] },

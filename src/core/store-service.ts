@@ -1,9 +1,9 @@
-import { mkdir, readFile, readdir, rename, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import YAML from 'yaml';
 
 import { parseAndValidateRecord, parseRecordMarkdown, type ParsedRecord, type RecordParserResult } from './record-parser.js';
-import { sourceRecordDirs, toStoreRelativePath } from './store-layout.js';
+import { packetFolderPath, packetMarkdownPath, sourceRecordDirs, toStoreRelativePath } from './store-layout.js';
 import { NotchException } from '../types/errors.js';
 
 export type WriteRecordOptions = {
@@ -17,6 +17,21 @@ export type WriteRecordOptions = {
 export type WrittenRecord = {
   path: string;
   relativePath: string;
+  rootPath?: string;
+  rootRelativePath?: string;
+};
+
+export type PacketBundleFile = {
+  content: Buffer | string;
+  relativePath: string;
+};
+
+export type WritePacketBundleOptions = {
+  directory: string;
+  explicitSlug?: boolean;
+  files: PacketBundleFile[];
+  packetMarkdown: string;
+  slug: string;
 };
 
 export type ScannedRecord = RecordParserResult & {
@@ -54,6 +69,41 @@ export async function writeRecordWithCollisionHandling(
   return {
     path: filePath,
     relativePath: toStoreRelativePath(storePath, filePath),
+  };
+}
+
+export async function writePacketBundleWithCollisionHandling(
+  storePath: string,
+  options: WritePacketBundleOptions,
+): Promise<WrittenRecord> {
+  const folderName = await uniquePacketFolderName(options.directory, options.slug, options.explicitSlug ?? false);
+  const folderPath = packetFolderPath(options.directory, folderName);
+  const tempFolderPath = path.join(options.directory, `.${folderName}.${process.pid}.${Date.now()}.tmp`);
+  const markdownPath = packetMarkdownPath(tempFolderPath);
+
+  try {
+    await atomicWriteFile(markdownPath, options.packetMarkdown);
+
+    for (const file of options.files) {
+      assertSafeBundleRelativePath(file.relativePath);
+      const filePath = path.join(tempFolderPath, file.relativePath);
+      await ensureDir(path.dirname(filePath));
+      await writeFile(filePath, file.content);
+    }
+
+    await rename(tempFolderPath, folderPath);
+  } catch (error) {
+    await rm(tempFolderPath, { force: true, recursive: true });
+    throw error;
+  }
+
+  const finalMarkdownPath = packetMarkdownPath(folderPath);
+
+  return {
+    path: finalMarkdownPath,
+    relativePath: toStoreRelativePath(storePath, finalMarkdownPath),
+    rootPath: folderPath,
+    rootRelativePath: toStoreRelativePath(storePath, folderPath),
   };
 }
 
@@ -136,7 +186,10 @@ async function uniqueFilename(
   let candidate = `${base}${extension}`;
   let suffix = 2;
 
-  while (await exists(path.join(directory, candidate))) {
+  while (
+    await exists(path.join(directory, candidate))
+    || await exists(path.join(directory, candidate.slice(0, -extension.length)))
+  ) {
     if (explicitSlug) {
       throw new NotchException({
         code: 'NOTCH_WRITE_FAILED',
@@ -155,6 +208,34 @@ async function uniqueFilename(
   return candidate;
 }
 
+async function uniquePacketFolderName(
+  directory: string,
+  slug: string,
+  explicitSlug: boolean,
+): Promise<string> {
+  const base = slug.replace(/\.md$/, '');
+  let candidate = base;
+  let suffix = 2;
+
+  while (await exists(path.join(directory, candidate)) || await exists(path.join(directory, `${candidate}.md`))) {
+    if (explicitSlug) {
+      throw new NotchException({
+        code: 'NOTCH_WRITE_FAILED',
+        message: `Packet folder already exists for explicit slug: ${slug}`,
+        path: path.join(directory, candidate),
+        recovery: 'Choose another slug or omit the slug to allow automatic suffixing.',
+        severity: 'error',
+        exitCode: 1,
+      });
+    }
+
+    candidate = `${base}-${suffix}`;
+    suffix += 1;
+  }
+
+  return candidate;
+}
+
 async function markdownFiles(directory: string): Promise<string[]> {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = await Promise.all(
@@ -162,6 +243,10 @@ async function markdownFiles(directory: string): Promise<string[]> {
       const filePath = path.join(directory, entry.name);
 
       if (entry.isDirectory()) {
+        if (entry.name === 'artifacts') {
+          return [];
+        }
+
         return await markdownFiles(filePath);
       }
 
@@ -170,6 +255,26 @@ async function markdownFiles(directory: string): Promise<string[]> {
   );
 
   return files.flat();
+}
+
+function assertSafeBundleRelativePath(relativePath: string): void {
+  const normalized = relativePath.split(path.sep).join('/');
+
+  if (
+    normalized.length === 0
+    || normalized.startsWith('/')
+    || normalized.includes('\\')
+    || normalized.split('/').some((part) => part.length === 0 || part === '.' || part === '..')
+  ) {
+    throw new NotchException({
+      code: 'NOTCH_PATH_OUTSIDE_STORE',
+      message: `Packet bundle path is unsafe: ${relativePath}`,
+      path: relativePath,
+      recovery: 'Use a relative path inside the packet folder.',
+      severity: 'error',
+      exitCode: 5,
+    });
+  }
 }
 
 async function exists(filePath: string): Promise<boolean> {

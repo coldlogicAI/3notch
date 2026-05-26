@@ -5,6 +5,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { CallToolRequestSchema, ListToolsRequestSchema, type CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 
+import { parseArtifactFileSpec } from '../core/artifact-service.js';
 import { createTargetedBrief, getProjectBrief, getTargetedBrief, listTargetedBriefs } from '../core/brief-service.js';
 import { checkStore } from '../core/check-service.js';
 import { loadConfig } from '../core/config-service.js';
@@ -179,13 +180,15 @@ async function executeTool(
     case 'create_packet': {
       return await createPacket(context, {
         agent: mcpActorName(args, options),
+        files: stringArray(args.files).map(parseArtifactFileSpec),
         includedRecords: arrayArg(args.include),
         ...(stringArg(args.importNotes) ? { importNotes: stringArg(args.importNotes) } : {}),
+        ...(stringArg(args.nextSteps) ? { nextSteps: stringArg(args.nextSteps) } : {}),
         ...(stringArg(args.outputPath) ? { outputPath: stringArg(args.outputPath) } : {}),
         mcp: true,
         ...(enumArg<PacketPurpose>(args.purpose) ? { purpose: enumArg<PacketPurpose>(args.purpose) } : {}),
         ...(enumArg<Sensitivity>(args.sensitivity) ? { sensitivity: enumArg<Sensitivity>(args.sensitivity) } : {}),
-        sourceLinks: arrayArg<SourceLink>(args.sourceLinks),
+        sourceLinks: [...arrayArg<SourceLink>(args.sourceLinks), ...stringArray(args.refs).map((file) => ({ kind: 'file' as const, path: file }))],
         sourceTool: 'notch-mcp',
         summary: requiredString(args.summary, 'summary'),
         ...(stringArg(args.task) ? { task: stringArg(args.task) } : {}),
@@ -210,11 +213,13 @@ async function executeTool(
     case 'create_reply': {
       return await createReply(context, {
         agent: mcpActorName(args, options),
+        files: stringArray(args.files).map(parseArtifactFileSpec),
         mcp: true,
+        ...(stringArg(args.nextSteps) ? { nextSteps: stringArg(args.nextSteps) } : {}),
         parentId: requiredString(args.parentId, 'parentId'),
         private: Boolean(args.private),
         replyType: requiredString(args.replyType, 'replyType') as ReplyType,
-        sourceLinks: arrayArg<SourceLink>(args.sourceLinks),
+        sourceLinks: [...arrayArg<SourceLink>(args.sourceLinks), ...stringArray(args.refs).map((file) => ({ kind: 'file' as const, path: file }))],
         sourceTool: 'notch-mcp',
         summary: requiredString(args.summary, 'summary'),
         tags: stringArray(args.tags),

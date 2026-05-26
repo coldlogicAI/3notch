@@ -2,6 +2,8 @@ import { createDatedFilename, createRecordId, toSlug } from './id-service.js';
 import { resolveActor, type ResolveActorOptions } from './actor-service.js';
 import type { ActorNameResolution, ActorTypeResolution, RecordMeta, RecordStatus, RecordType, ReviewStatus } from '../types/records.js';
 
+export const CURRENT_PACKET_SCHEMA_VERSION = '0.4.0';
+
 export type CreateRecordMetaOptions = ResolveActorOptions & {
   date?: Date;
   recordType: RecordType;
@@ -31,7 +33,7 @@ export function createRecordMeta(options: CreateRecordMetaOptions): CreatedRecor
     filenameBase: createDatedFilename(options.title, '', date),
     meta: {
       id: createRecordId(idPrefix, options.title, date),
-      schemaVersion: '1.0.0',
+      schemaVersion: CURRENT_PACKET_SCHEMA_VERSION,
       recordType: options.recordType,
       status: options.status ?? 'active',
       createdAt: date.toISOString(),

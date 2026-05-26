@@ -42,3 +42,29 @@ export function getStorePaths(storePath: string): StorePaths {
 export function toStoreRelativePath(storePath: string, filePath: string): string {
   return path.relative(storePath, filePath).split(path.sep).join('/');
 }
+
+export function packetFolderPath(directory: string, slug: string): string {
+  return path.join(directory, slug.replace(/\.md$/, ''));
+}
+
+export function packetMarkdownPath(packetFolder: string): string {
+  return path.join(packetFolder, 'packet.md');
+}
+
+export function packetManifestPath(packetFolder: string): string {
+  return path.join(packetFolder, 'manifest.json');
+}
+
+export function packetArtifactsPath(packetFolder: string): string {
+  return path.join(packetFolder, 'artifacts');
+}
+
+export function packetRootPath(markdownPath: string): string {
+  return path.basename(markdownPath) === 'packet.md' ? path.dirname(markdownPath) : markdownPath;
+}
+
+export function packetSlugFromMarkdownPath(markdownPath: string): string {
+  return path.basename(markdownPath) === 'packet.md'
+    ? path.basename(path.dirname(markdownPath))
+    : path.basename(markdownPath, '.md');
+}

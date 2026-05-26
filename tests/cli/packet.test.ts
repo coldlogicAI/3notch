@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -11,6 +11,8 @@ describe('notch packet', () => {
       await withTempProject({ prefix: 'notch-dest-' }, async (destination) => {
         await runCli(['onboard', '--yes', '--name', 'source-app'], { cwd: source.path });
         await runCli(['onboard', '--yes', '--name', 'destination-app'], { cwd: destination.path });
+        await mkdir(path.join(source.path, 'src'), { recursive: true });
+        await writeFile(path.join(source.path, 'src/index.ts'), 'export const value = 1;\n', 'utf8');
 
         const create = await runCli(
           [
@@ -33,6 +35,7 @@ describe('notch packet', () => {
         expect(create.exitCode).toBe(0);
         const created = JSON.parse(create.stdout) as { outboxPath: string; packet: { id: string } };
         expect(created.outboxPath).toContain('.notch/outbox');
+        expect(created.outboxPath.endsWith(path.join('source-app-state-to-codex', 'packet.md'))).toBe(true);
 
         const sourceList = await runCli(['--json', 'packet', 'list', '--outbox'], { cwd: source.path });
         expect(JSON.parse(sourceList.stdout)).toMatchObject({
@@ -50,6 +53,7 @@ describe('notch packet', () => {
         expect(imported.exitCode).toBe(0);
         const importedData = JSON.parse(imported.stdout) as { inboxPath: string };
         expect(importedData.inboxPath).toContain(path.join('.notch', 'inbox'));
+        expect(importedData.inboxPath.endsWith('packet.md')).toBe(true);
 
         const destinationList = await runCli(['--json', 'packet', 'list', '--inbox'], {
           cwd: destination.path,
@@ -132,6 +136,49 @@ describe('notch packet', () => {
       });
     });
   });
+
+  it('packs and unpacks packet archives', async () => {
+    await withTempProject({ prefix: 'notch-source-' }, async (source) => {
+      await withTempProject({ prefix: 'notch-dest-' }, async (destination) => {
+        await runCli(['onboard', '--yes', '--name', 'pack-source'], { cwd: source.path });
+        await runCli(['onboard', '--yes', '--name', 'pack-destination'], { cwd: destination.path });
+        await writeFile(path.join(source.path, 'showcase.html'), '<main>bundle</main>\n', 'utf8');
+        const create = await runCli([
+          '--json',
+          'packet',
+          'create',
+          '--title',
+          'Packed packet',
+          '--summary',
+          'Packet with artifact bytes.',
+          '--to-agent',
+          'codex',
+          '--to-repo',
+          destination.path,
+          '--file',
+          'showcase.html:source',
+          '--next-steps',
+          'Use artifacts/showcase.html.',
+        ], { cwd: source.path });
+        const created = JSON.parse(create.stdout) as { packet: { id: string } };
+        const archivePath = path.join(source.path, 'handoff.notchpkt');
+        const pack = await runCli(['--json', 'packet', 'pack', created.packet.id, '--output', archivePath], { cwd: source.path });
+        const packed = JSON.parse(pack.stdout) as { archivePath: string; bytes: number };
+
+        expect(pack.exitCode).toBe(0);
+        expect(packed.archivePath).toBe(archivePath);
+        expect(packed.bytes).toBeGreaterThan(0);
+
+        const unpack = await runCli(['--json', 'packet', 'unpack', archivePath], { cwd: destination.path });
+        const unpacked = JSON.parse(unpack.stdout) as { inboxPath: string; packet: { id: string; nextSteps: string } };
+
+        expect(unpack.exitCode).toBe(0);
+        expect(unpacked.packet.id).toBe(created.packet.id);
+        expect(unpacked.packet.nextSteps).toBe('Use artifacts/showcase.html.');
+        expect(await readFile(path.join(path.dirname(unpacked.inboxPath), 'artifacts/showcase.html'), 'utf8')).toBe('<main>bundle</main>\n');
+      });
+    });
+  }, 15_000);
 
   it('runs the secret scanner against stdin imports', async () => {
     await withTempProject({ prefix: 'notch-source-' }, async (source) => {

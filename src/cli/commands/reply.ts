@@ -2,13 +2,16 @@ import type { Command } from 'commander';
 
 import { getCliContext } from '../context.js';
 import { printInfo, printJson } from '../output.js';
+import { parseArtifactFileSpec, type ArtifactFileInput } from '../../core/artifact-service.js';
 import { loadConfig } from '../../core/config-service.js';
 import { createReply } from '../../core/packet-service.js';
 import type { ReplyType, SourceLink } from '../../types/records.js';
 
 type ReplyOptions = {
   file?: string[];
+  nextSteps?: string;
   private?: boolean;
+  ref?: string[];
   summary?: string;
   tags?: string;
   title?: string;
@@ -30,7 +33,9 @@ export function registerReplyCommand(program: Command): void {
     .option('--to-person <person>', 'target person')
     .option('--to-repo <repo>', 'target repo')
     .option('--private', 'force private sensitivity')
-    .option('--file <path>', 'attach a source file link', collect, [])
+    .option('--file <path[:purpose]>', 'copy a file into packet artifacts', collect, [])
+    .option('--ref <path>', 'attach a source file reference without copying bytes', collect, [])
+    .option('--next-steps <text>', 'instructions for the receiving agent')
     .option('--tags <tags>', 'comma-separated tags')
     .action(async (parentId: string, options: ReplyOptions, command: Command) => {
       const context = getCliContext(command);
@@ -38,10 +43,13 @@ export function registerReplyCommand(program: Command): void {
         ...(context.cwd ? { cwd: context.cwd } : {}),
         ...(context.store ? { store: context.store } : {}),
       });
-      const sourceLinks: SourceLink[] = (options.file ?? []).map((file) => ({ kind: 'file', path: file }));
+      const files: ArtifactFileInput[] = (options.file ?? []).map(parseArtifactFileSpec);
+      const sourceLinks: SourceLink[] = (options.ref ?? []).map((file) => ({ kind: 'file', path: file }));
       const result = await createReply(loaded, {
         ...(context.actor ? { actor: context.actor } : {}),
         ...(context.agent ? { agent: context.agent } : {}),
+        files,
+        ...(options.nextSteps ? { nextSteps: options.nextSteps } : {}),
         parentId,
         ...(options.private ? { private: true } : {}),
         replyType: requiredReplyType(options.type),

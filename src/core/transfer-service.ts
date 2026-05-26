@@ -1,15 +1,16 @@
 import { createHash } from 'node:crypto';
-import { basename } from 'node:path';
-import { readFile, stat } from 'node:fs/promises';
+import path, { basename } from 'node:path';
+import { lstat, readFile, stat } from 'node:fs/promises';
 
+import { readPacketBundleFiles, verifyPacketFolderArtifacts } from './artifact-service.js';
 import { appendAuditEntry } from './audit-service.js';
 import { parseAndValidateRecord } from './record-parser.js';
 import { resolveActor } from './actor-service.js';
 import { assertNoSecretsWithAudit } from './secret-scan-service.js';
 import { rebuildIndex } from './index-service.js';
-import { isValidScannedRecord, renderMarkdownRecord, scanMarkdownRecords, writeRecordWithCollisionHandling } from './store-service.js';
+import { isValidScannedRecord, renderMarkdownRecord, scanMarkdownRecords, writePacketBundleWithCollisionHandling, writeRecordWithCollisionHandling } from './store-service.js';
 import { createDatedFilename, toSlug } from './id-service.js';
-import { NotchException } from '../types/errors.js';
+import { NotchException, errorToNotchError } from '../types/errors.js';
 import type { LoadedConfig } from './config-service.js';
 import type { NotchPacket, SourceTool } from '../types/records.js';
 
@@ -26,9 +27,38 @@ export async function importPacketFile(
     sourceTool?: SourceTool['name'];
   } = {},
 ): Promise<{ inboxPath: string; packet: NotchPacket }> {
+  const packetStat = await lstat(packetPath);
+
+  if (packetStat.isDirectory()) {
+    return await importPacketFolder(context, packetPath, options);
+  }
+
+  if (basename(packetPath) === 'packet.md' && await hasPacketFolderSiblings(path.dirname(packetPath))) {
+    return await importPacketFolder(context, path.dirname(packetPath), options);
+  }
+
   const markdown = await readFile(packetPath, 'utf8');
 
   return await importPacketMarkdown(context, markdown, packetPath, options);
+}
+
+export async function importPacketFolder(
+  context: LoadedConfig,
+  packetFolderPath: string,
+  options: {
+    actor?: string;
+    agent?: string;
+    asReviewed?: boolean;
+    forcePrivate?: boolean;
+    mcp?: boolean;
+    seedOnly?: boolean;
+    sourceTool?: SourceTool['name'];
+  } = {},
+): Promise<{ inboxPath: string; packet: NotchPacket }> {
+  const packetMarkdownPath = path.join(packetFolderPath, 'packet.md');
+  const markdown = await readFile(packetMarkdownPath, 'utf8');
+
+  return await importPacketMarkdown(context, markdown, packetFolderPath, options, packetFolderPath);
 }
 
 export async function importPacketMarkdown(
@@ -44,6 +74,7 @@ export async function importPacketMarkdown(
     seedOnly?: boolean;
     sourceTool?: SourceTool['name'];
   } = {},
+  packetFolderPath?: string,
 ): Promise<{ inboxPath: string; packet: NotchPacket }> {
   const parsed = parseAndValidateRecord<NotchPacket>(markdown, importedFrom);
 
@@ -58,7 +89,38 @@ export async function importPacketMarkdown(
   }
 
   const packet = parsed.data;
-  await assertImportedReferencesExist(context, packet);
+  const importer = resolveActor({
+    ...(options.actor ? { actor: options.actor } : {}),
+    ...(options.agent ? { agent: options.agent } : {}),
+    cwd: context.projectRoot,
+    ...(options.mcp ? { mcp: true } : {}),
+    ...(options.sourceTool ? { sourceTool: options.sourceTool } : {}),
+  });
+
+  try {
+    if (packetFolderPath) {
+      await verifyPacketFolderArtifacts(packetFolderPath, packet);
+    }
+
+    await assertImportedReferencesExist(context, packet);
+  } catch (error) {
+    const notchError = errorToNotchError(error);
+    await appendAuditEntry(context.paths.logs, {
+      schemaVersion: '1.0.0',
+      at: new Date().toISOString(),
+      operation: 'import',
+      result: 'failed',
+      actor: importer.actor,
+      actorNameResolution: importer.actorNameResolution,
+      actorTypeResolution: importer.actorTypeResolution,
+      sourceTool: importer.sourceTool,
+      recordType: 'packet',
+      recordId: packet.id,
+      importedFrom,
+      errorCode: notchError.code,
+    });
+    throw error;
+  }
 
   if (options.seedOnly && packet.purpose !== 'seed') {
     throw new NotchException({
@@ -79,13 +141,6 @@ export async function importPacketMarkdown(
   };
   const body = parsed.body ?? '';
   const rendered = renderMarkdownRecord(imported, body);
-  const importer = resolveActor({
-    ...(options.actor ? { actor: options.actor } : {}),
-    ...(options.agent ? { agent: options.agent } : {}),
-    cwd: context.projectRoot,
-    ...(options.mcp ? { mcp: true } : {}),
-    ...(options.sourceTool ? { sourceTool: options.sourceTool } : {}),
-  });
   await assertNoSecretsWithAudit(rendered, context.config, {
     actor: importer.actor,
     actorNameResolution: importer.actorNameResolution,
@@ -103,11 +158,19 @@ export async function importPacketMarkdown(
   const slug = privateImport
     ? createDatedFilename(`${imported.title}-seed-from-${from}`, '', new Date())
     : createDatedFilename(`${imported.title}-from-${from}`, '', new Date());
-  const written = await writeRecordWithCollisionHandling(context.storePath, {
-    content: rendered,
-    directory,
-    slug,
-  });
+  const bundleFiles = packetFolderPath ? await readPacketBundleFiles(packetFolderPath) : [];
+  const written = bundleFiles.length > 0
+    ? await writePacketBundleWithCollisionHandling(context.storePath, {
+        directory,
+        files: bundleFiles,
+        packetMarkdown: rendered,
+        slug,
+      })
+    : await writeRecordWithCollisionHandling(context.storePath, {
+        content: rendered,
+        directory,
+        slug,
+      });
   await assertImmutableRecordDestination(written.path, rendered);
 
   await appendAuditEntry(context.paths.logs, {
@@ -184,4 +247,11 @@ async function assertImportedReferencesExist(context: LoadedConfig, packet: Notc
 
 function sha256(value: string): string {
   return createHash('sha256').update(value).digest('hex');
+}
+
+async function hasPacketFolderSiblings(packetFolderPath: string): Promise<boolean> {
+  const manifest = await stat(path.join(packetFolderPath, 'manifest.json')).catch(() => undefined);
+  const artifacts = await stat(path.join(packetFolderPath, 'artifacts')).catch(() => undefined);
+
+  return Boolean(manifest?.isFile() || artifacts?.isDirectory());
 }

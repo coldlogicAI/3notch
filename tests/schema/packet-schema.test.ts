@@ -50,6 +50,44 @@ describe('packet schema', () => {
     expect(result.ok ? result.data.replyType : undefined).toBe('question');
   });
 
+  it('accepts nextSteps and well-formed artifact entries', async () => {
+    const markdown = await readFile(path.join(fixturesDir, 'valid-packet.md'), 'utf8');
+    const bundled = markdown.replace(
+      'summary: Carries schema implementation context into another repo.',
+      [
+        'summary: Carries schema implementation context into another repo.',
+        'nextSteps: Build the receiving feature from artifacts/showcase.html.',
+        'artifacts:',
+        '  - path: artifacts/showcase.html',
+        '    sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        '    bytes: 42',
+        '    purpose: source',
+      ].join('\n'),
+    );
+    const result = parseAndValidateRecord<NotchPacket>(bundled, 'artifact-packet.md');
+
+    expect(result.ok).toBe(true);
+    expect(result.ok ? result.data.nextSteps : undefined).toContain('Build the receiving feature');
+    expect(result.ok ? result.data.artifacts?.[0]?.purpose : undefined).toBe('source');
+  });
+
+  it('rejects unsafe artifact paths and malformed hashes', async () => {
+    const markdown = await readFile(path.join(fixturesDir, 'valid-packet.md'), 'utf8');
+    const unsafe = markdown.replace(
+      'summary: Carries schema implementation context into another repo.',
+      [
+        'summary: Carries schema implementation context into another repo.',
+        'artifacts:',
+        '  - path: ../secret.txt',
+        '    sha256: not-a-hash',
+        '    bytes: -1',
+        '    purpose: source',
+      ].join('\n'),
+    );
+
+    expect(parseAndValidateRecord<NotchPacket>(unsafe, 'unsafe-artifact.md').ok).toBe(false);
+  });
+
   it('rejects malformed relationship IDs and reply fields without replyTo', async () => {
     const markdown = await readFile(path.join(fixturesDir, 'valid-packet.md'), 'utf8');
     const malformed = markdown.replace(

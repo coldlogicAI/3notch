@@ -16,7 +16,7 @@
   "properties": {
     "schemaVersion": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/schemaVersion" },
     "at": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/timestamp" },
-    "operation": { "enum": ["create", "import", "rebuild-index", "secret-blocked", "validation-failed"] },
+    "operation": { "enum": ["create", "import", "rebuild-index", "scan-skip", "secret-blocked", "validation-failed"] },
     "result": { "enum": ["success", "blocked", "failed"] },
     "actor": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/actor" },
     "actorNameResolution": { "enum": ["cli-flag", "git-config", "environment", "unknown", "mcp-client"] },
@@ -26,6 +26,8 @@
     "recordId": { "type": "string", "minLength": 1 },
     "recordPath": { "type": "string", "minLength": 1 },
     "importedFrom": { "type": "string", "minLength": 1 },
+    "path": { "type": "string", "minLength": 1 },
+    "reason": { "type": "string", "minLength": 1 },
     "supersedes": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordId" },
     "errorCode": { "type": "string", "minLength": 1 }
   }

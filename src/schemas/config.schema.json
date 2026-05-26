@@ -78,6 +78,19 @@
           "uniqueItems": true
         }
       }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxArtifactBytes": { "type": "integer", "minimum": 1 },
+        "maxPacketBytes": { "type": "integer", "minimum": 1 },
+        "scanTextExtensions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
     }
   }
 }

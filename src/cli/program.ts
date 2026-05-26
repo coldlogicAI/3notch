@@ -37,8 +37,9 @@ Examples:
   $ notch mark --summary "Remember this project decision"
   $ notch reply <id> --type question --summary "Can you clarify this?"
   $ notch check
-  $ notch packet create --title "Auth handoff" --to-agent codex --summary "..."
-  $ notch packet import ../other-repo/.notch/outbox/<file>.md
+  $ notch packet create --title "Auth handoff" --to-agent codex --summary "..." --file src/auth.ts --next-steps "Review auth flow."
+  $ notch packet pack <packet-id>
+  $ notch packet unpack <packet-id>.notchpkt
   $ notch scan README.md
   $ notch seed from ../old-project --review
   $ notch mcp serve

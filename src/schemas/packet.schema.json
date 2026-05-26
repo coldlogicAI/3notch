@@ -122,6 +122,11 @@
       }
     },
     "summary": { "type": "string", "minLength": 1 },
+    "nextSteps": { "type": "string", "minLength": 1 },
+    "artifacts": {
+      "type": "array",
+      "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/artifactEntry" }
+    },
     "supersedes": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordId" },
     "replyTo": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordId" },
     "replyType": { "enum": ["question", "clarification", "counter-decision", "objection", "confirmation"] },

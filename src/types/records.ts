@@ -7,6 +7,7 @@ export type RecordStatus = 'draft' | 'active' | 'archived';
 export type ReplyStatus = 'open' | 'resolved' | 'dismissed';
 export type PacketStatus = RecordStatus | ReplyStatus;
 export type PacketPurpose = 'handoff' | 'seed';
+export type PacketArtifactPurpose = 'asset' | 'source' | 'reference' | 'output';
 export type Sensitivity = 'project' | 'private';
 export type TransferStatus = 'draft' | 'outbox' | 'imported' | 'archived';
 export type ReplyType = 'question' | 'clarification' | 'counter-decision' | 'objection' | 'confirmation';
@@ -14,6 +15,7 @@ export type AuditOperation =
   | 'create'
   | 'import'
   | 'rebuild-index'
+  | 'scan-skip'
   | 'secret-blocked'
   | 'validation-failed';
 export type AuditResult = 'success' | 'blocked' | 'failed';
@@ -64,6 +66,13 @@ export type SourceLink = {
   lastVerifiedAt?: string;
 };
 
+export type PacketArtifact = {
+  path: string;
+  sha256: string;
+  bytes: number;
+  purpose: PacketArtifactPurpose;
+};
+
 export type RecordMeta = {
   id: string;
   schemaVersion: SchemaVersion;
@@ -107,6 +116,11 @@ export type NotchConfig = {
   };
   defaults: {
     allowedMcpWriteTools: string[];
+  };
+  artifacts?: {
+    maxArtifactBytes?: number;
+    maxPacketBytes?: number;
+    scanTextExtensions?: string[];
   };
 };
 
@@ -168,6 +182,8 @@ export type NotchPacket = Omit<RecordMeta, 'recordType' | 'status'> & {
     targetStore?: string;
   };
   summary: string;
+  nextSteps?: string;
+  artifacts?: PacketArtifact[];
   supersedes?: string;
   replyTo?: string;
   replyType?: ReplyType;
@@ -192,6 +208,8 @@ export type AuditEntry = {
   recordId?: string;
   recordPath?: string;
   importedFrom?: string;
+  path?: string;
+  reason?: string;
   supersedes?: string;
   errorCode?: string;
 };

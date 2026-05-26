@@ -74,6 +74,9 @@
         "toRepo": { "type": "string", "minLength": 1 },
         "task": { "type": "string", "minLength": 1 },
         "summary": { "type": "string", "minLength": 1 },
+        "nextSteps": { "type": "string", "minLength": 1 },
+        "files": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "refs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
         "include": {
           "type": "array",
           "items": {
@@ -137,6 +140,9 @@
         "toPerson": { "type": "string", "minLength": 1 },
         "toRepo": { "type": "string", "minLength": 1 },
         "private": { "type": "boolean" },
+        "nextSteps": { "type": "string", "minLength": 1 },
+        "files": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "refs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
         "sourceLinks": {
           "type": "array",
           "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLink" }

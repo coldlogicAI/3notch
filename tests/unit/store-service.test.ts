@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { scanMarkdownRecords, writeRecordWithCollisionHandling } from '../../src/core/store-service.js';
+import { scanMarkdownRecords, writePacketBundleWithCollisionHandling, writeRecordWithCollisionHandling } from '../../src/core/store-service.js';
 import { createBareStore } from '../helpers/store-fixtures.js';
 import { withTempProject } from '../helpers/temp-project.js';
 
@@ -51,6 +51,32 @@ describe('store service', () => {
           slug: 'packet',
         }),
       ).rejects.toMatchObject({ notchError: { code: 'NOTCH_WRITE_FAILED' } });
+    });
+  });
+
+  it('writes packet bundles and skips artifact markdown during record scans', async () => {
+    await withTempProject({}, async (project) => {
+      const storePath = await createBareStore(project.path);
+      const packet = await readFile(path.join(fixturesDir, 'valid-packet.md'), 'utf8');
+      const first = await writePacketBundleWithCollisionHandling(storePath, {
+        directory: path.join(storePath, 'outbox'),
+        files: [{ relativePath: 'artifacts/context.md', content: '# Artifact only\n' }],
+        packetMarkdown: packet,
+        slug: 'packet',
+      });
+      const second = await writeRecordWithCollisionHandling(storePath, {
+        content: packet,
+        directory: path.join(storePath, 'outbox'),
+        slug: 'packet',
+      });
+
+      expect(first.relativePath).toBe('outbox/packet/packet.md');
+      expect(path.basename(second.path)).toBe('packet-2.md');
+      const records = await scanMarkdownRecords(storePath, { includeInvalid: true });
+      expect(records.map((record) => record.relativePath).sort()).toEqual([
+        'outbox/packet-2.md',
+        'outbox/packet/packet.md',
+      ]);
     });
   });
 });

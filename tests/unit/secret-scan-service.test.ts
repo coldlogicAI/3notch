@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { assertNoSecrets, scanForSecrets } from '../../src/core/secret-scan-service.js';
+import { assertNoSecrets, isTextLikeArtifactPath, scanForSecrets } from '../../src/core/secret-scan-service.js';
 import { isNotchException } from '../../src/types/errors.js';
 
 describe('secret scan service', () => {
@@ -52,5 +52,18 @@ describe('secret scan service', () => {
   it('does not flag generated 3Notch identifiers as token-like secrets', () => {
     expect(scanForSecrets('packet_20260524T040512Z_repo_state')).toEqual([]);
     expect(scanForSecrets('20260524T040512Z-repo-state-to-codex')).toEqual([]);
+  });
+
+  it('classifies text-like artifact paths by built-in and configured extensions', () => {
+    expect(isTextLikeArtifactPath('showcase.html')).toBe(true);
+    expect(isTextLikeArtifactPath('mascot.jpg')).toBe(false);
+    expect(isTextLikeArtifactPath('design.custom', {
+      schemaVersion: '1.0.0',
+      project: { name: 'test', root: '/tmp/test' },
+      store: { path: '.notch', recordFormat: 'markdown-yaml', index: { enabled: true, engine: 'file-scan' } },
+      privacy: { telemetry: false, redactPatterns: [], secretScan: true, highEntropySecretScan: true },
+      defaults: { allowedMcpWriteTools: [] },
+      artifacts: { scanTextExtensions: ['.custom'] },
+    })).toBe(true);
   });
 });

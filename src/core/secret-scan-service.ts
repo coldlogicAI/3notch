@@ -9,6 +9,35 @@ import type {
   SourceTool,
 } from '../types/records.js';
 
+export const DEFAULT_ARTIFACT_TEXT_EXTENSIONS = [
+  '.md',
+  '.txt',
+  '.html',
+  '.htm',
+  '.css',
+  '.js',
+  '.mjs',
+  '.cjs',
+  '.ts',
+  '.tsx',
+  '.jsx',
+  '.json',
+  '.yaml',
+  '.yml',
+  '.toml',
+  '.ini',
+  '.py',
+  '.rb',
+  '.sh',
+  '.bash',
+  '.zsh',
+  '.env.example',
+  '.gitignore',
+  '.conf',
+  '.xml',
+  '.svg',
+] as const;
+
 export type SecretFinding = {
   code: 'NOTCH_SECRET_DETECTED';
   excerpt?: string;
@@ -183,6 +212,62 @@ export async function assertNoSecretsWithAudit(
   });
 
   throw new NotchException(error);
+}
+
+export async function assertNoSecretsInArtifactWithAudit(
+  content: Buffer,
+  config: NotchConfig,
+  audit: {
+    actor: Actor;
+    actorNameResolution: ActorNameResolution;
+    actorTypeResolution: ActorTypeResolution;
+    logsDir: string;
+    path: string;
+    recordId: string;
+    sourcePath: string;
+    recordType: RecordType;
+    sourceTool: SourceTool;
+  },
+): Promise<void> {
+  if (!isTextLikeArtifactPath(audit.sourcePath, config)) {
+    await appendAuditEntry(audit.logsDir, {
+      schemaVersion: '1.0.0',
+      at: new Date().toISOString(),
+      operation: 'scan-skip',
+      result: 'success',
+      actor: audit.actor,
+      actorNameResolution: audit.actorNameResolution,
+      actorTypeResolution: audit.actorTypeResolution,
+      sourceTool: audit.sourceTool,
+      recordType: audit.recordType,
+      recordId: audit.recordId,
+      path: audit.path,
+      reason: 'extension-not-in-allowlist',
+    });
+    return;
+  }
+
+  await assertNoSecretsWithAudit(content.toString('utf8'), config, {
+    actor: audit.actor,
+    actorNameResolution: audit.actorNameResolution,
+    actorTypeResolution: audit.actorTypeResolution,
+    field: `packet artifact ${audit.path}`,
+    logsDir: audit.logsDir,
+    path: audit.path,
+    recordId: audit.recordId,
+    recordType: audit.recordType,
+    sourceTool: audit.sourceTool,
+  });
+}
+
+export function isTextLikeArtifactPath(filePath: string, config?: NotchConfig): boolean {
+  const normalized = filePath.toLowerCase();
+  const configured = config?.artifacts?.scanTextExtensions ?? [];
+  const allowlist = [...DEFAULT_ARTIFACT_TEXT_EXTENSIONS, ...configured]
+    .map((extension) => extension.toLowerCase())
+    .map((extension) => extension.startsWith('.') ? extension : `.${extension}`);
+
+  return allowlist.some((extension) => normalized.endsWith(extension));
 }
 
 export function findingToError(finding: SecretFinding | undefined): NotchError {

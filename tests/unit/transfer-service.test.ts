@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -47,6 +47,36 @@ describe('transfer service', () => {
         notchError: { code: 'NOTCH_RECORD_IMMUTABLE' },
       });
       await expect(assertImmutableRecordDestination(packetPath, 'existing packet content')).resolves.toBeUndefined();
+    });
+  });
+
+  it('rejects packet folders with tampered artifacts before writing inbox state', async () => {
+    await withTempProject({ prefix: 'notch-source-' }, async (source) => {
+      await withTempProject({ prefix: 'notch-dest-' }, async (destination) => {
+        await createBareStore(source.path, { name: 'source-app' });
+        await createBareStore(destination.path, { name: 'destination-app' });
+        await mkdir(path.join(source.path, 'assets'), { recursive: true });
+        await writeFile(path.join(source.path, 'assets/context.txt'), 'Clean context.\n', 'utf8');
+        const sourceContext = await loadConfig({ cwd: source.path });
+        const destinationContext = await loadConfig({ cwd: destination.path });
+        const created = await createPacket(sourceContext, {
+          files: [{ path: 'assets/context.txt', purpose: 'source' }],
+          summary: 'Source app state.',
+          title: 'Source app state',
+          toAgent: 'codex',
+          toRepo: destination.path,
+        });
+        const packetRoot = path.dirname(created.outboxPath);
+        await writeFile(path.join(packetRoot, 'artifacts/context.txt'), 'Tampered context.\n', 'utf8');
+
+        await expect(importPacketFile(destinationContext, packetRoot)).rejects.toMatchObject({
+          notchError: { code: 'NOTCH_ARTIFACT_HASH_MISMATCH' },
+        });
+        expect(await readdir(destinationContext.paths.inbox)).toEqual([]);
+        expect(await readAuditLog(destinationContext.paths.logs)).toEqual(expect.arrayContaining([
+          expect.objectContaining({ errorCode: 'NOTCH_ARTIFACT_HASH_MISMATCH', operation: 'import', result: 'failed' }),
+        ]));
+      });
     });
   });
 });

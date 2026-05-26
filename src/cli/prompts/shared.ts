@@ -40,7 +40,8 @@ When the user asks to package, transfer, or hand off project context, use the lo
 
 Use packets for cross-tool or cross-repo handoff:
 - Call create_packet when the user wants context prepared for another agent, repo, or person.
-- Include a concise summary, recipient metadata, sourceLinks, exclusions, and next steps.
+- Include a concise summary, recipient metadata, sourceLinks, exclusions, and a nextSteps field describing what the receiving agent should do - short, imperative, file paths included where relevant.
+- Use files for artifacts whose bytes should travel with the packet; use refs only when the receiver shares the same filesystem path.
 - Call list_packets and get_packet when the user asks to inspect available packets.
 - Call import_packet only for a packet path the user explicitly selected.
 
@@ -76,7 +77,7 @@ Use this packet shape:
 
 ---
 id: packet_YYYYMMDDTHHMMSSZ_short_context_name
-schemaVersion: "1.0.0"
+schemaVersion: "0.4.0"
 recordType: packet
 status: active
 title: Short context name
@@ -88,6 +89,7 @@ origin:
   storePath: claude-chat
 recipient: {}
 summary: One concise paragraph of selected context.
+nextSteps: Review this packet and apply only the selected context the user asked to carry forward.
 includedRecords: []
 includedSourceLinks: []
 createdAt: YYYY-MM-DDTHH:MM:SSZ
@@ -105,6 +107,10 @@ reviewStatus: unreviewed
 ## Summary
 
 One concise paragraph of selected context.
+
+## Next Steps
+
+Review this packet and apply only the selected context the user asked to carry forward.
 
 ## Recipient
 

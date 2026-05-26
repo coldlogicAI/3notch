@@ -2,12 +2,14 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { appendAuditEntry } from './audit-service.js';
+import { manifestBundleFile, preparePacketArtifacts, type ArtifactFileInput } from './artifact-service.js';
 import { assertSafeRelativePath } from './path-safety.js';
 import { createRecordMeta } from './record-factory.js';
 import { parseAndValidateRecord } from './record-parser.js';
 import { assertNoSecretsWithAudit } from './secret-scan-service.js';
 import { rebuildIndex } from './index-service.js';
-import { atomicWriteFile, isValidScannedRecord, renderMarkdownRecord, scanMarkdownRecords, writeRecordWithCollisionHandling, type ValidScannedRecord } from './store-service.js';
+import { atomicWriteFile, isValidScannedRecord, renderMarkdownRecord, scanMarkdownRecords, writePacketBundleWithCollisionHandling, writeRecordWithCollisionHandling, type ValidScannedRecord } from './store-service.js';
+import { packetRootPath, packetSlugFromMarkdownPath, toStoreRelativePath } from './store-layout.js';
 import { toSlug } from './id-service.js';
 import { NotchException, type NotchError } from '../types/errors.js';
 import type { LoadedConfig } from './config-service.js';
@@ -17,9 +19,11 @@ export type CreatePacketInput = {
   actor?: string | undefined;
   agent?: string | undefined;
   destination?: 'outbox' | 'private-inbox' | undefined;
+  files?: ArtifactFileInput[];
   includedRecords?: PacketRecordRef[];
   importNotes?: string | undefined;
   mcp?: boolean | undefined;
+  nextSteps?: string | undefined;
   outputPath?: string | undefined;
   purpose?: PacketPurpose | undefined;
   replyStatus?: ReplyStatus | undefined;
@@ -55,6 +59,8 @@ export type CreateReplyInput = {
   actor?: string | undefined;
   agent?: string | undefined;
   mcp?: boolean | undefined;
+  files?: ArtifactFileInput[];
+  nextSteps?: string | undefined;
   parentId: string;
   private?: boolean | undefined;
   replyStatus?: ReplyStatus | undefined;
@@ -100,7 +106,8 @@ export async function createPacket(
 
   for (const link of input.sourceLinks ?? []) {
     if (link.kind === 'file' && link.path) {
-      assertSafeRelativePath(link.path, context.config.project.root);
+      const safe = assertSafeRelativePath(link.path, context.config.project.root);
+      assertNotStoreRelativePath(safe.relativePath, link.path);
     }
   }
 
@@ -142,6 +149,7 @@ export async function createPacket(
       ...(input.toRepo ? { targetRepo: input.toRepo } : {}),
     },
     summary: input.summary,
+    ...(input.nextSteps ? { nextSteps: input.nextSteps } : {}),
     ...(input.supersedes ? { supersedes: input.supersedes } : {}),
     ...(input.replyTo ? { replyTo: input.replyTo } : {}),
     ...(input.replyType ? { replyType: input.replyType } : {}),
@@ -149,8 +157,6 @@ export async function createPacket(
     includedSourceLinks: input.sourceLinks ?? [],
     ...(input.importNotes ? { importNotes: input.importNotes } : {}),
   };
-  const body = renderPacketBody(packet, input.task);
-  const markdown = renderMarkdownRecord(packet, body);
   const directory = input.destination === 'private-inbox'
     ? context.paths.privateInbox
     : sensitivity === 'private' || purpose === 'seed'
@@ -159,6 +165,27 @@ export async function createPacket(
   const slug = input.destination === 'private-inbox'
     ? created.filenameBase
     : `${created.filenameBase}-to-${toSlug(input.toAgent ?? input.toPerson ?? input.toRepo ?? 'seed')}`;
+  const preparedArtifacts = (input.files ?? []).length > 0
+    ? await preparePacketArtifacts(context, {
+        actor: packet.createdBy,
+        actorNameResolution: created.actorNameResolution,
+        actorTypeResolution: created.actorTypeResolution,
+        files: input.files ?? [],
+        packetId: packet.id,
+        sourceTool: packet.sourceTool,
+      })
+    : undefined;
+
+  if (preparedArtifacts && preparedArtifacts.artifacts.length > 0) {
+    packet.artifacts = preparedArtifacts.artifacts;
+    warnings.push(...preparedArtifacts.warnings);
+  }
+
+  const body = renderPacketBody(packet, input.task);
+  const markdown = renderMarkdownRecord(packet, body);
+  const packetMarkdownRelativePath = preparedArtifacts && preparedArtifacts.artifacts.length > 0
+    ? path.join(path.relative(context.storePath, directory), slug, 'packet.md')
+    : path.join(path.relative(context.storePath, directory), `${slug}.md`);
 
   await assertNoSecretsWithAudit(markdown, context.config, {
     actor: packet.createdBy,
@@ -166,7 +193,7 @@ export async function createPacket(
     actorTypeResolution: created.actorTypeResolution,
     field: 'packet markdown',
     logsDir: context.paths.logs,
-    path: path.join(path.relative(context.storePath, directory), `${slug}.md`),
+    path: packetMarkdownRelativePath,
     recordId: packet.id,
     recordType: 'packet',
     sourceTool: packet.sourceTool,
@@ -178,11 +205,22 @@ export async function createPacket(
     throw new NotchException(validation.errors[0] ?? invalidRecordError('Packet failed validation.'));
   }
 
-  const written = await writeRecordWithCollisionHandling(context.storePath, {
-    content: markdown,
-    directory,
-    slug,
-  });
+  const manifest = manifestBundleFile(packet);
+  const written = preparedArtifacts && preparedArtifacts.artifacts.length > 0
+    ? await writePacketBundleWithCollisionHandling(context.storePath, {
+        directory,
+        files: [
+          ...(manifest ? [manifest] : []),
+          ...preparedArtifacts.bundleFiles,
+        ],
+        packetMarkdown: markdown,
+        slug,
+      })
+    : await writeRecordWithCollisionHandling(context.storePath, {
+        content: markdown,
+        directory,
+        slug,
+      });
   let outputPath: string | undefined;
 
   if (input.outputPath) {
@@ -256,8 +294,10 @@ export async function createReply(
     ...(input.actor ? { actor: input.actor } : {}),
     ...(input.agent ? { agent: input.agent } : {}),
     destination,
+    files: input.files ?? [],
     importNotes: `Reply to ${input.parentId}.`,
     ...(input.mcp ? { mcp: true } : {}),
+    ...(input.nextSteps ? { nextSteps: input.nextSteps } : {}),
     purpose: destination === 'private-inbox' ? 'seed' : 'handoff',
     replyStatus: input.replyStatus ?? 'open',
     replyTo: input.parentId,
@@ -285,7 +325,7 @@ export async function listPackets(
     limit?: number | undefined;
     purpose?: PacketPurpose | undefined;
   } = {},
-): Promise<Array<{ direction: 'inbox' | 'outbox'; packet: NotchPacket; path: string }>> {
+): Promise<Array<{ direction: 'inbox' | 'outbox'; markdownPath: string; packet: NotchPacket; path: string; rootPath: string }>> {
   const records = await scanMarkdownRecords(context.storePath, {
     ...(filters.includePrivate === undefined ? {} : { includePrivate: filters.includePrivate }),
   });
@@ -296,8 +336,10 @@ export async function listPackets(
     .filter((record) => record.record.metadata.recordType === 'packet')
     .map((record) => ({
       direction: record.relativePath.includes('/outbox/') || record.relativePath.startsWith('outbox/') ? 'outbox' as const : 'inbox' as const,
+      markdownPath: record.path,
       packet: record.record.metadata as NotchPacket,
       path: record.path,
+      rootPath: packetRootPath(record.path),
     }))
     .filter((entry) => direction === 'both' || entry.direction === direction)
     .filter((entry) => !filters.purpose || entry.packet.purpose === filters.purpose)
@@ -309,14 +351,14 @@ export async function getPacket(
   context: LoadedConfig,
   idOrSlug: string,
   options: { direction?: 'inbox' | 'outbox' | 'both'; includePrivate?: boolean } = {},
-): Promise<{ direction: 'inbox' | 'outbox'; markdown: string; packet: NotchPacket; path: string }> {
+): Promise<{ direction: 'inbox' | 'outbox'; markdown: string; markdownPath: string; packet: NotchPacket; path: string; rootPath: string; rootRelativePath: string }> {
   const packets = await listPackets(context, {
     ...(options.direction ? { direction: options.direction } : {}),
     ...(options.includePrivate === undefined ? {} : { includePrivate: options.includePrivate }),
     limit: 1000,
   });
   const matches = packets.filter((entry) => {
-    const stem = path.basename(entry.path, '.md');
+    const stem = packetSlugFromMarkdownPath(entry.markdownPath);
     return entry.packet.id === idOrSlug || stem === idOrSlug;
   });
 
@@ -348,7 +390,8 @@ export async function getPacket(
 
   return {
     ...match,
-    markdown: await readFile(match.path, 'utf8'),
+    markdown: await readFile(match.markdownPath, 'utf8'),
+    rootRelativePath: toStoreRelativePath(context.storePath, match.rootPath),
   };
 }
 
@@ -356,6 +399,11 @@ export function renderPacketBody(packet: NotchPacket, task?: string): string {
   const baseBody = `## Summary
 
 ${packet.summary}
+${packet.nextSteps ? `
+## Next Steps
+
+${packet.nextSteps}
+` : ''}
 
 ## Recipient
 
@@ -458,6 +506,19 @@ async function findRecordById(context: LoadedConfig, id: string): Promise<ValidS
 
 function isOutboxPath(relativePath: string): boolean {
   return relativePath.startsWith('outbox/') || relativePath.startsWith('private/outbox/');
+}
+
+function assertNotStoreRelativePath(relativePath: string, originalPath: string): void {
+  if (relativePath === '.notch' || relativePath.startsWith('.notch/')) {
+    throw new NotchException({
+      code: 'NOTCH_ARTIFACT_PATH_INVALID',
+      message: 'Packet references cannot point inside the .notch store.',
+      path: originalPath,
+      recovery: 'Reference project source files, not 3Notch store internals.',
+      severity: 'error',
+      exitCode: 5,
+    });
+  }
 }
 
 function parentTitle(metadata: Record<string, unknown>): string {

@@ -19,7 +19,7 @@ describe('record factory', () => {
       id: 'packet_20260523T180000Z_auth_handoff',
       recordType: 'packet',
       reviewStatus: 'reviewed',
-      schemaVersion: '1.0.0',
+      schemaVersion: '0.4.0',
       sourceTool: { name: 'notch-cli' },
     });
     expect(created.slug).toBe('auth-handoff');
