@@ -4,11 +4,35 @@
 
 You are already the bus for your AI context: copying summaries between Claude, Codex, Cursor, ChatGPT, terminals, repos, and new projects. 3Notch is the local packet layer for the context you meant to carry by hand.
 
-3Notch is a local-first CLI and MCP server for moving explicit, reviewable Markdown/YAML records under `.notch/`. There is no cloud service, account, telemetry, vector database, hidden chat scraping, semantic indexing, or remote connector in V2.
+3Notch is a local-first CLI and MCP server for moving explicit, reviewable Markdown/YAML records under `.notch/`. There is no cloud service, account, telemetry, vector database, hidden chat scraping, semantic indexing, or remote connector in V3.
 
 ## Quickstart
 
-### 1. Same-Store Cross-Tool
+### 1. Bundle Files For Another Tool
+
+When Claude Desktop, Claude Code, Codex, Cursor, or another MCP-capable client has files the next tool needs, create a packet that carries both intent and bytes:
+
+```bash
+notch packet create \
+  --title "Brand handoff" \
+  --summary "Brand handoff for the launch page." \
+  --to-agent codex \
+  --to-repo ../brand-site \
+  --file mascot.jpg:asset \
+  --file showcase.html:source \
+  --next-steps "Build a one-page site at apps/brand-site/ using showcase.html as the layout and mascot.jpg in the hero."
+```
+
+The packet lands as a folder in `.notch/outbox/` with `packet.md`, `manifest.json`, and copied files under `artifacts/`. The receiving repo imports the folder or its `packet.md`:
+
+```bash
+notch packet import ../source/.notch/outbox/<packet-folder>/packet.md
+notch packet preview <packet-id>
+```
+
+MCP clients use the same model through `create_packet` with `files` and `nextSteps`.
+
+### 2. Same-Store Cross-Tool
 
 For a project you use from both Claude Code and Claude Desktop, point both clients at the same `.notch/` store:
 
@@ -32,14 +56,27 @@ notch packet list --outbox
 notch packet preview <packet-id>
 ```
 
-### 2. Cross-Repo Packet
+### 3. Cross-Repo Packet
 
 When the destination is a different repo, create an outbox packet in the source and import it in the destination:
 
 ```bash
-notch packet create --title "Auth handoff" --summary "Auth context for the API repo." --to-agent codex --to-repo ../api --file src/auth.ts
-notch packet import ../source/.notch/outbox/<packet-file>.md
+notch packet create --title "Auth handoff" --summary "Auth context for the API repo." --to-agent codex --to-repo ../api --ref src/auth.ts
+notch packet import ../source/.notch/outbox/<packet-file-or-folder>/packet.md
 ```
+
+Use `--ref` for V2-style pointer-only packets when both sides share the same workspace path. Use `--file` when the receiver needs the bytes copied into the packet.
+
+### Cross-Machine Pack / Unpack
+
+The folder is canonical on disk. To move a packet through email, iCloud, scp, Tailscale, or any other channel, pack it into a deterministic `.notchpkt` archive and unpack it in the destination:
+
+```bash
+notch packet pack <packet-id>
+notch packet unpack <packet-id>.notchpkt
+```
+
+V2 single-file packets keep working. 3Notch reads them in place without migration; new artifact packets use the folder layout.
 
 ### Fallback: Web Chats Without MCP
 
@@ -75,8 +112,10 @@ WORKDIR="$(mktemp -d)"
 mkdir -p "$WORKDIR/source-app" "$WORKDIR/destination-app"
 node dist/cli/index.js --cwd "$WORKDIR/source-app" onboard --yes --name source-app
 node dist/cli/index.js --cwd "$WORKDIR/destination-app" onboard --yes --name destination-app
-PACKET="$(node dist/cli/index.js --cwd "$WORKDIR/source-app" --json packet create --title "Current repo state" --summary "Checkout and admin settings changed." --to-agent claude --to-repo "$WORKDIR/destination-app" --file README.md | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).outboxPath))")"
-node dist/cli/index.js --cwd "$WORKDIR/source-app" packet preview "$(basename "$PACKET" .md)" --outbox
+CREATE_JSON="$(node dist/cli/index.js --cwd "$WORKDIR/source-app" --json packet create --title "Current repo state" --summary "Checkout and admin settings changed." --to-agent claude --to-repo "$WORKDIR/destination-app" --file README.md --next-steps "Review README.md and continue the destination setup.")"
+PACKET="$(printf '%s' "$CREATE_JSON" | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).outboxPath))")"
+PACKET_ID="$(printf '%s' "$CREATE_JSON" | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).packet.id))")"
+node dist/cli/index.js --cwd "$WORKDIR/source-app" packet preview "$PACKET_ID" --outbox
 node dist/cli/index.js --cwd "$WORKDIR/destination-app" packet import "$PACKET"
 node dist/cli/index.js --cwd "$WORKDIR/destination-app" packet list --inbox
 ```
@@ -105,11 +144,13 @@ notch brief create
 notch brief list
 notch brief show <id>
 notch packet create
-notch packet import <file>
+notch packet import <file-or-folder>
 notch packet import -
 notch packet list
 notch packet show <id>
 notch packet preview <id>
+notch packet pack <id>
+notch packet unpack <archive>
 notch seed from <repo-or-store-path>
 notch scan <file-or-stdin>
 notch status

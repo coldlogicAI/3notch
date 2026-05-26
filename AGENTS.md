@@ -41,6 +41,7 @@ CLI commands:
 - `notch reply <id>`
 - `notch brief`, `notch brief create`, `notch brief list`, `notch brief show <id>`
 - `notch packet create`, `notch packet import <file>`, `notch packet import -`, `notch packet list`, `notch packet show <id>`, `notch packet preview <id>`
+- `notch packet pack <id>`, `notch packet unpack <archive>`
 - `notch seed from <repo-or-store-path>`
 - `notch prompt --client <client>`
 - `notch scan <file-or-stdin>`

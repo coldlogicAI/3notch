@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "1.0.0",
+  "project": {
+    "name": "v2-back-compat",
+    "root": "/tmp/v2-back-compat"
+  },
+  "store": {
+    "path": ".notch",
+    "recordFormat": "markdown-yaml",
+    "index": {
+      "enabled": true,
+      "engine": "file-scan"
+    }
+  },
+  "privacy": {
+    "telemetry": false,
+    "redactPatterns": [
+      {
+        "kind": "regex",
+        "value": "(api[_-]?key|secret|password|token)",
+        "flags": "i"
+      }
+    ],
+    "secretScan": true,
+    "highEntropySecretScan": true
+  },
+  "defaults": {
+    "allowedMcpWriteTools": [
+      "create_brief",
+      "create_packet",
+      "import_packet",
+      "create_mark",
+      "create_reply",
+      "create_seed_packet",
+      "import_seed_packet"
+    ]
+  }
+}

@@ -6,6 +6,18 @@ All notable changes to 3Notch will be documented in this file.
 
 - No unreleased changes.
 
+## 0.4.0 - 2026-05-25
+
+- Add folder-canonical packet bundles with `packet.md`, optional `manifest.json`, and bundled `artifacts/`.
+- Add packet `artifacts[]` and `nextSteps` schema fields.
+- Change `--file` to copy artifact bytes by default and add `--ref` for V2 pointer-only behavior.
+- Record SHA-256 and byte size for artifacts in both packet frontmatter and `manifest.json`.
+- Add `notch packet pack` and `notch packet unpack` for deterministic `.notchpkt` gzipped tar archives.
+- Extend scanner coverage over text-like artifacts and audit binary `scan-skip` events.
+- Enforce artifact size caps: 50MB per artifact, 200MB per packet, with 80% soft warnings.
+- Bump new packet schema version to `0.4.0`.
+- Keep V2 single-file packets readable without migration.
+
 ## 0.3.0 - 2026-05-24
 
 - Add `supersedes`, `replyTo`, `replyType`, and reply `status` packet fields.

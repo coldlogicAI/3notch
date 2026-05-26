@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 
 import { createNotchMcpServer } from '../../src/mcp/server.js';
 import { createMcpHarness } from '../helpers/mcp-harness.js';
@@ -11,6 +13,8 @@ describe('e2e cross-repo packet smoke', () => {
       await withTempProject({ prefix: 'notch-e2e-dest-' }, async (destination) => {
         await runCli(['onboard', '--yes', '--name', 'source-app'], { cwd: source.path });
         await runCli(['onboard', '--yes', '--name', 'destination-app'], { cwd: destination.path });
+        await mkdir(path.join(source.path, 'src'), { recursive: true });
+        await writeFile(path.join(source.path, 'src/index.ts'), 'export const state = "ready";\n', 'utf8');
         await runCli([
           'brief',
           'create',
