@@ -33,7 +33,7 @@ export function registerReplyCommand(program: Command): void {
     .option('--to-person <person>', 'target person')
     .option('--to-repo <repo>', 'target repo')
     .option('--private', 'force private sensitivity')
-    .option('--file <path[:purpose]>', 'copy a file into packet artifacts', collect, [])
+    .option('--file <path[:purpose]>', 'copy a file into packet artifacts; purpose: asset, source, reference, or output; favicon/icon/logo/image become asset', collect, [])
     .option('--ref <path>', 'attach a source file reference without copying bytes', collect, [])
     .option('--next-steps <text>', 'instructions for the receiving agent')
     .option('--tags <tags>', 'comma-separated tags')

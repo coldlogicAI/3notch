@@ -6,6 +6,76 @@ import { runCli } from '../helpers/run-cli.js';
 import { withTempProject } from '../helpers/temp-project.js';
 
 describe('notch packet', () => {
+  it('normalizes common artifact purpose aliases', async () => {
+    await withTempProject({ prefix: 'notch-alias-' }, async (project) => {
+      await runCli(['onboard', '--yes', '--name', 'artifact-purpose-app'], { cwd: project.path });
+      await mkdir(path.join(project.path, 'src/app'), { recursive: true });
+      await writeFile(path.join(project.path, 'src/app/icon.svg'), '<svg />\n', 'utf8');
+
+      const result = await runCli(
+        [
+          '--json',
+          'packet',
+          'create',
+          '--title',
+          'Favicon delivery',
+          '--summary',
+          'Favicon artifact purpose smoke.',
+          '--to-agent',
+          'codex',
+          '--file',
+          'src/app/icon.svg:favicon',
+        ],
+        { cwd: project.path },
+      );
+
+      expect(result.exitCode).toBe(0);
+      expect(JSON.parse(result.stdout)).toMatchObject({
+        packet: {
+          artifacts: [
+            expect.objectContaining({
+              path: 'artifacts/icon.svg',
+              purpose: 'asset',
+            }),
+          ],
+        },
+      });
+    });
+  });
+
+  it('rejects unknown artifact purpose labels with a clear error', async () => {
+    await withTempProject({ prefix: 'notch-invalid-purpose-' }, async (project) => {
+      await runCli(['onboard', '--yes', '--name', 'artifact-purpose-app'], { cwd: project.path });
+      await mkdir(path.join(project.path, 'src/app'), { recursive: true });
+      await writeFile(path.join(project.path, 'src/app/icon.svg'), '<svg />\n', 'utf8');
+
+      const result = await runCli(
+        [
+          '--json',
+          'packet',
+          'create',
+          '--title',
+          'Invalid purpose',
+          '--summary',
+          'Invalid artifact purpose smoke.',
+          '--to-agent',
+          'codex',
+          '--file',
+          'src/app/icon.svg:handoff',
+        ],
+        { cwd: project.path },
+      );
+
+      expect(result.exitCode).toBe(1);
+      expect(JSON.parse(result.stderr)).toMatchObject({
+        error: {
+          code: 'NOTCH_ARTIFACT_PURPOSE_INVALID',
+          recovery: expect.stringContaining('asset'),
+        },
+      });
+    });
+  });
+
   it('creates, lists, shows, and imports packets across two repos', async () => {
     await withTempProject({ prefix: 'notch-source-' }, async (source) => {
       await withTempProject({ prefix: 'notch-dest-' }, async (destination) => {
@@ -168,6 +238,15 @@ describe('notch packet', () => {
         expect(pack.exitCode).toBe(0);
         expect(packed.archivePath).toBe(archivePath);
         expect(packed.bytes).toBeGreaterThan(0);
+
+        const readableArchivePath = path.join(source.path, 'handoff with spaces.notchpkt');
+        const readablePack = await runCli(['packet', 'pack', created.packet.id, '--output', readableArchivePath], { cwd: source.path });
+
+        expect(readablePack.exitCode).toBe(0);
+        expect(readablePack.stdout).toContain('To receive this packet in another repo:');
+        expect(readablePack.stdout).toContain('cd /path/to/destination-repo');
+        expect(readablePack.stdout).toContain('notch onboard --yes');
+        expect(readablePack.stdout).toContain(`notch packet unpack '${readableArchivePath}'`);
 
         const unpack = await runCli(['--json', 'packet', 'unpack', archivePath], { cwd: destination.path });
         const unpacked = JSON.parse(unpack.stdout) as { inboxPath: string; packet: { id: string; nextSteps: string } };

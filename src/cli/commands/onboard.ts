@@ -285,7 +285,7 @@ This project uses 3Notch for explicit, reviewable context handoffs between AI to
 1. Read \`brief.md\` for the project baseline.
 2. Use \`notch packet list\`, \`notch packet show <id>\`, and \`notch packet preview <id>\` to inspect existing handoffs.
 3. When the user asks you to hand context to another repo, person, or tool, create a packet with \`notch packet create\`.
-4. Use \`--file <path[:purpose]>\` when the receiver needs copied bytes. Use \`--ref <path>\` only when the receiver shares the same filesystem path.
+4. Use \`--file <path[:purpose]>\` when the receiver needs copied bytes. If you are unsure, omit \`:purpose\`; the default is \`asset\`. Valid artifact purposes are \`asset\`, \`source\`, \`reference\`, and \`output\`; common labels like \`favicon\`, \`icon\`, \`logo\`, and \`image\` are accepted as \`asset\`. Use \`--ref <path>\` only when the receiver shares the same filesystem path.
 5. Use \`notch packet pack <id>\` and \`notch packet unpack <archive>\` when a packet needs to move between machines.
 6. Run \`notch check\` after imports or relationship-heavy changes. Run \`notch doctor\` when the store seems unhealthy.
 

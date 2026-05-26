@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 - `assertImmutablePacketFolder` is now called before bundle writes so the "sealed folder" contract is enforced at write time, not just implied by collision suffixing.
 - `notch onboard` now points users to `.notch/README.md` first and keeps `notch prompt` as a web-chat / copy-paste fallback.
+- Common `--file <path:purpose>` aliases such as `:favicon`, `:icon`, `:logo`, and `:image` normalize to `asset`; unknown labels fail with a clear artifact-purpose error.
 - All user-facing docs rewritten to be version-agnostic and current to V3 (artifact bundling, `nextSteps`, pack/unpack, full MCP tool surface).
 
 ### Removed

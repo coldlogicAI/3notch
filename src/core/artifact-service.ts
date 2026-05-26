@@ -20,6 +20,30 @@ import type {
 } from '../types/records.js';
 
 export const ARTIFACT_PURPOSES = ['asset', 'source', 'reference', 'output'] as const;
+const ARTIFACT_PURPOSE_ALIASES: Record<string, PacketArtifactPurpose> = {
+  code: 'source',
+  favicon: 'asset',
+  favicons: 'asset',
+  icon: 'asset',
+  icons: 'asset',
+  image: 'asset',
+  images: 'asset',
+  img: 'asset',
+  logo: 'asset',
+  logos: 'asset',
+  media: 'asset',
+  photo: 'asset',
+  photos: 'asset',
+  picture: 'asset',
+  pictures: 'asset',
+  ref: 'reference',
+  refs: 'reference',
+  result: 'output',
+  results: 'output',
+  screenshot: 'asset',
+  screenshots: 'asset',
+  src: 'source',
+};
 export const DEFAULT_MAX_ARTIFACT_BYTES = 50 * 1024 * 1024;
 export const DEFAULT_MAX_PACKET_BYTES = 200 * 1024 * 1024;
 export const SIZE_WARN_RATIO = 0.8;
@@ -57,15 +81,36 @@ export function parseArtifactFileSpec(value: string): ArtifactFileInput {
   }
 
   const maybePurpose = value.slice(delimiter + 1);
+  const normalizedPurpose = maybePurpose.trim().toLowerCase();
 
-  if (isArtifactPurpose(maybePurpose)) {
+  if (isArtifactPurpose(normalizedPurpose)) {
     return {
       path: value.slice(0, delimiter),
-      purpose: maybePurpose,
+      purpose: normalizedPurpose,
     };
   }
 
-  return { path: value };
+  const aliasPurpose = ARTIFACT_PURPOSE_ALIASES[normalizedPurpose];
+
+  if (aliasPurpose) {
+    return {
+      path: value.slice(0, delimiter),
+      purpose: aliasPurpose,
+    };
+  }
+
+  if (/[\\/]/.test(maybePurpose) || maybePurpose.includes('.')) {
+    return { path: value };
+  }
+
+  throw new NotchException({
+    code: 'NOTCH_ARTIFACT_PURPOSE_INVALID',
+    message: `Invalid artifact purpose "${maybePurpose}" in file spec: ${value}`,
+    path: value,
+    recovery: `Use one of: ${ARTIFACT_PURPOSES.join(', ')}. Common labels like favicon, icon, logo, image, and screenshot are accepted as asset.`,
+    severity: 'error',
+    exitCode: 1,
+  });
 }
 
 export async function preparePacketArtifacts(

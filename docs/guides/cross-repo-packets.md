@@ -24,7 +24,7 @@ Recipient fields (`--to-agent`, `--to-person`, `--to-repo`) label intent. They d
 - `--file <path>` copies the file's bytes into the packet's `artifacts/` directory and records a SHA-256 hash. Use this when the receiver does not share your filesystem.
 - `--ref <path>` records a pointer only. Use this when the receiver shares the same workspace path (sibling repo on the same machine).
 
-Append `:asset`, `:source`, `:reference`, or `:output` to a `--file` arg to tag its purpose. Default is `asset`.
+Append `:asset`, `:source`, `:reference`, or `:output` to a `--file` arg to tag its purpose. Default is `asset`; when unsure, omit the suffix. Common human labels like `:favicon`, `:icon`, `:logo`, `:image`, and `:screenshot` are accepted as `asset`.
 
 ## Preview Before Import
 

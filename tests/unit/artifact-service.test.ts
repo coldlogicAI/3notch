@@ -3,13 +3,43 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { readAuditLog } from '../../src/core/audit-service.js';
-import { sha256 } from '../../src/core/artifact-service.js';
+import { parseArtifactFileSpec, sha256 } from '../../src/core/artifact-service.js';
 import { loadConfig } from '../../src/core/config-service.js';
 import { createPacket } from '../../src/core/packet-service.js';
 import { createBareStore } from '../helpers/store-fixtures.js';
 import { withTempProject } from '../helpers/temp-project.js';
 
 describe('artifact service integration', () => {
+  it('parses artifact file purpose labels, aliases common labels, and rejects unknown labels', () => {
+    expect(parseArtifactFileSpec('src/app/icon.svg:asset')).toEqual({
+      path: 'src/app/icon.svg',
+      purpose: 'asset',
+    });
+    expect(parseArtifactFileSpec('src/app/icon.svg:favicon')).toEqual({
+      path: 'src/app/icon.svg',
+      purpose: 'asset',
+    });
+    expect(parseArtifactFileSpec('src/app/index.ts:code')).toEqual({
+      path: 'src/app/index.ts',
+      purpose: 'source',
+    });
+    expect(parseArtifactFileSpec('docs/api.md:ref')).toEqual({
+      path: 'docs/api.md',
+      purpose: 'reference',
+    });
+    expect(parseArtifactFileSpec('dist/report.html:result')).toEqual({
+      path: 'dist/report.html',
+      purpose: 'output',
+    });
+    expect(parseArtifactFileSpec('src/app/icon.svg')).toEqual({ path: 'src/app/icon.svg' });
+    expect(parseArtifactFileSpec('C:\\project\\icon.svg')).toEqual({ path: 'C:\\project\\icon.svg' });
+    expect(() => parseArtifactFileSpec('src/app/icon.svg:handoff')).toThrowError(
+      expect.objectContaining({
+        notchError: expect.objectContaining({ code: 'NOTCH_ARTIFACT_PURPOSE_INVALID' }),
+      }),
+    );
+  });
+
   it('copies artifact bytes, records hashes, writes manifest, and audits binary scan skips', async () => {
     await withTempProject({}, async (project) => {
       await createBareStore(project.path, { name: 'artifact-app' });

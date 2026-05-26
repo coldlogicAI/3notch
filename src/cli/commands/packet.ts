@@ -71,7 +71,7 @@ export function registerPacketCommand(program: Command): void {
     .option('--sensitivity <sensitivity>', 'packet sensitivity: project or private')
     .option('--supersedes <id>', 'record ID this packet supersedes')
     .option('--private', 'create a private seed packet')
-    .option('--file <path[:purpose]>', 'copy a file into packet artifacts', collect, [])
+    .option('--file <path[:purpose]>', 'copy a file into packet artifacts; purpose: asset, source, reference, or output; favicon/icon/logo/image become asset', collect, [])
     .option('--ref <path>', 'include a source file reference without copying bytes', collect, [])
     .option('--next-steps <text>', 'instructions for the receiving agent')
     .option('--out <path>', 'write an additional portable packet file')
@@ -139,6 +139,13 @@ export function registerPacketCommand(program: Command): void {
 
       printInfo(`Packed packet ${result.packet.id}`, context.output);
       printInfo(archivePath, context.output);
+      printInfo([
+        '',
+        'To receive this packet in another repo:',
+        '  cd /path/to/destination-repo',
+        '  notch onboard --yes',
+        `  notch packet unpack ${quoteShellArg(archivePath)}`,
+      ].join('\n'), context.output);
     });
 
   packet
@@ -343,6 +350,14 @@ function renderPacketPreview(markdown: string, scannerFindings: SecretFinding[],
     ...artifactLines,
     markdown,
   ].join('\n');
+}
+
+function quoteShellArg(value: string): string {
+  if (/^[A-Za-z0-9_./:@%+=,-]+$/.test(value)) {
+    return value;
+  }
+
+  return `'${value.replaceAll("'", "'\\''")}'`;
 }
 
 async function readStdin(): Promise<string> {
