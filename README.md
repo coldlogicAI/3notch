@@ -2,6 +2,8 @@
 
 **Your AI tools will change. Your project context should not have to.**
 
+[**Website →**](https://3notch.dev) · [**Docs →**](https://3notch.dev/docs/) · [**Quickstart →**](https://3notch.dev/docs/quickstart/) · [**npm →**](https://www.npmjs.com/package/@3notch/cli)
+
 [![CI](https://img.shields.io/github/actions/workflow/status/coldlogicAI/3notch/ci.yml?branch=main&style=flat-square)](https://github.com/coldlogicAI/3notch/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@3notch/cli?style=flat-square)](https://www.npmjs.com/package/@3notch/cli)
 [![Node](https://img.shields.io/node/v/@3notch/cli?style=flat-square)](https://nodejs.org)
