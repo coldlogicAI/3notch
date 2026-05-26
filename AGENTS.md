@@ -2,7 +2,7 @@
 
 ## Purpose
 
-3Notch is a local-first CLI and MCP server for moving project context across boundaries that built-in AI tooling cannot cross — across repos, across AI work surfaces, web chats, and into new projects. V2 ships packet transfer, private context seeding, targeted briefs, self-addressed marks, typed packet replies, web-chat stdin intake, relationship indexing, and deterministic corpus checks. Supporting commands: onboard, status, doctor, mcp serve.
+3Notch is a local-first CLI and MCP server for moving project context across boundaries that built-in AI tooling cannot cross — across repos, across AI work surfaces, web chats, and into new projects. V3 is the current shipped surface: packet transfer with artifact bundles, private context seeding, targeted briefs, self-addressed marks, typed packet replies, web-chat stdin intake, relationship indexing, deterministic corpus checks, and `.notchpkt` pack/unpack for cross-machine transport. Supporting commands: `onboard`, `status`, `doctor`, `mcp serve`.
 
 ## Read First
 
@@ -52,7 +52,7 @@ MCP tools:
 - `create_mark`, `create_reply`, `check_store`
 - `get_status`, `run_doctor`
 
-## Deferred From V1 (do not implement)
+## Deferred (do not implement)
 
 These are deliberately out of scope. Same-repo same-tool continuity is solved by CLAUDE.md, native tool memory, and `git commit`. 3Notch's wedge is cross-boundary transport.
 
@@ -67,13 +67,10 @@ A regression-guard test (`tests/unit/no-deferred-commands.test.ts`) prevents acc
 
 ## Boundaries
 
-- Do not implement the full V1 plan unless the user asks for that session.
 - When the user presents a product idea or asks "is this the right path?", discuss and pressure-test it before changing specs, plans, or repo files.
-- Treat cross-repo packets as core V1.
-- Treat private context seeding as core V1.
-- Treat cross-tool handoff as the product direction: Claude Desktop, Claude Code, Codex, Cursor, ChatGPT exchange context through explicit reviewable packets, not copy-paste.
-- No telemetry, cloud sync, hosted service, dashboard, vector database, or SQLite/native DB for V1.
-- Do not build hidden chat or project scraping. MCP tools write selected or summarized context the user/agent explicitly supplies during a session.
+- Treat cross-repo packets, cross-tool handoff, and private context seeding as the core product loops.
+- No telemetry, cloud sync, hosted service, dashboard, vector database, or SQLite/native DB.
+- Do not build hidden chat or project scraping. MCP tools write selected or summarized context the user or agent explicitly supplies during a session.
 - Preserve human-readable `.notch/` source files as the source of truth.
 - Use `.notch/outbox/` for created packets, `.notch/inbox/` for imported packets, and ignored `.notch/private/` for user preferences, workflow conventions, and seed packets.
 - Treat `.notch/index/` and `.notch/logs/` as derived/noisy output.
@@ -93,9 +90,10 @@ npm run lint
 npm run type-check
 npm run build
 npm test
+npm run test:e2e
 node dist/cli/index.js --help
 ```
 
 ## Done Criteria
 
-Run lint, type-check, build, tests, and a built CLI smoke check before claiming implementation work is done. Keep commits focused and leave the repo clean.
+Run lint, type-check, build, unit tests, e2e tests, and a built-CLI smoke check before claiming implementation work is done. Keep commits focused and leave the repo clean.

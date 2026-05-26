@@ -4,7 +4,15 @@
   "description": "Local-first private context packets across repos and AI tools.",
   "type": "module",
   "license": "MIT",
-  "author": "",
+  "author": "3Notch contributors",
+  "homepage": "https://github.com/OWNER/REPO#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OWNER/REPO.git"
+  },
+  "bugs": {
+    "url": "https://github.com/OWNER/REPO/issues"
+  },
   "keywords": [
     "ai",
     "agents",
