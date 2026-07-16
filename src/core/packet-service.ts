@@ -285,11 +285,20 @@ export async function createReply(
     ? parent.record.metadata as NotchPacket
     : undefined;
   const parentIsOutbox = isOutboxPath(parent.relativePath);
-  const destination = parentIsOutbox ? 'outbox' : 'private-inbox';
-  const toAgent = input.toAgent ?? parentPacket?.recipient.targetAgent;
-  const toPerson = input.toPerson ?? parentPacket?.recipient.targetPerson;
-  const toRepo = input.toRepo ?? parentPacket?.recipient.targetRepo;
-  const privateReply = input.private || destination === 'private-inbox';
+  const parentIsPrivate = !parentPacket
+    || parentPacket.purpose === 'seed'
+    || parentPacket.sensitivity === 'private';
+  const destination = parentIsOutbox || (!input.private && !parentIsPrivate)
+    ? 'outbox'
+    : 'private-inbox';
+  const inheritOriginalRecipient = parentIsOutbox || destination === 'private-inbox';
+  const toAgent = input.toAgent
+    ?? (inheritOriginalRecipient ? parentPacket?.recipient.targetAgent : undefined);
+  const toPerson = input.toPerson
+    ?? (inheritOriginalRecipient ? parentPacket?.recipient.targetPerson : undefined);
+  const toRepo = input.toRepo
+    ?? (inheritOriginalRecipient ? parentPacket?.recipient.targetRepo : parentPacket?.origin.projectName);
+  const privateReply = input.private || parentIsPrivate;
   const result = await createPacket(context, {
     ...(input.actor ? { actor: input.actor } : {}),
     ...(input.agent ? { agent: input.agent } : {}),

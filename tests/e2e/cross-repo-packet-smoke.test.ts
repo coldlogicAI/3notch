@@ -65,4 +65,115 @@ describe('e2e cross-repo packet smoke', () => {
       });
     });
   }, 20_000);
+
+  it('routes a reply to an imported project handoff back to the origin outbox', async () => {
+    await withTempProject({ prefix: 'notch-e2e-reply-source-' }, async (source) => {
+      await withTempProject({ prefix: 'notch-e2e-reply-dest-' }, async (destination) => {
+        await runCli(['onboard', '--yes', '--name', 'reply-source'], { cwd: source.path });
+        await runCli(['onboard', '--yes', '--name', 'reply-destination'], { cwd: destination.path });
+
+        const created = await runCli([
+          '--json',
+          'packet',
+          'create',
+          '--title',
+          'Review request',
+          '--summary',
+          'Review this project handoff.',
+          '--to-agent',
+          'reviewer',
+          '--to-repo',
+          'reply-destination',
+        ], { cwd: source.path });
+        const parent = JSON.parse(created.stdout) as {
+          outboxPath: string;
+          packet: { id: string };
+        };
+
+        await runCli(['packet', 'import', parent.outboxPath], { cwd: destination.path });
+        const reply = await runCli([
+          '--json',
+          'reply',
+          parent.packet.id,
+          '--type',
+          'confirmation',
+          '--summary',
+          'Review complete.',
+        ], { cwd: destination.path });
+        const replyData = JSON.parse(reply.stdout) as {
+          packet: {
+            purpose: string;
+            recipient: { targetAgent?: string; targetRepo?: string };
+            replyTo: string;
+            sensitivity: string;
+            transferStatus: string;
+          };
+          path: string;
+        };
+
+        expect(reply.exitCode).toBe(0);
+        expect(replyData.path).toContain(path.join('.notch', 'outbox'));
+        expect(replyData.path).not.toContain(path.join('.notch', 'private'));
+        expect(replyData.packet).toMatchObject({
+          purpose: 'handoff',
+          recipient: { targetRepo: 'reply-source' },
+          replyTo: parent.packet.id,
+          sensitivity: 'project',
+          transferStatus: 'outbox',
+        });
+        expect(replyData.packet.recipient.targetAgent).toBeUndefined();
+      });
+    });
+  }, 20_000);
+
+  it('keeps replies to imported private seeds in the private inbox', async () => {
+    await withTempProject({ prefix: 'notch-e2e-seed-source-' }, async (source) => {
+      await withTempProject({ prefix: 'notch-e2e-seed-dest-' }, async (destination) => {
+        await runCli(['onboard', '--yes', '--name', 'seed-source'], { cwd: source.path });
+        await runCli(['onboard', '--yes', '--name', 'seed-destination'], { cwd: destination.path });
+
+        const created = await runCli([
+          '--json',
+          'packet',
+          'create',
+          '--title',
+          'Private context',
+          '--summary',
+          'Keep this context private.',
+          '--private',
+        ], { cwd: source.path });
+        const parent = JSON.parse(created.stdout) as {
+          outboxPath: string;
+          packet: { id: string };
+        };
+
+        await runCli(['packet', 'import', parent.outboxPath], { cwd: destination.path });
+        const reply = await runCli([
+          '--json',
+          'reply',
+          parent.packet.id,
+          '--type',
+          'clarification',
+          '--summary',
+          'Private clarification.',
+        ], { cwd: destination.path });
+        const replyData = JSON.parse(reply.stdout) as {
+          packet: {
+            purpose: string;
+            sensitivity: string;
+            transferStatus: string;
+          };
+          path: string;
+        };
+
+        expect(reply.exitCode).toBe(0);
+        expect(replyData.path).toContain(path.join('.notch', 'private', 'inbox'));
+        expect(replyData.packet).toMatchObject({
+          purpose: 'seed',
+          sensitivity: 'private',
+          transferStatus: 'imported',
+        });
+      });
+    });
+  }, 20_000);
 });
