@@ -9,6 +9,7 @@ import { resolveActor } from './actor-service.js';
 import { assertNoSecretsWithAudit } from './secret-scan-service.js';
 import { rebuildIndex } from './index-service.js';
 import { isValidScannedRecord, renderMarkdownRecord, scanMarkdownRecords, writePacketBundleWithCollisionHandling, writeRecordWithCollisionHandling } from './store-service.js';
+import { withStoreWriteLock } from './store-lock-service.js';
 import { createDatedFilename, toSlug } from './id-service.js';
 import { NotchException, errorToNotchError } from '../types/errors.js';
 import type { LoadedConfig } from './config-service.js';
@@ -154,43 +155,69 @@ export async function importPacketMarkdown(
   });
   const privateImport = options.forcePrivate || imported.sensitivity === 'private' || imported.purpose === 'seed';
   const directory = privateImport ? context.paths.privateInbox : context.paths.inbox;
-  const from = toSlug(imported.origin.projectName);
-  const slug = privateImport
-    ? createDatedFilename(`${imported.title}-seed-from-${from}`, '', new Date())
-    : createDatedFilename(`${imported.title}-from-${from}`, '', new Date());
   const bundleFiles = packetFolderPath ? await readPacketBundleFiles(packetFolderPath) : [];
-  const written = bundleFiles.length > 0
-    ? await writePacketBundleWithCollisionHandling(context.storePath, {
-        directory,
-        files: bundleFiles,
-        packetMarkdown: rendered,
-        slug,
-      })
-    : await writeRecordWithCollisionHandling(context.storePath, {
-        content: rendered,
-        directory,
-        slug,
-      });
-  await assertImmutableRecordDestination(written.path, rendered);
 
-  await appendAuditEntry(context.paths.logs, {
-    schemaVersion: '1.0.0',
-    at: new Date().toISOString(),
-    operation: 'import',
-    result: 'success',
-    actor: importer.actor,
-    actorNameResolution: importer.actorNameResolution,
-    actorTypeResolution: importer.actorTypeResolution,
-    sourceTool: importer.sourceTool,
-    recordType: 'packet',
-    recordId: imported.id,
-    recordPath: written.relativePath,
-    importedFrom,
-    ...(imported.supersedes ? { supersedes: imported.supersedes } : {}),
+  return await withStoreWriteLock(context.storePath, async () => {
+    await assertPacketIdNotPresent(context, packet.id, directory);
+    const from = toSlug(imported.origin.projectName);
+    const slug = privateImport
+      ? createDatedFilename(`${imported.title}-seed-from-${from}`, '', new Date())
+      : createDatedFilename(`${imported.title}-from-${from}`, '', new Date());
+    const written = bundleFiles.length > 0
+      ? await writePacketBundleWithCollisionHandling(context.storePath, {
+          directory,
+          files: bundleFiles,
+          packetMarkdown: rendered,
+          slug,
+        })
+      : await writeRecordWithCollisionHandling(context.storePath, {
+          content: rendered,
+          directory,
+          slug,
+        });
+    await assertImmutableRecordDestination(written.path, rendered);
+
+    await appendAuditEntry(context.paths.logs, {
+      schemaVersion: '1.0.0',
+      at: new Date().toISOString(),
+      operation: 'import',
+      result: 'success',
+      actor: importer.actor,
+      actorNameResolution: importer.actorNameResolution,
+      actorTypeResolution: importer.actorTypeResolution,
+      sourceTool: importer.sourceTool,
+      recordType: 'packet',
+      recordId: imported.id,
+      recordPath: written.relativePath,
+      importedFrom,
+      ...(imported.supersedes ? { supersedes: imported.supersedes } : {}),
+    });
+    await rebuildIndex(context.storePath);
+
+    return { inboxPath: written.path, packet: imported };
   });
-  await rebuildIndex(context.storePath);
+}
 
-  return { inboxPath: written.path, packet: imported };
+async function assertPacketIdNotPresent(context: LoadedConfig, packetId: string, directory: string): Promise<void> {
+  const records = await scanMarkdownRecords(context.storePath, { includePrivate: true });
+  const existing = records.find(
+    (record) => isValidScannedRecord(record)
+      && record.record.metadata.id === packetId
+      && record.path.startsWith(`${directory}${path.sep}`),
+  );
+
+  if (!existing) {
+    return;
+  }
+
+  throw new NotchException({
+    code: 'NOTCH_RECORD_ALREADY_EXISTS',
+    message: `Packet ${packetId} is already present in this store.`,
+    path: existing.path,
+    recovery: 'Do not import the same packet twice. Transport adapters should deduplicate retries by packet ID and archive hash.',
+    severity: 'error',
+    exitCode: 6,
+  });
 }
 
 export async function assertImmutableRecordDestination(filePath: string, nextContent: string): Promise<void> {
