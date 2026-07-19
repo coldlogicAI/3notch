@@ -1,0 +1,14 @@
+{
+  "name": "3notch-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static site for 3notch.dev — local continuation checkpoints and portable handoff packets for AI agents.",
+  "homepage": "https://3notch.dev",
+  "license": "MIT",
+  "scripts": {
+    "dev": "npx --yes serve public -p 4321",
+    "deploy": "npx --yes wrangler@latest pages deploy public --project-name=3notch",
+    "deploy:preview": "npx --yes wrangler@latest pages deploy public --project-name=3notch --branch=preview"
+  },
+  "devDependencies": {}
+}

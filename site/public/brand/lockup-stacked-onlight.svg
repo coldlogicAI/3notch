@@ -1,0 +1,14 @@
+<!-- 3Notch · Lockup · ON LIGHT · STACKED (for use on Paper backgrounds) -->
+<!-- Spec ref: brand-system Section 05. Mark 28px above wordmark, 0.6rem gap. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 88" fill="none" role="img" aria-label="3Notch">
+  <!-- Mark: 28x28 -->
+  <g transform="translate(0, 0)">
+    <line x1="3.5" y1="7.7" x2="24.5" y2="7.7"  stroke="#E04E2C" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="3.5" y1="14"  x2="24.5" y2="14"   stroke="#E04E2C" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="3.5" y1="20.3" x2="24.5" y2="20.3" stroke="#E04E2C" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
+  <!-- Wordmark stacked below -->
+  <text x="0" y="68" font-family="Geist, system-ui, -apple-system, sans-serif" font-weight="600" font-size="22" letter-spacing="-0.55" fill="#0F0E0C">
+    <tspan fill="#E04E2C">3</tspan>Notch
+  </text>
+</svg>

@@ -1,0 +1,8 @@
+<!-- 3Notch · Mark · canonical (default — 28-72px range) -->
+<!-- Spec: viewBox 0 0 80 80 · stroke #E04E2C · stroke-linecap round -->
+<!-- For 16px favicon use mark-16.svg (stroke 14, x=8/x=72) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none" role="img" aria-label="3Notch mark">
+  <line x1="10" y1="22" x2="70" y2="22" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/>
+  <line x1="10" y1="40" x2="70" y2="40" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/>
+  <line x1="10" y1="58" x2="70" y2="58" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Continuation checkpoints — 3Notch Docs</title>
+<meta name="description" content="Configure local Claude Code continuation checkpoints for compaction, rate-limit, and agent-switch recovery with 3Notch.">
+<link rel="canonical" href="https://3notch.dev/docs/guides/continuation-checkpoints/">
+<meta name="theme-color" content="#0B0A08">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/docs/docs.css">
+</head>
+<body>
+
+<nav class="docs-nav">
+  <div class="docs-nav-inner">
+    <div class="docs-nav-left">
+      <a class="wordmark" href="/" aria-label="3Notch home">
+        <svg class="wm-mark" viewBox="0 0 80 80" width="16" height="16" fill="none" aria-hidden="true"><line x1="10" y1="22" x2="70" y2="22" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/><line x1="10" y1="40" x2="70" y2="40" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/><line x1="10" y1="58" x2="70" y2="58" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/></svg>
+        <span class="wm-text"><b>3</b>Notch</span>
+      </a>
+      <span class="docs-nav-breadcrumb"><a href="/docs/">Docs</a> <span class="sep">/</span> Guides <span class="sep">/</span> <b>Continuation checkpoints</b></span>
+    </div>
+    <div class="docs-nav-right">
+      <a class="nav-link" href="/">Home</a>
+      <a class="nav-cta" href="https://github.com/coldlogicAI/3notch" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="docs-layout">
+  <aside class="docs-sidebar" id="sidebar">
+    <button class="docs-sidebar-toggle" type="button" aria-controls="sidebar-inner" aria-expanded="false">Menu</button>
+    <div class="docs-sidebar-inner" id="sidebar-inner">
+      <div class="docs-sidebar-group">
+        <div class="docs-sidebar-head">Get started</div>
+        <ul>
+          <li><a href="/docs/">Overview</a></li>
+          <li><a href="/docs/quickstart/">Quickstart</a></li>
+        </ul>
+      </div>
+      <div class="docs-sidebar-group">
+        <div class="docs-sidebar-head">Guides</div>
+        <ul>
+          <li><a href="/docs/guides/continuation-checkpoints/" aria-current="page">Continuation checkpoints</a></li>
+          <li><a href="/docs/guides/cross-tool-handoff/">Cross-tool handoff</a></li>
+          <li><a href="/docs/guides/cross-repo-packets/">Cross-repo packets</a></li>
+          <li><a href="/docs/guides/private-context-seeding/">Private context seeding</a></li>
+          <li><a href="/docs/guides/targeted-brief-workflow/">Targeted brief workflow</a></li>
+          <li><a href="/docs/guides/mcp-setup/">MCP setup</a></li>
+        </ul>
+      </div>
+      <div class="docs-sidebar-group">
+        <div class="docs-sidebar-head">Reference</div>
+        <ul>
+          <li><a href="/docs/reference/privacy/">Privacy</a></li>
+          <li><a href="/docs/reference/security-story/">Security story</a></li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+  <main class="docs-content">
+    <div class="docs-meta">
+      <span class="eyebrow">Guide · v0.5.0</span>
+      <span class="docs-edit"><a href="https://github.com/coldlogicAI/3notch/blob/main/docs/guides/continuation-checkpoints.md" rel="noopener">Edit on GitHub →</a></span>
+    </div>
+
+    <h1>Continuation checkpoints<span class="accent">.</span></h1>
+    <p class="docs-lede">Preserve enough selected project state to continue after a rate limit, context compaction, or intentional agent switch. Checkpoints are ordinary local packets—not transcripts or hidden model memory.</p>
+
+    <h2>Enable Claude Code checkpoints</h2>
+    <pre><code><span class="prompt">$</span> <span class="cmd">notch onboard</span> <span class="flag">--yes</span> <span class="flag">--mcp</span> <span class="arg">claude-code</span> <span class="flag">--checkpoints</span> <span class="arg">prompt</span></code></pre>
+    <p><code>prompt</code> asks before the agent writes a semantic checkpoint. Choose <code>auto</code> to write at configured milestones, <code>script</code> for deterministic recovery fallbacks only, or <code>off</code> to remove the 3Notch-owned hooks.</p>
+    <p>Optional <code>--checkpoint-stop</code> evaluates every Claude response. It can produce frequent checkpoints, so onboarding warns before enabling it.</p>
+
+    <h2>What the recovery layer records</h2>
+    <ul>
+      <li><code>TaskCreated</code> and <code>TaskCompleted</code> aggregate structured task progress without creating one packet per checklist item.</li>
+      <li><code>PostCompact</code> uses Claude Code's documented <code>compact_summary</code>.</li>
+      <li><code>StopFailure:rate_limit</code> uses accumulated tasks and Git state when recoverable work exists.</li>
+      <li>Optional <code>Stop</code> uses the final assistant message and deduplicates unchanged state.</li>
+    </ul>
+    <p>Fallbacks include branch, short commit, dirty state, and changed-file names. They do not copy file contents or artifacts automatically.</p>
+
+    <h2>Resume safely</h2>
+    <p>At the next session start, 3Notch offers the latest matching checkpoint once. The agent must not load the packet body until you confirm. Every automatic or agent-authored checkpoint is <code>unreviewed</code> and targets <code>next-agent</code>.</p>
+    <p>Streams resolve from an explicit override, the current Git branch, a detached commit, or <code>default</code>. Each new checkpoint explicitly supersedes the latest checkpoint in that stream.</p>
+
+    <h2>Privacy boundary</h2>
+    <ul>
+      <li>Hook scripts never open <code>transcript_path</code>.</li>
+      <li>Ignored accumulators live under <code>.notch/index/continuation/</code>.</li>
+      <li>Project checkpoints may appear in Git; private checkpoints use ignored <code>.notch/private/outbox/</code>.</li>
+      <li>Private mode intentionally enables local MCP private reads and warns during setup.</li>
+      <li>3Notch never commits, pushes, imports, or transports a checkpoint automatically.</li>
+    </ul>
+    <p>A fallback cannot recover reasoning that was never reflected in a task, compact summary, Git state, final message, or prior semantic checkpoint.</p>
+
+    <div class="docs-pagination">
+      <a href="/docs/quickstart/" class="prev">
+        <span class="label">← Previous</span>
+        <span class="title">Quickstart</span>
+      </a>
+      <a href="/docs/guides/cross-tool-handoff/" class="next">
+        <span class="label">Next →</span>
+        <span class="title">Cross-tool handoff</span>
+      </a>
+    </div>
+  </main>
+</div>
+
+<footer class="docs-footer">
+  <div class="docs-footer-inner">
+    <span><b>3</b>Notch · v0.5.0 · OSS · MIT</span>
+    <span><a href="/">← Back to 3notch.dev</a></span>
+  </div>
+</footer>
+
+<script>
+  document.querySelectorAll('.docs-sidebar-toggle').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const sidebar = btn.closest('.docs-sidebar');
+      const isOpen = sidebar.classList.toggle('open');
+      btn.setAttribute('aria-expanded', String(isOpen));
+    });
+  });
+</script>
+
+</body>
+</html>

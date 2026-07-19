@@ -1,0 +1,12 @@
+# Cloudflare Pages redirects
+# https://developers.cloudflare.com/pages/configuration/redirects/
+
+# Force apex (www → root)
+https://www.3notch.dev/*  https://3notch.dev/:splat  301
+
+# Convenience shortlinks
+/github      https://github.com/coldlogicAI/3notch                  302
+/repo        https://github.com/coldlogicAI/3notch                  302
+/npm         https://www.npmjs.com/package/@3notch/cli              302
+/license     https://github.com/coldlogicAI/3notch/blob/main/LICENSE 302
+/changelog   https://github.com/coldlogicAI/3notch/blob/main/CHANGELOG.md 302

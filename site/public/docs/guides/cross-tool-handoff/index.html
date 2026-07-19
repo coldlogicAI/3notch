@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cross-tool handoff — 3Notch Docs</title>
+<meta name="description" content="The four shapes of cross-tool handoff in 3Notch: same store, cross-repo, cross-machine, and the web-chat bridge.">
+<link rel="canonical" href="https://3notch.dev/docs/guides/cross-tool-handoff/">
+<meta name="theme-color" content="#0B0A08">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/docs/docs.css">
+</head>
+<body>
+
+<nav class="docs-nav">
+  <div class="docs-nav-inner">
+    <div class="docs-nav-left">
+      <a class="wordmark" href="/" aria-label="3Notch home">
+        <svg class="wm-mark" viewBox="0 0 80 80" width="16" height="16" fill="none" aria-hidden="true"><line x1="10" y1="22" x2="70" y2="22" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/><line x1="10" y1="40" x2="70" y2="40" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/><line x1="10" y1="58" x2="70" y2="58" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/></svg>
+        <span class="wm-text"><b>3</b>Notch</span>
+      </a>
+      <span class="docs-nav-breadcrumb"><a href="/docs/">Docs</a> <span class="sep">/</span> Guides <span class="sep">/</span> <b>Cross-tool handoff</b></span>
+    </div>
+    <div class="docs-nav-right">
+      <a class="nav-link" href="/">Home</a>
+      <a class="nav-cta" href="https://github.com/coldlogicAI/3notch" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2c-3.2.7-3.87-1.36-3.87-1.36-.52-1.34-1.27-1.69-1.27-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.47.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.62 1.58.23 2.76.12 3.05.73.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.41-5.25 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.68.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </div>
+</nav>
+
+<div class="docs-layout">
+  <aside class="docs-sidebar" id="sidebar">
+    <button class="docs-sidebar-toggle" type="button" aria-controls="sidebar-inner" aria-expanded="false">Menu</button>
+    <div class="docs-sidebar-inner" id="sidebar-inner">
+      <div class="docs-sidebar-group">
+        <div class="docs-sidebar-head">Get started</div>
+        <ul>
+          <li><a href="/docs/">Overview</a></li>
+          <li><a href="/docs/quickstart/">Quickstart</a></li>
+        </ul>
+      </div>
+      <div class="docs-sidebar-group">
+        <div class="docs-sidebar-head">Guides</div>
+        <ul>
+          <li><a href="/docs/guides/continuation-checkpoints/">Continuation checkpoints</a></li>
+          <li><a href="/docs/guides/cross-tool-handoff/" aria-current="page">Cross-tool handoff</a></li>
+          <li><a href="/docs/guides/cross-repo-packets/">Cross-repo packets</a></li>
+          <li><a href="/docs/guides/private-context-seeding/">Private context seeding</a></li>
+          <li><a href="/docs/guides/targeted-brief-workflow/">Targeted brief workflow</a></li>
+          <li><a href="/docs/guides/mcp-setup/">MCP setup</a></li>
+        </ul>
+      </div>
+      <div class="docs-sidebar-group">
+        <div class="docs-sidebar-head">Reference</div>
+        <ul>
+          <li><a href="/docs/reference/privacy/">Privacy</a></li>
+          <li><a href="/docs/reference/security-story/">Security story</a></li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+  <main class="docs-content">
+    <div class="docs-meta">
+      <span class="eyebrow">Guide</span>
+      <span class="docs-edit"><a href="https://github.com/coldlogicAI/3notch/blob/main/docs/guides/cross-tool-handoff.md" rel="noopener">Edit on GitHub →</a></span>
+    </div>
+
+    <h1>Cross-tool handoff<span class="accent">.</span></h1>
+    <p class="docs-lede">3Notch moves selected context between AI work surfaces by writing local packets. It does not inspect client databases, scrape chat history, or maintain a remote inbox.</p>
+    <p>There are four shapes of handoff. Pick the one that matches where the source and destination live.</p>
+
+    <h2>Same store (one project, two tools)</h2>
+    <p>For one project used from both Claude Code and Claude Desktop, point both clients at the same <code>.notch/</code> store:</p>
+    <pre><code><span class="prompt">$</span> <span class="cmd">notch onboard</span> <span class="flag">--yes</span> <span class="flag">--mcp</span> <span class="arg">claude-code</span>
+<span class="prompt">$</span> <span class="cmd">notch onboard</span> <span class="flag">--yes</span> <span class="flag">--mcp</span> <span class="arg">claude-desktop</span></code></pre>
+    <p>When the source agent creates a packet through <code>create_packet</code>, the destination agent can read it through <code>list_packets</code> and <code>get_packet</code> immediately. No transfer step.</p>
+    <p>Conversational flow:</p>
+    <pre><code><span class="info">Package this week's launch-context updates for Claude Desktop.</span>
+<span class="info">Include files used, assumptions, exclusions, and next steps.</span></code></pre>
+    <p>Inspect before relying on it:</p>
+    <pre><code><span class="prompt">$</span> <span class="cmd">notch packet list</span> <span class="flag">--outbox</span>
+<span class="prompt">$</span> <span class="cmd">notch packet preview</span> <span class="arg">&lt;packet-id&gt;</span></code></pre>
+
+    <h2>Cross-repo (same machine, different repo)</h2>
+    <p>The source creates an outbox packet; the destination imports it:</p>
+    <pre><code><span class="prompt">$</span> <span class="cmd">notch packet import</span> <span class="arg">../source/.notch/outbox/&lt;packet-folder&gt;/packet.md</span>
+<span class="prompt">$</span> <span class="cmd">notch packet preview</span> <span class="arg">&lt;packet-id&gt;</span> <span class="flag">--inbox</span></code></pre>
+    <p>If the destination needs the actual files (not just paths), use <code>--file</code> on the source side:</p>
+    <pre><code><span class="prompt">$</span> <span class="cmd">notch packet create</span> <span class="flag">--to-repo</span> <span class="arg">../destination</span> <span class="flag">--file</span> <span class="arg">src/auth.ts</span> <span class="flag">--file</span> <span class="arg">docs/auth.md</span></code></pre>
+    <p>See <a href="/docs/guides/cross-repo-packets/">Cross-repo packets</a> for the full flow.</p>
+
+    <h2>Cross-machine</h2>
+    <p>Pack the folder into a deterministic <code>.notchpkt</code> archive, move it through any channel you already use (scp, rsync, iCloud, email, git LFS), and unpack on the other side:</p>
+    <pre><code><span class="prompt">$</span> <span class="cmd">notch packet pack</span> <span class="arg">&lt;packet-id&gt;</span>
+<span class="c"># move &lt;packet-id&gt;.notchpkt to the destination machine</span>
+<span class="prompt">$</span> <span class="cmd">notch packet unpack</span> <span class="arg">&lt;packet-id&gt;.notchpkt</span></code></pre>
+    <p><code>.notchpkt</code> is a gzipped tar with deterministic entry ordering. Hashes are re-verified at unpack against the manifest before anything lands in the inbox.</p>
+
+    <h2>Web-chat (no local MCP)</h2>
+    <p>For Claude.ai and other browser chats that can't reach a local MCP server, use the bridge prompt and stdin import:</p>
+    <pre><code><span class="prompt">$</span> <span class="cmd">notch prompt</span> <span class="flag">--client</span> <span class="arg">claude-chat</span>
+<span class="c"># paste the prompt into the chat; when done, ask for a packet</span>
+<span class="prompt">$</span> <span class="cmd">pbpaste</span> | <span class="cmd">notch packet import</span> <span class="flag">-</span></code></pre>
+
+    <h2>Rules of the road</h2>
+    <ul>
+      <li>The source must hand over the context it wants stored. 3Notch does not derive it for you.</li>
+      <li>Source links and exclusions belong in the packet, not as out-of-band conversation.</li>
+      <li>Same-store handoff is fastest. Cross-repo and cross-machine require an explicit import.</li>
+      <li>Inbox packets are immutable. To change context, author a successor with <code>--supersedes</code> or a typed reply with <code>notch reply</code>.</li>
+      <li>Private seed records (<code>.notch/private/</code>) are hidden from MCP unless the server is started with <code>--include-private</code>.</li>
+    </ul>
+
+    <div class="docs-pagination">
+      <a href="/docs/quickstart/" class="prev">
+        <span class="label">← Previous</span>
+        <span class="title">Quickstart</span>
+      </a>
+      <a href="/docs/guides/cross-repo-packets/" class="next">
+        <span class="label">Next →</span>
+        <span class="title">Cross-repo packets</span>
+      </a>
+    </div>
+  </main>
+</div>
+
+<footer class="docs-footer">
+  <div class="docs-footer-inner">
+    <span><b>3</b>Notch · v0.5.0 · OSS · MIT</span>
+    <span><a href="/">← Back to 3notch.dev</a></span>
+  </div>
+</footer>
+
+<script>
+  document.querySelectorAll('.docs-sidebar-toggle').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const sidebar = btn.closest('.docs-sidebar');
+      const isOpen = sidebar.classList.toggle('open');
+      btn.setAttribute('aria-expanded', String(isOpen));
+    });
+  });
+</script>
+
+</body>
+</html>

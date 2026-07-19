@@ -1,0 +1,6 @@
+<!-- 3Notch · Mark · Inverse (Paper-on-Mark-red, for use on red backgrounds) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none" role="img" aria-label="3Notch mark">
+  <line x1="10" y1="22" x2="70" y2="22" stroke="#F4EFE5" stroke-width="9" stroke-linecap="round"/>
+  <line x1="10" y1="40" x2="70" y2="40" stroke="#F4EFE5" stroke-width="9" stroke-linecap="round"/>
+  <line x1="10" y1="58" x2="70" y2="58" stroke="#F4EFE5" stroke-width="9" stroke-linecap="round"/>
+</svg>
