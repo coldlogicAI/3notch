@@ -1,6 +1,6 @@
 # 3Notch V3 Memo
 
-> **Status: background reading. Not required for implementation.** The nine decisions in Section 7 are locked and have been translated into the V3 implementation plan at `docs/active-plans/v3/3notch-v3-plan.md` — implementing agents should read the plan, not this memo. This document is preserved for product-decision context (refused options, the "underbuilt vs underscoped" V2 diagnostic, the assumed user goal, the brand rename considered-and-rejected reasoning) that the plan does not duplicate. Useful when scoping V4 or revisiting why V3 refused transport/identity/relay; not useful for executing V3.
+> **Status: background reading. Not required for implementation.** The nine decisions in Section 7 are locked and have been translated into the V3 implementation plan at `docs/archived-plans/v3/3notch-v3-plan.md` — implementing agents should read the plan, not this memo. This document is preserved for product-decision context (refused options, the "underbuilt vs underscoped" V2 diagnostic, the assumed user goal, the brand rename considered-and-rejected reasoning) that the plan does not duplicate. Useful when scoping V4 or revisiting why V3 refused transport/identity/relay; not useful for executing V3.
 
 ## 1. Product Thesis
 

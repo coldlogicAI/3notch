@@ -2,20 +2,27 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { describe, expect, it } from 'vitest';
 
 import { createMcpHarness } from '../helpers/mcp-harness.js';
+import { readJsonRepoFile } from '../helpers/package-inspection.js';
 import { runCli } from '../helpers/run-cli.js';
 import { createBareStore } from '../helpers/store-fixtures.js';
 import { withTempProject } from '../helpers/temp-project.js';
 
+type PackageJson = {
+  version: string;
+};
+
 describe('test harness helpers', () => {
   it('creates and cleans up isolated temp projects', async () => {
     await withTempProject({ git: true }, async (project) => {
+      const packageJson = await readJsonRepoFile<PackageJson>('package.json');
+
       expect(project.path).toContain('notch-test-');
 
       const result = await runCli(['--version'], { cwd: project.path });
 
       expect(result.exitCode).toBe(0);
       expect(result.stderr).toBe('');
-      expect(result.stdout.trim()).toBe('0.5.0');
+      expect(result.stdout.trim()).toBe(packageJson.version);
     });
   });
 

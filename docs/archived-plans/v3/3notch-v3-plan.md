@@ -2,11 +2,11 @@
 
 ## Status
 
-V1, V1.1, and V2 are shipped. The V1 technical spec (`docs/archived-plans/v1/3notch-v1-technical-spec.md`) remains authoritative for architecture, data model, store layout, security boundaries, and error codes. The V2 plan (`docs/active-plans/v2/3notch-v2-plan.md`) is the authoritative substrate spec for `supersedes`, `replyTo`/`replyType`/`status`, `mark`, `check`, `relationships.json`, inbox immutability, and the audit log shape.
+V1, V1.1, and V2 are shipped. The V1 technical spec (`docs/archived-plans/v1/3notch-v1-technical-spec.md`) remains authoritative for architecture, data model, store layout, security boundaries, and error codes. The V2 plan (`docs/archived-plans/v2/3notch-v2-plan.md`) is the authoritative substrate spec for `supersedes`, `replyTo`/`replyType`/`status`, `mark`, `check`, `relationships.json`, inbox immutability, and the audit log shape.
 
 V3 builds on the V2 substrate. It does **not** rewrite it. V3 closes the artifact-envelope gap so the lived headline case (Claude Desktop → Codex with a JPEG + HTML + intent) works end-to-end on one machine without copy-paste.
 
-This plan is the implementation contract — implementers work from this document alone. Background reasoning, refused options, and the diagnostic that produced the V3 shape live in `docs/active-plans/v3/v3-memo.md` for human product decisions (e.g., V4 scoping); the memo is not required reading for executing V3.
+This plan is the implementation contract — implementers work from this document alone. Background reasoning, refused options, and the diagnostic that produced the V3 shape live in `docs/archived-plans/v3/v3-memo.md` for human product decisions (e.g., V4 scoping); the memo is not required reading for executing V3.
 
 ## Scope (seven themes, nothing else)
 
@@ -317,8 +317,8 @@ These are not V3 features. They are contracts so external tooling and agent prom
 - **`notch check` rules unchanged in V3.** New rules wait for demonstrated demand and land in V3.1+ behind their own plan.
 - **The verb `lint` remains reserved and held out of 3Notch OSS in perpetuity.** Carried from V2 IP-hygiene commitment.
 
-If a V3.1 plan is needed later, it lands in `docs/active-plans/v3.1/` and this V3 plan moves to `docs/archived-plans/v3/`.
+V3 is shipped and archived. If a V3.1 plan is needed later, it lands in `docs/active-plans/v3.1/` during development and moves to `docs/archived-plans/v3.1/` when shipped.
 
 ## Implementation Log
 
-Append progress entries to `docs/active-plans/v3/v3-implementation-log.md` after each coherent slice or wave.
+V3 implementation progress is preserved in `docs/archived-plans/v3/v3-implementation-log.md`.
