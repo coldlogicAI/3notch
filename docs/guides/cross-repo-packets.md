@@ -46,6 +46,11 @@ Import writes a copy to `.notch/inbox/`. If the source is a packet folder, every
 
 Imported packet folders are sealed. To change context, author a successor with `--supersedes <id>` or a typed reply with `notch reply`. Never edit an inbox packet in place.
 
+Replying to an imported project handoff writes a new project packet to your
+`.notch/outbox/` and targets the parent packet's origin project by default. Move
+or pack that reply through the same explicit transport used for the original
+handoff. Replies to private seed context remain under `.notch/private/`.
+
 ## Cross-Machine
 
 When the destination is on a different machine, pack the folder into a deterministic `.notchpkt` archive, move it through any channel you already use, and unpack on the other side:
