@@ -6,6 +6,56 @@ import { runCli } from '../helpers/run-cli.js';
 import { withTempProject } from '../helpers/temp-project.js';
 
 describe('notch packet', () => {
+  it('creates repeatable tags and lists packets requiring all requested tags', async () => {
+    await withTempProject({}, async (project) => {
+      await runCli(['onboard', '--yes', '--name', 'tagged-packets'], { cwd: project.path });
+
+      const matching = await runCli([
+        '--json',
+        'packet',
+        'create',
+        '--title',
+        'Matching checkpoint',
+        '--summary',
+        'Matches both continuation tags.',
+        '--to-agent',
+        'codex',
+        '--tag',
+        'Continuation',
+        '--tag',
+        'Stream Feature A',
+      ], { cwd: project.path });
+      await runCli([
+        'packet',
+        'create',
+        '--title',
+        'Other checkpoint',
+        '--summary',
+        'Matches only one continuation tag.',
+        '--to-agent',
+        'codex',
+        '--tag',
+        'continuation',
+      ], { cwd: project.path });
+      const matchingData = JSON.parse(matching.stdout) as { packet: { id: string; tags: string[] } };
+
+      expect(matchingData.packet.tags).toEqual(['continuation', 'stream-feature-a']);
+
+      const listed = await runCli([
+        '--json',
+        'packet',
+        'list',
+        '--tag',
+        'continuation',
+        '--tag',
+        'Stream Feature A',
+      ], { cwd: project.path });
+      const listedData = JSON.parse(listed.stdout) as { packets: Array<{ packet: { id: string } }> };
+
+      expect(listedData.packets.map((entry) => entry.packet.id)).toEqual([matchingData.packet.id]);
+    });
+  });
+
   it('normalizes common artifact purpose aliases', async () => {
     await withTempProject({ prefix: 'notch-alias-' }, async (project) => {
       await runCli(['onboard', '--yes', '--name', 'artifact-purpose-app'], { cwd: project.path });

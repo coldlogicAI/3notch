@@ -4,6 +4,7 @@ import { VERSION } from '../core/version.js';
 import { registerBriefCommand } from './commands/brief.js';
 import { registerCheckCommand } from './commands/check.js';
 import { registerDoctorCommand } from './commands/doctor.js';
+import { registerHookCommand } from './commands/hook.js';
 import { registerMarkCommand } from './commands/mark.js';
 import { registerMcpCommand } from './commands/mcp.js';
 import { registerOnboardCommand } from './commands/onboard.js';
@@ -56,6 +57,7 @@ Examples:
   registerStatusCommand(program);
   registerCheckCommand(program);
   registerDoctorCommand(program);
+  registerHookCommand(program);
   registerScanCommand(program);
   registerMcpCommand(program);
 

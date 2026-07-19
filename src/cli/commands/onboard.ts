@@ -1,21 +1,30 @@
-import { mkdir, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import type { Command } from 'commander';
 
 import { getCliContext } from '../context.js';
-import { configureClaudeCodeMcp, type McpConfigWriteResult } from '../mcp-config-claude-code.js';
+import {
+  configureClaudeCodeContinuation,
+  configureClaudeCodeMcp,
+  DEFAULT_CONTINUATION_EVENTS,
+  DEFAULT_SEMANTIC_TRIGGERS,
+  type McpConfigWriteResult,
+} from '../mcp-config-claude-code.js';
 import { configureClaudeDesktopMcp, type ClaudeDesktopMcpConfigResult } from '../mcp-config-claude-desktop.js';
 import { mcpInstructions } from '../mcp-instructions.js';
 import { printInfo, printJson } from '../output.js';
 import { renderAgentPromptForClient } from './prompt.js';
 import { resolveProjectRoot } from '../../core/config-service.js';
+import { schemaService } from '../../core/schema-service.js';
 import { getStorePaths, requiredStoreDirs } from '../../core/store-layout.js';
 import { NotchException } from '../../types/errors.js';
-import type { NotchConfig, ProjectBrief } from '../../types/records.js';
-import { renderMarkdownRecord } from '../../core/store-service.js';
+import type { ContinuationMode, NotchConfig, ProjectBrief } from '../../types/records.js';
+import { atomicWriteFile, renderMarkdownRecord } from '../../core/store-service.js';
 
 type OnboardOptions = {
+  checkpointStop?: boolean;
+  checkpoints?: string;
   force?: boolean;
   mcp?: string;
   name?: string;
@@ -29,12 +38,47 @@ export function registerOnboardCommand(program: Command): void {
     .option('--name <project>', 'project name for the 3Notch config')
     .option('--yes', 'create starter files without prompting')
     .option('--mcp <client>', 'print MCP setup instructions for a client')
+    .option('--checkpoints <mode>', 'configure Claude Code continuation checkpoints (off, script, prompt, or auto)')
+    .option('--checkpoint-stop', 'also checkpoint after every Claude response (high frequency)')
     .option('--force', 'repair missing starter files without overwriting existing source records')
     .action(async (options: OnboardOptions, command: Command) => {
       const context = getCliContext(command);
       const cwd = path.resolve(context.cwd ?? process.cwd());
       const projectRoot = await resolveProjectRoot(cwd);
       const projectName = options.name ?? path.basename(projectRoot);
+      const checkpointMode = parseCheckpointMode(options.checkpoints);
+      const mcpClient = options.mcp && options.mcp !== 'none' ? options.mcp : undefined;
+
+      if (checkpointMode && mcpClient !== 'claude-code') {
+        throw new NotchException({
+          code: 'NOTCH_CHECKPOINT_CLIENT_REQUIRED',
+          message: 'Continuation checkpoint onboarding currently supports Claude Code only.',
+          recovery: `Re-run with --mcp claude-code --checkpoints ${checkpointMode}.`,
+          severity: 'error',
+          exitCode: 1,
+        });
+      }
+
+      if (options.checkpointStop && !checkpointMode) {
+        throw new NotchException({
+          code: 'NOTCH_CHECKPOINT_MODE_REQUIRED',
+          message: '--checkpoint-stop requires --checkpoints <mode>.',
+          recovery: 'Choose script, prompt, or auto checkpoint mode.',
+          severity: 'error',
+          exitCode: 1,
+        });
+      }
+
+      if (options.checkpointStop && checkpointMode === 'off') {
+        throw new NotchException({
+          code: 'NOTCH_CHECKPOINT_MODE_CONFLICT',
+          message: '--checkpoint-stop cannot be enabled when checkpoints are off.',
+          recovery: 'Remove --checkpoint-stop or choose script, prompt, or auto.',
+          severity: 'error',
+          exitCode: 1,
+        });
+      }
+
       const storePath = context.store ? path.resolve(cwd, context.store) : path.join(projectRoot, '.notch');
       const paths = getStorePaths(storePath);
       const storeExists = await exists(storePath);
@@ -66,9 +110,55 @@ export function registerOnboardCommand(program: Command): void {
         await writeIfMissing(paths.brief, renderMarkdownRecord(defaultProjectBrief(projectName), defaultProjectBriefBody()));
       }
 
-      const mcpClient = options.mcp && options.mcp !== 'none' ? options.mcp : undefined;
+      const nextConfig = checkpointMode
+        ? await continuationConfigFor(paths.config, checkpointMode, Boolean(options.checkpointStop))
+        : undefined;
+      const checkpointWarnings = checkpointMode && checkpointMode !== 'off'
+        ? [
+            ...(nextConfig?.continuation?.sensitivity === 'project'
+              ? ['Project checkpoints are written to .notch/outbox and may appear in Git.']
+              : []),
+            ...(nextConfig?.continuation?.sensitivity === 'private'
+              ? ['Private checkpoints enable --include-private for this project\'s 3Notch MCP server. Claude Code can read private 3Notch packets after user-approved tool access.']
+              : []),
+            ...(nextConfig?.continuation?.claudeCode.events.includes('Stop')
+              ? ['Stop fires after every Claude response and may create frequent checkpoints.']
+              : []),
+          ]
+        : [];
+
+      if (checkpointMode && checkpointMode !== 'off') {
+        await ensureGitignoreEntry(projectRoot, '.claude/settings.local.json');
+      }
+
+      if (!context.output.json) {
+        for (const warning of checkpointWarnings) {
+          printInfo(`Warning: ${warning}`, context.output);
+        }
+      }
+
+      const checkpointConfig = nextConfig
+        ? await configureClaudeCodeContinuation(projectRoot, nextConfig.continuation)
+        : undefined;
+
+      if (nextConfig) {
+        await atomicWriteFile(paths.config, `${JSON.stringify(nextConfig, null, 2)}\n`);
+      }
+
+      const includePrivateMcp = Boolean(
+        nextConfig?.continuation &&
+        nextConfig.continuation.mode !== 'off' &&
+        nextConfig.continuation.sensitivity === 'private',
+      );
       const mcpConfig = mcpClient
-        ? await configureMcpClient(mcpClient, projectRoot, storePath, Boolean(options.yes), context.output.json)
+        ? await configureMcpClient(
+            mcpClient,
+            projectRoot,
+            storePath,
+            Boolean(options.yes),
+            context.output.json,
+            includePrivateMcp,
+          )
         : undefined;
       const output = {
         alreadyInitialized: configExists && !options.force,
@@ -76,13 +166,17 @@ export function registerOnboardCommand(program: Command): void {
         agentInstructions: mcpClient ? renderAgentPromptForClient(mcpClient) : undefined,
         mcpClient,
         mcpConfig,
+        checkpointConfig,
+        checkpointWarnings,
         projectName,
         promptHint: mcpClient ? undefined : [
           'Next: ask your agent to read .notch/README.md, then use notch packet for handoffs.',
           'For web chats or copy-paste setup, run: notch prompt --client claude-chat',
         ].join('\n'),
         storePath,
-        mcpInstructions: mcpClient ? mcpInstructions(mcpClient, storePath, projectRoot) : undefined,
+        mcpInstructions: mcpClient
+          ? mcpInstructions(mcpClient, storePath, projectRoot, includePrivateMcp)
+          : undefined,
       };
 
       if (context.output.json) {
@@ -105,6 +199,14 @@ export function registerOnboardCommand(program: Command): void {
         }
       }
 
+      if (output.checkpointConfig?.wrote) {
+        printInfo(`\nConfigured Claude Code continuation hooks at ${output.checkpointConfig.configPath}`, context.output);
+
+        if (output.checkpointConfig.backupPath) {
+          printInfo(`Backup written to ${output.checkpointConfig.backupPath}`, context.output);
+        }
+      }
+
       if (output.mcpConfig && 'instructions' in output.mcpConfig && output.mcpConfig.instructions) {
         printInfo(`\n${output.mcpConfig.instructions}`, context.output);
       }
@@ -123,15 +225,89 @@ export function registerOnboardCommand(program: Command): void {
     });
 }
 
+async function continuationConfigFor(
+  configPath: string,
+  mode: ContinuationMode,
+  includeStop: boolean,
+): Promise<NotchConfig> {
+  let config: NotchConfig;
+
+  try {
+    config = JSON.parse(await readFile(configPath, 'utf8')) as NotchConfig;
+  } catch (error) {
+    throw new NotchException({
+      code: 'NOTCH_CONFIG_INVALID',
+      message: error instanceof Error ? error.message : 'Config JSON could not be parsed.',
+      path: configPath,
+      recovery: 'Fix .notch/config.json.',
+      severity: 'error',
+      exitCode: 3,
+    });
+  }
+
+  const existing = config.continuation;
+  const existingEvents = existing?.claudeCode.events ?? DEFAULT_CONTINUATION_EVENTS;
+  const eventsWithoutStop = existingEvents.filter((event) => event !== 'Stop');
+  const events = includeStop
+    ? [...eventsWithoutStop, 'Stop' as const]
+    : eventsWithoutStop;
+
+  const nextConfig: NotchConfig = {
+    ...config,
+    continuation: {
+      mode,
+      sensitivity: existing?.sensitivity ?? 'project',
+      ...(existing?.streamOverride ? { streamOverride: existing.streamOverride } : {}),
+      semanticTriggers: existing?.semanticTriggers ?? DEFAULT_SEMANTIC_TRIGGERS,
+      claudeCode: { events },
+    },
+  };
+
+  const validation = schemaService.validate<NotchConfig>('config', nextConfig, configPath);
+
+  if (!validation.ok) {
+    const firstError = validation.errors[0];
+    throw new NotchException({
+      code: 'NOTCH_CONFIG_INVALID',
+      message: firstError?.message ?? 'Config is invalid.',
+      path: configPath,
+      recovery: 'Fix .notch/config.json.',
+      severity: 'error',
+      exitCode: 1,
+    });
+  }
+
+  return validation.data;
+}
+
+function parseCheckpointMode(value: string | undefined): ContinuationMode | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === 'off' || value === 'script' || value === 'prompt' || value === 'auto') {
+    return value;
+  }
+
+  throw new NotchException({
+    code: 'NOTCH_CHECKPOINT_MODE_INVALID',
+    message: `Unsupported checkpoint mode: ${value}.`,
+    recovery: 'Choose off, script, prompt, or auto.',
+    severity: 'error',
+    exitCode: 1,
+  });
+}
+
 async function configureMcpClient(
   client: string,
   projectRoot: string,
   storePath: string,
   yes: boolean,
   json: boolean,
+  includePrivate: boolean,
 ): Promise<McpConfigWriteResult | ClaudeDesktopMcpConfigResult | undefined> {
   if (client === 'claude-code') {
-    return await configureClaudeCodeMcp(projectRoot, storePath);
+    return await configureClaudeCodeMcp(projectRoot, storePath, includePrivate);
   }
 
   if (client === 'claude-desktop') {
@@ -192,6 +368,21 @@ async function writeIfMissing(filePath: string, content: string): Promise<void> 
 
   await mkdir(path.dirname(filePath), { recursive: true });
   await writeFile(filePath, content, 'utf8');
+}
+
+async function ensureGitignoreEntry(projectRoot: string, entry: string): Promise<void> {
+  const gitignorePath = path.join(projectRoot, '.gitignore');
+  const existing = await readFile(gitignorePath, 'utf8').catch(() => '');
+  const alreadyIgnored = existing
+    .split(/\r?\n/u)
+    .some((line) => line.trim() === entry);
+
+  if (alreadyIgnored) {
+    return;
+  }
+
+  const prefix = existing.trimEnd();
+  await atomicWriteFile(gitignorePath, `${prefix ? `${prefix}\n` : ''}${entry}\n`);
 }
 
 function defaultConfig(projectName: string, projectRoot: string): NotchConfig {
@@ -288,6 +479,10 @@ This project uses 3Notch for explicit, reviewable context handoffs between AI to
 4. Use \`--file <path[:purpose]>\` when the receiver needs copied bytes. Copied files keep their project-relative path under \`artifacts/\`. If you are unsure, omit \`:purpose\`; the default is \`asset\`. Valid artifact purposes are \`asset\`, \`source\`, \`reference\`, and \`output\`; common labels like \`favicon\`, \`icon\`, \`logo\`, and \`image\` are accepted as \`asset\`. Use \`--ref <path>\` only when the receiver shares the same filesystem path.
 5. Use \`notch packet pack <id>\` and \`notch packet unpack <archive>\` when a packet needs to move between machines.
 6. Run \`notch check\` after imports or relationship-heavy changes. Run \`notch doctor\` when the store seems unhealthy.
+
+## Continuation Checkpoints
+
+Claude Code checkpoints are opt-in through \`notch onboard --mcp claude-code --checkpoints <mode>\`. Script hooks aggregate structured task events and repository state without reading session transcripts. \`prompt\` asks before an agent drafts a semantic checkpoint; \`auto\` drafts it automatically. On resume, 3Notch offers a matching checkpoint but never loads it without user confirmation.
 
 ## Boundaries
 

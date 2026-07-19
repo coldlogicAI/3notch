@@ -97,7 +97,9 @@
           "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLink" }
         },
         "importNotes": { "type": "string", "minLength": 1 },
-        "outputPath": { "type": "string", "minLength": 1 }
+        "outputPath": { "type": "string", "minLength": 1 },
+        "supersedes": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordId" },
+        "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags" }
       }
     },
     "import_packet": {
@@ -157,6 +159,7 @@
         "direction": { "enum": ["inbox", "outbox", "both"] },
         "includePrivate": { "type": "boolean" },
         "purpose": { "enum": ["handoff", "seed"] },
+        "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags" },
         "to": { "type": "string", "minLength": 1 },
         "fromProject": { "type": "string", "minLength": 1 },
         "since": { "type": "string", "minLength": 1 },

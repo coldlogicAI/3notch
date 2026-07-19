@@ -38,4 +38,19 @@ describe('MCP tool input schemas', () => {
     expect(validate({ limit: 51 })).toBe(false);
     expect(validate({ limit: 0 })).toBe(false);
   });
+
+  it('accepts packet tags and supersedes fields', () => {
+    const ajv = new Ajv2020({ strict: true });
+    ajv.addSchema(sharedSchema);
+    const validateCreate = ajv.compile(getMcpToolInputSchema('create_packet'));
+    const validateList = ajv.compile(getMcpToolInputSchema('list_packets'));
+
+    expect(validateCreate({
+      summary: 'Continuation state.',
+      supersedes: 'packet_previous_checkpoint',
+      tags: ['continuation', 'stream-feature-a'],
+      title: 'Continuation checkpoint',
+    })).toBe(true);
+    expect(validateList({ tags: ['continuation', 'stream-feature-a'] })).toBe(true);
+  });
 });

@@ -191,6 +191,8 @@ async function executeTool(
         sourceLinks: [...arrayArg<SourceLink>(args.sourceLinks), ...stringArray(args.refs).map((file) => ({ kind: 'file' as const, path: file }))],
         sourceTool: 'notch-mcp',
         summary: requiredString(args.summary, 'summary'),
+        ...(stringArg(args.supersedes) ? { supersedes: stringArg(args.supersedes) } : {}),
+        tags: stringArray(args.tags),
         ...(stringArg(args.task) ? { task: stringArg(args.task) } : {}),
         title: requiredString(args.title, 'title'),
         ...(stringArg(args.toAgent) ? { toAgent: stringArg(args.toAgent) } : {}),
@@ -244,6 +246,7 @@ async function executeTool(
           includePrivate: Boolean(args.includePrivate) && Boolean(options.includePrivate),
           ...(args.limit ? { limit: Number(args.limit) } : {}),
           ...(enumArg<PacketPurpose>(args.purpose) ? { purpose: enumArg<PacketPurpose>(args.purpose) } : {}),
+          ...(args.tags ? { tags: stringArray(args.tags) } : {}),
         }),
         warnings: Boolean(args.includePrivate) && !options.includePrivate
           ? [{ code: 'NOTCH_PRIVATE_HIDDEN', message: 'Private packets require --include-private.', severity: 'warn' }]

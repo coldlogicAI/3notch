@@ -15,6 +15,14 @@ notch onboard --yes --mcp codex
 notch onboard --yes --mcp cursor
 ```
 
+For opt-in Claude Code continuation checkpoints, configure MCP and hooks together:
+
+```bash
+notch onboard --yes --mcp claude-code --checkpoints prompt
+```
+
+This safely merges command hooks into `.claude/settings.local.json`. See [Continuation checkpoints](continuation-checkpoints.md) for modes, events, and privacy boundaries.
+
 `notch onboard --mcp claude-code` writes a project-local `.mcp.json`. `notch onboard --mcp claude-desktop` updates `~/Library/Application Support/Claude/claude_desktop_config.json` with a backup. Other clients print copy-paste snippets.
 
 ## Server Flags
@@ -37,7 +45,7 @@ Read-only:
 Write tools (require client tool-permission grant):
 
 - `create_brief`
-- `create_packet` (accepts `files`, `refs`, and `nextSteps`)
+- `create_packet` (accepts `files`, `refs`, `nextSteps`, `tags`, and `supersedes`)
 - `create_mark` — self-addressed private capture
 - `create_reply` — typed packet reply
 - `create_seed_packet`

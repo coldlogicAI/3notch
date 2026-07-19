@@ -19,6 +19,27 @@ describe('base schemas', () => {
     expect(result.ok).toBe(true);
   });
 
+  it('validates continuation config and rejects unsupported Claude events', async () => {
+    const config = await readJsonFixture<NotchConfig>('config-valid.json');
+    config.continuation = {
+      mode: 'prompt',
+      sensitivity: 'private',
+      streamOverride: 'auth-redesign',
+      semanticTriggers: ['Before switching agents'],
+      claudeCode: {
+        events: ['SessionStart', 'PostCompact', 'StopFailure:rate_limit'],
+      },
+    };
+
+    expect(schemaService.validate<NotchConfig>('config', config).ok).toBe(true);
+
+    const invalid = structuredClone(config) as unknown as {
+      continuation: { claudeCode: { events: string[] } };
+    };
+    invalid.continuation.claudeCode.events = ['PreCompact'];
+    expect(schemaService.validate<NotchConfig>('config', invalid).ok).toBe(false);
+  });
+
   it('rejects forbidden config values', async () => {
     const config = await readJsonFixture<NotchConfig>('config-invalid.json');
     const result = schemaService.validate<NotchConfig>('config', config);

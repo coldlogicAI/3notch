@@ -6,6 +6,7 @@ export const CURRENT_PACKET_SCHEMA_VERSION = '0.4.0';
 
 export type CreateRecordMetaOptions = ResolveActorOptions & {
   date?: Date;
+  idDiscriminator?: string;
   recordType: RecordType;
   status?: RecordStatus;
   tags?: string[];
@@ -32,7 +33,7 @@ export function createRecordMeta(options: CreateRecordMetaOptions): CreatedRecor
     actorTypeResolution: actor.actorTypeResolution,
     filenameBase: createDatedFilename(options.title, '', date),
     meta: {
-      id: createRecordId(idPrefix, options.title, date),
+      id: createRecordId(idPrefix, options.title, date, options.idDiscriminator),
       schemaVersion: CURRENT_PACKET_SCHEMA_VERSION,
       recordType: options.recordType,
       status: options.status ?? 'active',

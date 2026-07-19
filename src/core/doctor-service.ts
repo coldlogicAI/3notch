@@ -1,6 +1,10 @@
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import {
+  continuationResyncCommand,
+  inspectClaudeCodeContinuation,
+} from '../cli/mcp-config-claude-code.js';
 import { readAuditLog } from './audit-service.js';
 import { checkStore } from './check-service.js';
 import { assertNoSymlinksInside } from './path-safety.js';
@@ -185,11 +189,64 @@ export async function runDoctor(
     severity: check.summary.errors > 0 || check.summary.warnings > 0 ? 'warn' : 'ok',
   });
 
+  const hookInspection = await inspectClaudeCodeContinuation(context.projectRoot);
+  const configuredContinuation = context.config.continuation;
+  const expectedEvents = configuredContinuation && configuredContinuation.mode !== 'off'
+    ? configuredContinuation.claudeCode.events
+    : [];
+  const shouldReportHooks = configuredContinuation !== undefined || hookInspection.hasOwnedHooks;
+
+  if (shouldReportHooks && hookInspection.error) {
+    checks.push({
+      code: 'NOTCH_CLAUDE_HOOKS_INVALID',
+      message: hookInspection.error,
+      path: hookInspection.configPath,
+      severity: 'warn',
+    });
+    errors.push({
+      code: 'NOTCH_CLAUDE_HOOKS_INVALID',
+      message: hookInspection.error,
+      path: hookInspection.configPath,
+      recovery: 'Fix .claude/settings.local.json, then resync with notch onboard.',
+      severity: options.strict ? 'error' : 'warn',
+      ...(options.strict ? { exitCode: 3 } : {}),
+    });
+  } else if (shouldReportHooks && !sameEvents(expectedEvents, hookInspection.events)) {
+    const recovery = configuredContinuation
+      ? continuationResyncCommand(configuredContinuation)
+      : 'notch onboard --yes --mcp claude-code --checkpoints off';
+    checks.push({
+      code: 'NOTCH_CLAUDE_HOOKS_DRIFT',
+      message: 'Claude Code continuation hooks do not match .notch/config.json',
+      path: hookInspection.configPath,
+      severity: 'warn',
+    });
+    errors.push({
+      code: 'NOTCH_CLAUDE_HOOKS_DRIFT',
+      message: 'Claude Code continuation hooks do not match .notch/config.json.',
+      path: hookInspection.configPath,
+      recovery,
+      severity: options.strict ? 'error' : 'warn',
+      ...(options.strict ? { exitCode: 6 } : {}),
+    });
+  } else if (shouldReportHooks) {
+    checks.push({
+      code: 'NOTCH_CLAUDE_HOOKS_SYNCED',
+      message: 'Claude Code continuation hooks match .notch/config.json',
+      path: hookInspection.configPath,
+      severity: 'ok',
+    });
+  }
+
   return {
     checks,
     errors,
     healthy: errors.every((error) => error.severity !== 'error'),
   };
+}
+
+function sameEvents(first: string[], second: string[]): boolean {
+  return first.length === second.length && first.every((event) => second.includes(event));
 }
 
 function packetDirectionFor(relativePath: string): 'inbox' | 'outbox' | undefined {
