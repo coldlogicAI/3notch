@@ -1,6 +1,6 @@
 # 3Notch
 
-**Your AI tools will change. Your project context should not have to.**
+**Save the working state your AI tools won't.**
 
 [**Website →**](https://3notch.dev) · [**Docs →**](https://3notch.dev/docs/) · [**Quickstart →**](https://3notch.dev/docs/quickstart/) · [**npm →**](https://www.npmjs.com/package/@3notch/cli)
 
@@ -9,28 +9,52 @@
 [![Node](https://img.shields.io/node/v/@3notch/cli?style=flat-square)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 
-3Notch is a local-first CLI and MCP server for moving explicit, reviewable context between repos and AI tools. You are already the bus for your AI context — copying summaries between Claude, Codex, Cursor, ChatGPT, terminals, repos, and new projects. 3Notch is the local packet layer for the context you meant to carry by hand.
+Your AI session died — rate limited, context compacted, model went down. Six hours of decisions, constraints, and working state gone. The next agent starts from scratch because nothing portable survived the switch.
 
-No cloud service. No account. No telemetry. No vector database. No hidden chat scraping. No remote connector.
+3Notch is a local CLI and MCP server that saves your working state as portable checkpoints. When a session crashes, the next one picks up where you left off. When you switch tools — Claude to Codex, Cursor to ChatGPT — your context travels with you. When work moves to another repo or machine, you package the handoff.
+
+No cloud service. No account. No telemetry. No lock-in. Everything stays on your machine.
 
 ---
 
-## Quickstart
+## Get Started
 
-Install once:
+Give this to your agent:
+
+> Install @3notch/cli and set up context checkpoints for this repo. When a session crashes or I hit a rate limit, save where I was so the next session can pick up. When I switch tools, package the handoff.
+
+Or install directly:
 
 ```bash
 npm install -g @3notch/cli
 notch onboard
 ```
 
-Onboard creates `.notch/README.md` so local agents have a durable place to learn the project handoff rules. The default next step is to ask your agent to read `.notch/README.md`, explain its understanding, and then create or inspect packets as needed. Use `notch prompt` only for web chats or copy-paste setup when an agent cannot read local files.
-
 Then pick the flow that matches your situation.
 
-### 1. Bundle files for another tool
+### Session crashed — pick up where you left off
 
-When one tool has files the next tool needs, create a packet that carries both intent and bytes:
+When a session hits a rate limit or compacts, 3Notch saves your working state automatically. The next session offers to resume:
+
+```bash
+notch packet list
+# Shows your latest checkpoint with objective, completed work, blockers, and next action
+```
+
+### Switching tools — take your context with you
+
+Moving from Claude Code to Codex? The outgoing agent writes a checkpoint. The incoming agent reads it:
+
+```bash
+notch packet create \
+  --title "Auth refactor checkpoint" \
+  --summary "Token validation done, session store migration blocked." \
+  --next-steps "Implement Redis session adapter"
+```
+
+### Different repo or machine — package the handoff
+
+Bundle selected files, decisions, and next steps into a portable packet:
 
 ```bash
 notch packet create \
@@ -40,52 +64,19 @@ notch packet create \
   --to-repo ../brand-site \
   --file mascot.jpg:asset \
   --file showcase.html:source \
-  --next-steps "Build apps/brand-site/ using showcase.html as the layout and mascot.jpg in the hero."
+  --next-steps "Build the launch page using showcase.html as the layout and mascot.jpg in the hero."
 ```
 
-The packet lands as a folder in `.notch/outbox/` with `packet.md`, `manifest.json`, and copied bytes under `artifacts/`. Copied files keep their project-relative paths, so `src/app/icon.svg` lands at `artifacts/src/app/icon.svg`. The destination imports the folder:
+The packet lands as a folder in `.notch/outbox/` with `packet.md`, `manifest.json`, and copied bytes under `artifacts/`. The destination imports it:
 
 ```bash
 notch packet import ../source/.notch/outbox/<packet-folder>/packet.md
 notch packet preview <packet-id>
 ```
 
-MCP clients use the same model through `create_packet` with `files`, `refs`, and `nextSteps`.
+### Cross-machine
 
-### 2. Same store, two tools
-
-For one project used from both Claude Code and Claude Desktop, point both clients at the same `.notch/` store:
-
-```bash
-notch onboard --yes --mcp claude-code
-notch onboard --yes --mcp claude-desktop
-```
-
-Both clients now read and write the same store. When one creates a packet, the other can list and read it immediately — no transfer step.
-
-### Continue after compaction or rate limits
-
-Claude Code can maintain opt-in continuation checkpoints without reading its transcript:
-
-```bash
-notch onboard --yes --mcp claude-code --checkpoints prompt
-```
-
-Structured task hooks accumulate progress without creating one packet per checklist item. Compaction and rate-limit boundaries can write one unreviewed fallback from Claude's exposed hook fields plus Git state. In `prompt` or `auto` mode, Claude also drafts richer checkpoints at configured milestones. See [Continuation checkpoints](docs/guides/continuation-checkpoints.md).
-
-### 3. Cross-repo on one machine
-
-```bash
-notch packet create --title "Auth handoff" --summary "Auth context for the API repo." \
-  --to-agent codex --to-repo ../api --ref src/auth.ts
-notch packet import ../source/.notch/outbox/<packet-file-or-folder>/packet.md
-```
-
-Use `--ref` when both repos share the same workspace path. Use `--file` when the destination needs the bytes copied in.
-
-### 4. Cross-machine
-
-Pack the folder into a deterministic `.notchpkt` archive, move it via scp / iCloud / Tailscale / email / git, unpack on the other side:
+Pack the folder into a `.notchpkt` archive, move it however you want (scp, iCloud, Tailscale, email, git), unpack on the other side:
 
 ```bash
 notch packet pack <packet-id>
@@ -93,9 +84,9 @@ notch packet pack <packet-id>
 notch packet unpack <packet-id>.notchpkt
 ```
 
-### 5. Browser-only chats (fallback)
+### Browser-only chats (fallback)
 
-Claude.ai and other web chats can't reach local MCP yet. The fallback is clipboard-mediated:
+Web chats that can't reach local MCP use a clipboard bridge:
 
 ```bash
 notch prompt --client claude-chat
@@ -103,9 +94,7 @@ notch prompt --client claude-chat
 pbpaste | notch packet import -
 ```
 
-This is an escape hatch, not a peer of the MCP-native paths. The structurally honest replacement is custom connectors / remote MCP — see [Where We Want Help](#where-we-want-help).
-
-### 6. Personal capture
+### Personal capture
 
 When you just want to remember something for yourself:
 
@@ -115,23 +104,22 @@ notch mark --summary "Decided to keep browser auth cookie-based" --tags auth
 
 ---
 
-## How The Handoff Model Works
+## How It Works
 
-The loop is explicit and reviewable:
+Checkpoints and packets are plain Markdown files with structured frontmatter. You can read, edit, and version them like anything else in your repo.
 
-1. A user asks an AI client or CLI session to package selected context.
-2. The client supplies a summary, source links, exclusions, recipient metadata, and next steps through CLI or MCP.
-3. 3Notch validates the record, scans it for secrets, and writes a Markdown packet under `.notch/outbox/` or `.notch/private/`.
-4. The user previews the packet before another tool or repo relies on it.
-5. Another repo can import the packet, or another tool can read it directly when both clients share the same store.
+1. You or your agent ask 3Notch to save the current working state.
+2. 3Notch validates the record, scans it for secrets, and writes it under `.notch/`.
+3. You preview the checkpoint before another tool relies on it.
+4. The next session, tool, or repo reads and resumes from it.
 
-Targeting fields (`--to-agent`, `--to-person`, `--to-repo`) answer "who is this packet for?" They are routing and review metadata. They are not identity, authentication, or delivery controls — your existing transport (scp, rsync, iCloud, Tailscale, email, git) moves the bytes.
+Targeting fields (`--to-agent`, `--to-repo`) are routing metadata, not delivery controls — your existing transport moves the bytes.
 
-## Core Commands
+## Commands
 
 ```text
-notch onboard                       initialize .notch/, .notch/README.md, and MCP setup
-notch packet create                 create a packet (--file, --ref, --next-steps)
+notch onboard                       initialize .notch/ and MCP setup
+notch packet create                 create a checkpoint or packet (--file, --ref, --next-steps)
 notch packet import <file-or-folder>  import a packet into .notch/inbox/
 notch packet preview <id>           show what an agent will read
 notch packet pack <id>              produce a .notchpkt archive
@@ -158,18 +146,6 @@ notch mcp serve                     local stdio MCP server
 
 Private records under `.notch/private/` are hidden unless the server starts with `--include-private`. See [docs/guides/mcp-setup.md](docs/guides/mcp-setup.md) for client-specific setup.
 
-## Repo Structure
-
-```
-src/                  CLI, core services, MCP server, schemas, types
-tests/                unit, CLI, MCP, schema, e2e tests + fixtures
-fixtures/             demo .notch/ stores used by docs and e2e tests
-docs/                 guides, reference, agent prompts, archived plans
-.github/              CI workflow, issue templates, PR template
-```
-
-For the internal architecture (record types, store layout, services), see [docs/archived-plans/v1/3notch-v1-technical-spec.md](docs/archived-plans/v1/3notch-v1-technical-spec.md) — it is still the authoritative spec.
-
 ## Docs
 
 Full index: [docs/README.md](docs/README.md).
@@ -190,20 +166,17 @@ Full index: [docs/README.md](docs/README.md).
 
 3Notch is deliberately narrow.
 
-- Local-first files by default. No cloud dependency, no hosted relay, no account system.
+- Local files by default. No cloud dependency, no hosted relay, no account system.
 - No telemetry.
-- No hidden chat or project scraping. Opt-in Claude hooks consume only documented event fields and Git metadata; they never open transcript paths.
-- No semantic derivation, auto-tagging, similarity threading, contradiction flagging, wiki UI, graph view, hosted sync, or cross-store aggregation.
+- No vector database or native database dependency.
 - No arbitrary shell execution through MCP.
-- No SQLite or native database dependency.
-- No transport verbs (`send`, `pass`). Your existing tools move bytes; 3Notch validates, scans, and stores them.
-- No `decision`, `question`, `conflict`, or `stale` record types. Same-tool memory remains the client's job; continuation checkpoints are ordinary packets for recovery and intentional agent boundaries.
+- Your existing tools move bytes; 3Notch validates, scans, and stores them.
 
-A regression-guard test (`tests/unit/no-deferred-commands.test.ts`) prevents accidental re-introduction.
+A regression-guard test (`tests/unit/no-deferred-commands.test.ts`) prevents accidental scope creep.
 
 ## Where We Want Help
 
-3Notch is open source because the cross-vendor handoff problem can only be solved neutrally. These are known gaps where contributor input is welcome:
+3Notch is open source because the cross-vendor context problem can only be solved neutrally. These are known gaps where contributor input is welcome:
 
 **Reaching more surfaces**
 - **Web-chat ingest via custom connectors / remote MCP.** An optional HTTP/SSE MCP mode a user wires to Claude.ai via Anthropic's custom-connector flow plus a user-controlled tunnel (Tailscale, Cloudflare). No hosted relay.
@@ -224,15 +197,27 @@ A regression-guard test (`tests/unit/no-deferred-commands.test.ts`) prevents acc
 - **Per-language / per-framework brief templates.**
 
 **Surfaces on top of the stable substrate**
-- **Reply-surfacing UX patterns.** V2 shipped the schema (`replyTo`, `replyType`, `status`); the surfacing layer is deferred so contributors can experiment.
-- **Wiki / browse / graph views** over `relationships.json`. Out of OSS core by design; contributor surfaces welcome.
+- **Reply-surfacing UX patterns.** The schema (`replyTo`, `replyType`, `status`) is shipped; the surfacing layer is deferred so contributors can experiment.
+- **Wiki / browse / graph views** over `relationships.json`. Out of core by design; contributor surfaces welcome.
 - **Additional `notch check` rules** — contribute once you've hit the pain.
 
 **Hardening**
 - **Encryption at rest** for `.notch/private/`.
 - **Scanner rule contributions** — org-specific, industry-specific, or platform-specific patterns.
 
-If you're considering a contribution, open an issue first so we can align on the OSS-core / contributor-ecosystem boundary.
+If you're considering a contribution, open an issue first so we can align on scope.
+
+## Repo Structure
+
+```
+src/                  CLI, core services, MCP server, schemas, types
+tests/                unit, CLI, MCP, schema, e2e tests + fixtures
+fixtures/             demo .notch/ stores used by docs and e2e tests
+docs/                 guides, reference, agent prompts, archived plans
+.github/              CI workflow, issue templates, PR template
+```
+
+For internal architecture (record types, store layout, services), see [docs/archived-plans/v1/3notch-v1-technical-spec.md](docs/archived-plans/v1/3notch-v1-technical-spec.md).
 
 ## Development
 

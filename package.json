@@ -1,7 +1,7 @@
 {
   "name": "@3notch/cli",
   "version": "0.5.0",
-  "description": "Local-first private context packets across repos and AI tools.",
+  "description": "Save the working state your AI tools won't. Local checkpoints and portable packets across tools, repos, and machines.",
   "type": "module",
   "license": "MIT",
   "author": "3Notch contributors",
@@ -21,7 +21,11 @@
     "handoff",
     "packets",
     "privacy",
-    "mcp"
+    "mcp",
+    "session",
+    "recovery",
+    "working-state",
+    "checkpoint"
   ],
   "engines": {
     "node": ">=20"

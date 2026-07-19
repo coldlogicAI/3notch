@@ -10,5 +10,5 @@
 ## Scope Check
 
 - [ ] No telemetry/cloud dependency added
-- [ ] No SQLite/native DB added for V1
+- [ ] No SQLite/native DB added
 - [ ] Human-readable `.notch/` source files preserved

@@ -22,7 +22,7 @@ npm test               # vitest unit + integration
 npm run test:e2e       # vitest e2e (slower; uses real CLI subprocesses)
 ```
 
-Every PR must pass `lint`, `type-check`, `build`, and `test` locally. CI runs the same on Ubuntu, macOS, and Windows under Node 20 and 22; please match that surface before opening a PR.
+Every PR must pass `lint`, `type-check`, `build`, and `test` locally. CI runs the same on Ubuntu and macOS under Node 20 and 22; please match that surface before opening a PR.
 
 For a quick built-CLI smoke after `build`:
 
