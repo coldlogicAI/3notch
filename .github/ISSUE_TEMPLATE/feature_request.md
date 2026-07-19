@@ -10,6 +10,6 @@ assignees: ""
 
 ## Proposed behavior
 
-## V1 fit
+## Scope fit
 
-Does this directly improve cross-boundary context transfer (cross-repo, cross-tool, or new-project seeding)? Same-repo same-session continuity is intentionally deferred from V1.
+Does this directly improve working-state recovery, cross-tool handoffs, or cross-repo context transfer?

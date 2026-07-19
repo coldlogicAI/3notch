@@ -1,0 +1,7 @@
+<!-- 3Notch · Mark · 16px geometry (favicon / small-context) -->
+<!-- Stroke thickened to 14, ends extended (x=8/x=72) for anti-alias legibility -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none" role="img" aria-label="3Notch mark">
+  <line x1="8" y1="22" x2="72" y2="22" stroke="#E04E2C" stroke-width="14" stroke-linecap="round"/>
+  <line x1="8" y1="40" x2="72" y2="40" stroke="#E04E2C" stroke-width="14" stroke-linecap="round"/>
+  <line x1="8" y1="58" x2="72" y2="58" stroke="#E04E2C" stroke-width="14" stroke-linecap="round"/>
+</svg>

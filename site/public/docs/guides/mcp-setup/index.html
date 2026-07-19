@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCP setup — 3Notch Docs</title>
+<meta name="description" content="Start the 3Notch local stdio MCP server. Wire Claude Code, Claude Desktop, Cursor, and Codex. Available tools and server flags.">
+<link rel="canonical" href="https://3notch.dev/docs/guides/mcp-setup/">
+<meta name="theme-color" content="#0B0A08">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/docs/docs.css">
+</head>
+<body>
+
+<nav class="docs-nav">
+  <div class="docs-nav-inner">
+    <div class="docs-nav-left">
+      <a class="wordmark" href="/" aria-label="3Notch home">
+        <svg class="wm-mark" viewBox="0 0 80 80" width="16" height="16" fill="none" aria-hidden="true"><line x1="10" y1="22" x2="70" y2="22" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/><line x1="10" y1="40" x2="70" y2="40" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/><line x1="10" y1="58" x2="70" y2="58" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/></svg>
+        <span class="wm-text"><b>3</b>Notch</span>
+      </a>
+      <span class="docs-nav-breadcrumb"><a href="/docs/">Docs</a> <span class="sep">/</span> Guides <span class="sep">/</span> <b>MCP setup</b></span>
+    </div>
+    <div class="docs-nav-right">
+      <a class="nav-link" href="/">Home</a>
+      <a class="nav-cta" href="https://github.com/coldlogicAI/3notch" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2c-3.2.7-3.87-1.36-3.87-1.36-.52-1.34-1.27-1.69-1.27-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.47.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.62 1.58.23 2.76.12 3.05.73.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.41-5.25 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.68.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </div>
+</nav>
+
+<div class="docs-layout">
+  <aside class="docs-sidebar" id="sidebar">
+    <button class="docs-sidebar-toggle" type="button" aria-controls="sidebar-inner" aria-expanded="false">Menu</button>
+    <div class="docs-sidebar-inner" id="sidebar-inner">
+      <div class="docs-sidebar-group">
+        <div class="docs-sidebar-head">Get started</div>
+        <ul>
+          <li><a href="/docs/">Overview</a></li>
+          <li><a href="/docs/quickstart/">Quickstart</a></li>
+        </ul>
+      </div>
+      <div class="docs-sidebar-group">
+        <div class="docs-sidebar-head">Guides</div>
+        <ul>
+          <li><a href="/docs/guides/continuation-checkpoints/">Continuation checkpoints</a></li>
+          <li><a href="/docs/guides/cross-tool-handoff/">Cross-tool handoff</a></li>
+          <li><a href="/docs/guides/cross-repo-packets/">Cross-repo packets</a></li>
+          <li><a href="/docs/guides/private-context-seeding/">Private context seeding</a></li>
+          <li><a href="/docs/guides/targeted-brief-workflow/">Targeted brief workflow</a></li>
+          <li><a href="/docs/guides/mcp-setup/" aria-current="page">MCP setup</a></li>
+        </ul>
+      </div>
+      <div class="docs-sidebar-group">
+        <div class="docs-sidebar-head">Reference</div>
+        <ul>
+          <li><a href="/docs/reference/privacy/">Privacy</a></li>
+          <li><a href="/docs/reference/security-story/">Security story</a></li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+  <main class="docs-content">
+    <div class="docs-meta">
+      <span class="eyebrow">Guide</span>
+      <span class="docs-edit"><a href="https://github.com/coldlogicAI/3notch/blob/main/docs/guides/mcp-setup.md" rel="noopener">Edit on GitHub →</a></span>
+    </div>
+
+    <h1>MCP setup<span class="accent">.</span></h1>
+    <p class="docs-lede">3Notch exposes a local stdio MCP server. Start it from the project root and your AI agent can read and write the store directly — no typing required on your end.</p>
+
+    <pre><code><span class="prompt">$</span> <span class="cmd">notch mcp serve</span></code></pre>
+    <p>For client-specific setup snippets, run:</p>
+    <pre><code><span class="prompt">$</span> <span class="cmd">notch onboard</span> <span class="flag">--yes</span> <span class="flag">--mcp</span> <span class="arg">claude-code</span>
+<span class="prompt">$</span> <span class="cmd">notch onboard</span> <span class="flag">--yes</span> <span class="flag">--mcp</span> <span class="arg">claude-desktop</span>
+<span class="prompt">$</span> <span class="cmd">notch onboard</span> <span class="flag">--yes</span> <span class="flag">--mcp</span> <span class="arg">codex</span>
+<span class="prompt">$</span> <span class="cmd">notch onboard</span> <span class="flag">--yes</span> <span class="flag">--mcp</span> <span class="arg">cursor</span></code></pre>
+    <p><code>notch onboard --mcp claude-code</code> writes a project-local <code>.mcp.json</code>. <code>notch onboard --mcp claude-desktop</code> updates <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> with a backup. Other clients print copy-paste snippets.</p>
+
+    <h2>Server flags</h2>
+    <pre><code><span class="prompt">$</span> <span class="cmd">notch mcp serve</span> <span class="flag">--read-only</span>           <span class="c"># reject write tools</span>
+<span class="prompt">$</span> <span class="cmd">notch mcp serve</span> <span class="flag">--include-private</span>     <span class="c"># expose .notch/private/ for this server only</span>
+<span class="prompt">$</span> <span class="cmd">notch mcp serve</span> <span class="flag">--store</span> <span class="arg">/path/.notch</span>  <span class="c"># point at a non-default store</span>
+<span class="prompt">$</span> <span class="cmd">notch mcp serve</span> <span class="flag">--default-actor</span> <span class="arg">"Claude Desktop"</span></code></pre>
+
+    <h2>Available tools</h2>
+    <p>Read-only:</p>
+    <ul>
+      <li><code>get_brief</code>, <code>list_briefs</code>, <code>get_targeted_brief</code></li>
+      <li><code>get_packet</code>, <code>list_packets</code></li>
+      <li><code>get_status</code>, <code>check_store</code>, <code>run_doctor</code></li>
+    </ul>
+    <p>Write tools (require client tool-permission grant):</p>
+    <ul>
+      <li><code>create_brief</code></li>
+      <li><code>create_packet</code> (accepts <code>files</code>, <code>refs</code>, and <code>nextSteps</code>)</li>
+      <li><code>create_mark</code> — self-addressed private capture</li>
+      <li><code>create_reply</code> — typed packet reply</li>
+      <li><code>create_seed_packet</code></li>
+      <li><code>import_packet</code>, <code>import_seed_packet</code></li>
+    </ul>
+
+    <div class="docs-note">
+      <div>
+        <div class="docs-note-label">No hidden tools</div>
+        <p>There are no shell-execution, chat-scraping, remote-connector, or background-collection tools. Any tool name not in this list does not exist.</p>
+      </div>
+    </div>
+
+    <h2>Agent instruction packs</h2>
+    <pre><code><span class="prompt">$</span> <span class="cmd">notch prompt</span> <span class="flag">--client</span> <span class="arg">claude-code</span>
+<span class="prompt">$</span> <span class="cmd">notch prompt</span> <span class="flag">--client</span> <span class="arg">claude-desktop</span>
+<span class="prompt">$</span> <span class="cmd">notch prompt</span> <span class="flag">--client</span> <span class="arg">codex</span>
+<span class="prompt">$</span> <span class="cmd">notch prompt</span> <span class="flag">--client</span> <span class="arg">cursor</span>
+<span class="prompt">$</span> <span class="cmd">notch prompt</span> <span class="flag">--client</span> <span class="arg">claude-chat</span>   <span class="c"># web-chat bridge</span></code></pre>
+    <p>These print agent instructions you paste into <code>CLAUDE.md</code>, <code>AGENTS.md</code>, or the client's system prompt. They tell the agent when to use which tool, with <code>nextSteps</code> and source links as first-class fields.</p>
+
+    <div class="docs-pagination">
+      <a href="/docs/guides/targeted-brief-workflow/" class="prev">
+        <span class="label">← Previous</span>
+        <span class="title">Targeted brief workflow</span>
+      </a>
+      <a href="/docs/reference/privacy/" class="next">
+        <span class="label">Next →</span>
+        <span class="title">Privacy</span>
+      </a>
+    </div>
+  </main>
+</div>
+
+<footer class="docs-footer">
+  <div class="docs-footer-inner">
+    <span><b>3</b>Notch · v0.5.0 · OSS · MIT</span>
+    <span><a href="/">← Back to 3notch.dev</a></span>
+  </div>
+</footer>
+
+<script>
+  document.querySelectorAll('.docs-sidebar-toggle').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const sidebar = btn.closest('.docs-sidebar');
+      const isOpen = sidebar.classList.toggle('open');
+      btn.setAttribute('aria-expanded', String(isOpen));
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cross-repo packets — 3Notch Docs</title>
+<meta name="description" content="Create, preview, and import 3Notch packets across repos. --file vs --ref. Pack and unpack .notchpkt archives.">
+<link rel="canonical" href="https://3notch.dev/docs/guides/cross-repo-packets/">
+<meta name="theme-color" content="#0B0A08">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/docs/docs.css">
+</head>
+<body>
+
+<nav class="docs-nav">
+  <div class="docs-nav-inner">
+    <div class="docs-nav-left">
+      <a class="wordmark" href="/" aria-label="3Notch home">
+        <svg class="wm-mark" viewBox="0 0 80 80" width="16" height="16" fill="none" aria-hidden="true"><line x1="10" y1="22" x2="70" y2="22" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/><line x1="10" y1="40" x2="70" y2="40" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/><line x1="10" y1="58" x2="70" y2="58" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/></svg>
+        <span class="wm-text"><b>3</b>Notch</span>
+      </a>
+      <span class="docs-nav-breadcrumb"><a href="/docs/">Docs</a> <span class="sep">/</span> Guides <span class="sep">/</span> <b>Cross-repo packets</b></span>
+    </div>
+    <div class="docs-nav-right">
+      <a class="nav-link" href="/">Home</a>
+      <a class="nav-cta" href="https://github.com/coldlogicAI/3notch" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2c-3.2.7-3.87-1.36-3.87-1.36-.52-1.34-1.27-1.69-1.27-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.47.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.62 1.58.23 2.76.12 3.05.73.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.41-5.25 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.68.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </div>
+</nav>
+
+<div class="docs-layout">
+  <aside class="docs-sidebar" id="sidebar">
+    <button class="docs-sidebar-toggle" type="button" aria-controls="sidebar-inner" aria-expanded="false">Menu</button>
+    <div class="docs-sidebar-inner" id="sidebar-inner">
+      <div class="docs-sidebar-group">
+        <div class="docs-sidebar-head">Get started</div>
+        <ul>
+          <li><a href="/docs/">Overview</a></li>
+          <li><a href="/docs/quickstart/">Quickstart</a></li>
+        </ul>
+      </div>
+      <div class="docs-sidebar-group">
+        <div class="docs-sidebar-head">Guides</div>
+        <ul>
+          <li><a href="/docs/guides/continuation-checkpoints/">Continuation checkpoints</a></li>
+          <li><a href="/docs/guides/cross-tool-handoff/">Cross-tool handoff</a></li>
+          <li><a href="/docs/guides/cross-repo-packets/" aria-current="page">Cross-repo packets</a></li>
+          <li><a href="/docs/guides/private-context-seeding/">Private context seeding</a></li>
+          <li><a href="/docs/guides/targeted-brief-workflow/">Targeted brief workflow</a></li>
+          <li><a href="/docs/guides/mcp-setup/">MCP setup</a></li>
+        </ul>
+      </div>
+      <div class="docs-sidebar-group">
+        <div class="docs-sidebar-head">Reference</div>
+        <ul>
+          <li><a href="/docs/reference/privacy/">Privacy</a></li>
+          <li><a href="/docs/reference/security-story/">Security story</a></li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+  <main class="docs-content">
+    <div class="docs-meta">
+      <span class="eyebrow">Guide</span>
+      <span class="docs-edit"><a href="https://github.com/coldlogicAI/3notch/blob/main/docs/guides/cross-repo-packets.md" rel="noopener">Edit on GitHub →</a></span>
+    </div>
+
+    <h1>Cross-repo packets<span class="accent">.</span></h1>
+    <p class="docs-lede">A packet is a reviewable Markdown record (and, when needed, an artifact bundle) that one repo creates and another imports. It is the main 3Notch flow.</p>
+
+    <h2>Create</h2>
+    <pre><code><span class="prompt">$</span> <span class="cmd">notch packet create</span> \
+  <span class="flag">--title</span> <span class="arg">"Brand handoff"</span> \
+  <span class="flag">--summary</span> <span class="arg">"Launch-page context for the brand repo."</span> \
+  <span class="flag">--to-agent</span> <span class="arg">codex</span> \
+  <span class="flag">--to-repo</span> <span class="arg">../brand-site</span> \
+  <span class="flag">--file</span> <span class="arg">mascot.jpg:asset</span> \
+  <span class="flag">--file</span> <span class="arg">showcase.html:source</span> \
+  <span class="flag">--next-steps</span> <span class="arg">"Build apps/brand-site/ using showcase.html as the layout and mascot.jpg in the hero."</span></code></pre>
+    <p>The packet is written to <code>.notch/outbox/</code>. When <code>--file</code> is used, it lands as a folder containing <code>packet.md</code>, <code>manifest.json</code>, and copied bytes under <code>artifacts/</code>, preserving each file's project-relative path. Without <code>--file</code>, it lands as a single <code>.md</code> file.</p>
+    <p>Recipient fields (<code>--to-agent</code>, <code>--to-person</code>, <code>--to-repo</code>) label intent. They do not authenticate or deliver anything — local filesystems and your own transport (scp, rsync, iCloud, Tailscale, email, git) move the bytes.</p>
+
+    <h2>File vs reference</h2>
+    <ul>
+      <li><code>--file &lt;path&gt;</code> copies the file's bytes into the packet's <code>artifacts/</code> directory, preserves its project-relative path, and records a SHA-256 hash. Use this when the receiver does not share your filesystem.</li>
+      <li><code>--ref &lt;path&gt;</code> records a pointer only. Use this when the receiver shares the same workspace path (sibling repo on the same machine).</li>
+    </ul>
+    <p>Append <code>:asset</code>, <code>:source</code>, <code>:reference</code>, or <code>:output</code> to a <code>--file</code> arg to tag its purpose. Default is <code>asset</code>; when unsure, omit the suffix. Common human labels like <code>:favicon</code>, <code>:icon</code>, <code>:logo</code>, <code>:image</code>, and <code>:screenshot</code> are accepted as <code>asset</code>.</p>
+
+    <h2>Preview before import</h2>
+    <pre><code><span class="prompt">$</span> <span class="cmd">notch packet preview</span> <span class="arg">&lt;packet-id&gt;</span></code></pre>
+    <p>Preview shows the agent-visible content plus an artifact table (path, short SHA-256, byte size) and re-runs the scanner against the markdown so newer rules can flag older packets.</p>
+
+    <h2>Import</h2>
+    <pre><code><span class="prompt">$</span> <span class="cmd">notch packet import</span> <span class="arg">../source/.notch/outbox/&lt;packet-folder&gt;/packet.md</span>
+<span class="prompt">$</span> <span class="cmd">notch packet list</span> <span class="flag">--inbox</span>
+<span class="prompt">$</span> <span class="cmd">notch packet show</span> <span class="arg">&lt;packet-id&gt;</span> <span class="flag">--inbox</span></code></pre>
+    <p>Import writes a copy to <code>.notch/inbox/</code>. If the source is a packet folder, every artifact is re-hashed against <code>manifest.json</code> and the packet's frontmatter; a mismatch raises <code>NOTCH_ARTIFACT_HASH_MISMATCH</code> and nothing lands in the inbox.</p>
+    <p>Imported packet folders are sealed. To change context, author a successor with <code>--supersedes &lt;id&gt;</code> or a typed reply with <code>notch reply</code>. Never edit an inbox packet in place.</p>
+
+    <h2>Cross-machine</h2>
+    <p>When the destination is on a different machine, pack the folder into a deterministic <code>.notchpkt</code> archive, move it through any channel you already use, and unpack on the other side:</p>
+    <pre><code><span class="prompt">$</span> <span class="cmd">notch packet pack</span> <span class="arg">&lt;packet-id&gt;</span>          <span class="c"># → &lt;packet-id&gt;.notchpkt in $CWD</span>
+<span class="prompt">$</span> <span class="cmd">notch packet unpack</span> <span class="arg">&lt;packet-id&gt;.notchpkt</span></code></pre>
+    <p><code>--output -</code> writes the archive to stdout for piping; <code>notch packet unpack -</code> reads from stdin.</p>
+
+    <h2>Review habits</h2>
+    <ul>
+      <li>Run <code>notch packet preview &lt;id&gt;</code> before relying on an imported packet.</li>
+      <li>Keep <code>--summary</code> honest about what was reviewed vs. what was assumed.</li>
+      <li>Use <code>includedSourceLinks</code> and <code>--file</code> to identify exactly what claims were based on.</li>
+      <li>Run <code>notch doctor</code> after import to validate records and rebuild derived indexes.</li>
+    </ul>
+
+    <div class="docs-pagination">
+      <a href="/docs/guides/cross-tool-handoff/" class="prev">
+        <span class="label">← Previous</span>
+        <span class="title">Cross-tool handoff</span>
+      </a>
+      <a href="/docs/guides/private-context-seeding/" class="next">
+        <span class="label">Next →</span>
+        <span class="title">Private context seeding</span>
+      </a>
+    </div>
+  </main>
+</div>
+
+<footer class="docs-footer">
+  <div class="docs-footer-inner">
+    <span><b>3</b>Notch · v0.5.0 · OSS · MIT</span>
+    <span><a href="/">← Back to 3notch.dev</a></span>
+  </div>
+</footer>
+
+<script>
+  document.querySelectorAll('.docs-sidebar-toggle').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const sidebar = btn.closest('.docs-sidebar');
+      const isOpen = sidebar.classList.toggle('open');
+      btn.setAttribute('aria-expanded', String(isOpen));
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,14 @@
+<!-- 3Notch · Lockup · PRIMARY · HORIZONTAL (for use on dark/ink backgrounds) -->
+<!-- Spec ref: brand-system Section 05. Mark 36px + Geist 600 wordmark @ 28px. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 56" fill="none" role="img" aria-label="3Notch">
+  <!-- Mark: 36x36, viewBox normalized to a 36-unit box -->
+  <g transform="translate(0, 10)">
+    <line x1="4.5" y1="9.9" x2="31.5" y2="9.9"  stroke="#E04E2C" stroke-width="4" stroke-linecap="round"/>
+    <line x1="4.5" y1="18"  x2="31.5" y2="18"   stroke="#E04E2C" stroke-width="4" stroke-linecap="round"/>
+    <line x1="4.5" y1="26.1" x2="31.5" y2="26.1" stroke="#E04E2C" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <!-- Wordmark: "3" in Mark red, "Notch" in Paper -->
+  <text x="48" y="38" font-family="Geist, system-ui, -apple-system, sans-serif" font-weight="600" font-size="28" letter-spacing="-0.7" fill="#F4EFE5">
+    <tspan fill="#E04E2C">3</tspan>Notch
+  </text>
+</svg>

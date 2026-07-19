@@ -1,0 +1,8 @@
+<!-- 3Notch · Favicon · 16px geometry (stroke 14, x=8/x=72) per brand-system Section 05 -->
+<!-- The Ink rect is the favicon's canvas (favicons require a defined background) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="32" height="32">
+  <rect width="80" height="80" fill="#0B0A08"/>
+  <line x1="8" y1="22" x2="72" y2="22" stroke="#E04E2C" stroke-width="14" stroke-linecap="round"/>
+  <line x1="8" y1="40" x2="72" y2="40" stroke="#E04E2C" stroke-width="14" stroke-linecap="round"/>
+  <line x1="8" y1="58" x2="72" y2="58" stroke="#E04E2C" stroke-width="14" stroke-linecap="round"/>
+</svg>

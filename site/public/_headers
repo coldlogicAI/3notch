@@ -1,0 +1,30 @@
+# Cloudflare Pages headers
+# https://developers.cloudflare.com/pages/configuration/headers/
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+
+# Long-cache static assets
+/favicon.svg
+  Cache-Control: public, max-age=604800, immutable
+/favicon-32.png
+  Cache-Control: public, max-age=604800, immutable
+/apple-touch-icon.png
+  Cache-Control: public, max-age=604800, immutable
+# OG images — short cache so updates propagate (social crawlers honor max-age)
+# Bump the ?v= query string in index.html on content changes to force immediate re-crawl.
+/og-image.png
+  Cache-Control: public, max-age=3600, must-revalidate
+/og-image.svg
+  Cache-Control: public, max-age=3600, must-revalidate
+
+# HTML — short cache so updates roll out fast
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate

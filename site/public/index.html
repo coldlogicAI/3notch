@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3Notch — Mark your trail.</title>
+<meta name="description" content="Your AI session died mid-task. 3Notch saves the working state so the next agent picks up where this one stopped. Local, portable, open source.">
+
+<!-- Canonical & social -->
+<link rel="canonical" href="https://3notch.dev/">
+<meta property="og:title" content="3Notch — Mark your trail.">
+<meta property="og:description" content="Your AI session died mid-task. 3Notch saves the working state so the next agent picks up where this one stopped. Local, portable, open source.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://3notch.dev/">
+<meta property="og:image" content="https://3notch.dev/og-image.png?v=v0.5.0">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="3Notch — Mark your trail.">
+<meta name="twitter:description" content="Your AI session died mid-task. 3Notch saves the working state so the next agent picks up where this one stopped. Local, portable, open source.">
+<meta name="twitter:image" content="https://3notch.dev/og-image.png?v=v0.5.0">
+<meta name="theme-color" content="#0B0A08">
+
+<!-- Structured data: Software + FAQ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "3Notch",
+  "description": "3Notch is an open-source CLI tool that saves AI working state as local, portable checkpoints. When an AI coding session hits a rate limit, compacts its context window, or switches models, 3Notch preserves the current objective, completed work, decisions, blockers, and next steps so the next session can resume without starting over.",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "macOS, Windows, Linux",
+  "url": "https://3notch.dev/",
+  "downloadUrl": "https://www.npmjs.com/package/@3notch/cli",
+  "softwareVersion": "0.5.0",
+  "license": "https://opensource.org/licenses/MIT",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "coldlogic AI",
+    "url": "https://github.com/coldlogicAI"
+  },
+  "codeRepository": "https://github.com/coldlogicAI/3notch",
+  "programmingLanguage": "TypeScript"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How do I save context when switching AI models?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "3Notch creates portable checkpoints that capture your current objective, completed work, decisions, blockers, and next steps. When you switch from one AI tool to another (e.g., Claude to Codex), the outgoing agent writes a checkpoint and the incoming agent reads it to resume with full context. Install with: npm install -g @3notch/cli"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I recover context after an AI rate limit or session crash?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "3Notch automatically saves working state when a session hits a rate limit or compacts its context window. When you start a new session, 3Notch offers the latest checkpoint for review and loads it after you approve, so you can resume in seconds instead of spending 30-40 minutes re-explaining your project."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is 3Notch?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "3Notch is a free, open-source CLI tool and MCP server that saves AI coding session context as portable, local Markdown files. It works with Claude Code, Codex, Cursor, ChatGPT, and any MCP-compatible AI tool. Checkpoints are plain Markdown with structured frontmatter — no database, no cloud service, no account required. Everything stays on your machine."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does 3Notch work with Claude Code, Codex, and Cursor?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. 3Notch is vendor-neutral and works with any AI coding tool. It includes a built-in MCP server for tools that support Model Context Protocol (Claude Code, Claude Desktop, Cursor), and portable .notchpkt archives that can be imported into any tool. Checkpoints are plain Markdown files readable by any agent."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is 3Notch free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. 3Notch is completely free, open-source software released under the MIT license. There is no cloud service, no account, no telemetry, and no paid tier. Install it with: npm install -g @3notch/cli"
+      }
+    }
+  ]
+}
+</script>
+
+<!-- Icons -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/favicon.svg" color="#E04E2C">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:        #0B0A08;
+  --ink-soft:   #111009;
+  --surface:    #181512;
+  --line:       #242018;
+  --line-mid:   #2E2A24;
+  --paper:      #F4EFE5;
+  --paper-dim:  #8A847B;
+  --paper-mute: #4D4843;
+  --mark:       #E04E2C;
+  --mark-dim:   rgba(224,78,44,0.10);
+  --ok:         #5A9E5A;
+  --no:         #9E4A3A;
+  --f:          'Geist', system-ui, -apple-system, sans-serif;
+  --f-mono:     'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --w:          1160px;
+  --pad:        2rem;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--f);
+  font-weight: 400;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  font-feature-settings: "ss01", "ss02";
+}
+
+::selection { background: var(--mark); color: var(--paper); }
+
+a { color: inherit; text-decoration: none; }
+button { font: inherit; cursor: pointer; background: none; border: none; color: inherit; }
+
+/* ── LAYOUT PRIMITIVES ── */
+.w { max-width: var(--w); margin: 0 auto; padding: 0 var(--pad); }
+.rule { border: none; border-top: 1px solid var(--line); }
+.rule-mark { border: none; height: 1px; background: linear-gradient(90deg, var(--mark) 0%, var(--mark) 48px, var(--line) 48px); }
+.eyebrow { font-family: var(--f-mono); font-size: 0.62rem; color: var(--mark); letter-spacing: 0.18em; text-transform: uppercase; font-weight: 500; }
+.meta { font-family: var(--f-mono); font-size: 0.62rem; color: var(--paper-mute); letter-spacing: 0.16em; text-transform: uppercase; }
+
+/* ── NAV ── */
+.nav {
+  position: sticky; top: 0; z-index: 100;
+  border-bottom: 1px solid var(--line);
+  background: rgba(11,10,8,0.88);
+  backdrop-filter: saturate(160%) blur(14px);
+  -webkit-backdrop-filter: saturate(160%) blur(14px);
+}
+.nav-inner {
+  max-width: var(--w); margin: 0 auto; padding: 0 var(--pad);
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px;
+}
+.wordmark { display: flex; align-items: center; gap: 10px; }
+.wm-mark { flex-shrink: 0; }
+.wm-text {
+  font-family: var(--f); font-weight: 600; font-size: 0.98rem;
+  letter-spacing: -0.025em; color: var(--paper); line-height: 1;
+}
+.wm-text b { color: var(--mark); font-weight: 600; }
+.nav-links { display: flex; align-items: center; gap: 1.8rem; }
+.nav-link {
+  font-family: var(--f-mono); font-size: 0.7rem; color: var(--paper-dim);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  transition: color 0.15s ease;
+}
+.nav-link:hover { color: var(--paper); }
+.nav-cta {
+  font-family: var(--f-mono); font-size: 0.68rem;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  border: 1px solid var(--line-mid); padding: 7px 12px;
+  color: var(--paper); transition: border-color 0.15s, color 0.15s;
+  display: inline-flex; align-items: center; gap: 7px;
+}
+.nav-cta:hover { border-color: var(--mark); color: var(--mark); }
+.nav-cta svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+@media (max-width: 640px) {
+  .nav-links .nav-link:not(.nav-cta) { display: none; }
+}
+
+/* ── HERO ── */
+.hero {
+  padding: 4.5rem 0 5rem;
+  position: relative;
+  overflow: hidden;
+}
+.hero-bg {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 60% at 80% 30%, rgba(224,78,44,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 50% at 20% 80%, rgba(224,78,44,0.025) 0%, transparent 60%);
+}
+.hero-grid {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0.4;
+  background-image:
+    linear-gradient(to right, var(--line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+  background-size: 96px 96px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black 0%, transparent 70%);
+}
+.hero-inner { position: relative; }
+.hero-split {
+  display: grid; grid-template-columns: 1.15fr 1fr;
+  gap: 3rem; align-items: center;
+}
+@media (max-width: 900px) {
+  .hero-split { grid-template-columns: 1fr; gap: 2rem; }
+}
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-family: var(--f-mono); font-size: 0.66rem;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--paper-dim); margin-bottom: 2rem;
+}
+.hero-eyebrow .dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--mark);
+  animation: pulse 2.5s ease-in-out infinite;
+}
+.hero-eyebrow b { color: var(--mark); font-weight: 500; }
+.hero-eyebrow .sep { color: var(--paper-mute); }
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 4px var(--mark), 0 0 9px rgba(224,78,44,0.3); }
+  50%      { box-shadow: 0 0 8px var(--mark), 0 0 18px rgba(224,78,44,0.5); }
+}
+
+.hero-h1 {
+  font-family: var(--f); font-weight: 600;
+  font-size: clamp(3.5rem, 9vw, 7rem);
+  letter-spacing: -0.045em; line-height: 0.95;
+  color: var(--paper); margin-bottom: 1.5rem;
+}
+.hero-h1 .accent { color: var(--mark); }
+.hero-sub {
+  font-size: clamp(1.05rem, 1.8vw, 1.35rem);
+  color: var(--paper-dim); line-height: 1.5;
+  margin-bottom: 1.25rem; font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.hero-sub strong { color: var(--paper); font-weight: 500; }
+
+.install-block {
+  display: flex; flex-direction: column; gap: 0.6rem;
+  margin-bottom: 1.5rem; max-width: 36rem;
+}
+.install-cmd {
+  display: flex; align-items: center; gap: 0;
+  background: var(--ink-soft); border: 1px solid var(--line-mid);
+  font-family: var(--f-mono); font-size: 0.92rem;
+  color: var(--paper); height: 52px;
+}
+.install-cmd-text {
+  flex: 1; display: flex; align-items: center; gap: 12px;
+  padding: 0 1.1rem; min-width: 0; overflow-x: auto;
+  scrollbar-width: none;
+}
+.install-cmd-text::-webkit-scrollbar { display: none; }
+.install-cmd-text .prompt { color: var(--mark); flex-shrink: 0; user-select: none; }
+.install-cmd-text .body { white-space: nowrap; }
+.install-cmd-copy {
+  border-left: 1px solid var(--line-mid);
+  padding: 0 1.1rem; height: 100%;
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--f-mono); font-size: 0.65rem;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--paper-dim);
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.install-cmd-copy:hover { color: var(--paper); background: var(--surface); }
+.install-cmd-copy.copied { color: var(--mark); }
+.install-cmd-copy svg { width: 12px; height: 12px; }
+
+.agent-prompt {
+  max-width: 46rem; margin-bottom: 1.5rem;
+  border: 1px solid var(--line-mid); background: var(--ink-soft);
+}
+.agent-prompt-head {
+  min-height: 42px; padding: 0.7rem 0.85rem 0.7rem 1rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  border-bottom: 1px solid var(--line); background: var(--surface);
+}
+.agent-prompt-label {
+  font-family: var(--f-mono); font-size: 0.62rem; color: var(--mark);
+  letter-spacing: 0.16em; text-transform: uppercase;
+}
+.agent-prompt .install-cmd-copy {
+  border: 1px solid var(--line-mid); height: 30px; padding: 0 0.75rem;
+}
+.agent-prompt-body {
+  padding: 1.15rem 1.2rem 1.25rem;
+  font-size: 0.92rem; color: var(--paper-dim); line-height: 1.65;
+}
+.agent-prompt-body strong { color: var(--paper); font-weight: 500; }
+.agent-prompt-note {
+  margin-top: 0.75rem; font-family: var(--f-mono); font-size: 0.67rem;
+  color: var(--paper-mute); line-height: 1.55;
+}
+.direct-install {
+  max-width: 46rem; margin: -0.35rem 0 1.5rem;
+  display: grid; grid-template-columns: auto 1fr auto;
+  align-items: center; border: 1px solid var(--line); background: var(--ink);
+}
+.direct-install-label {
+  align-self: stretch; display: flex; align-items: center;
+  padding: 0 1.25rem; border-right: 1px solid var(--line);
+  font-family: var(--f-mono); font-size: 0.62rem; color: var(--mark);
+  letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap;
+  font-weight: 500;
+}
+.direct-install code {
+  min-width: 0; overflow-x: auto; padding: 0 1rem;
+  font-family: var(--f-mono); font-size: 0.82rem; color: var(--paper);
+  white-space: nowrap; scrollbar-width: none;
+}
+.direct-install code::-webkit-scrollbar { display: none; }
+.direct-install .install-cmd-copy { height: 52px; }
+@media (max-width: 560px) {
+  .direct-install { grid-template-columns: 1fr auto; }
+  .direct-install-label { grid-column: 1 / -1; min-height: 34px; border-right: none; border-bottom: 1px solid var(--line); }
+}
+
+.hero-actions { display: flex; align-items: center; gap: 2rem; flex-wrap: wrap; }
+.hero-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--f-mono); font-size: 0.72rem;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--paper); padding-bottom: 3px;
+  border-bottom: 1px solid var(--line-mid);
+  transition: border-color 0.15s, color 0.15s;
+}
+.hero-link:hover { border-color: var(--mark); color: var(--mark); }
+.hero-link.muted { color: var(--paper-dim); border-color: transparent; }
+.hero-link.muted:hover { color: var(--paper); }
+.hero-link svg { width: 11px; height: 11px; }
+
+.hero-tags {
+  display: flex; flex-wrap: wrap; gap: 0;
+  margin-top: 3rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1.5rem;
+}
+.hero-tag {
+  font-family: var(--f-mono); font-size: 0.6rem;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--paper-dim); padding-right: 1.5rem; margin-right: 1.5rem;
+  border-right: 1px solid var(--line);
+  display: inline-flex; align-items: center; gap: 7px;
+}
+.hero-tag:last-child { border-right: none; margin-right: 0; padding-right: 0; }
+.hero-tag svg { width: 16px; height: 16px; color: var(--mark); flex-shrink: 0; }
+
+/* ── SECTION HEADS ── */
+.s-head {
+  padding: 3.75rem 0 0;
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 2.5rem; align-items: baseline;
+  margin-bottom: 2.5rem;
+}
+.s-num { font-family: var(--f-mono); font-size: 0.62rem; color: var(--mark); letter-spacing: 0.2em; padding-top: 0.4rem; }
+.s-head-body { max-width: 48rem; }
+.s-title {
+  font-family: var(--f); font-weight: 600;
+  font-size: clamp(1.75rem, 3.5vw, 2.6rem);
+  letter-spacing: -0.035em; line-height: 1.05;
+  color: var(--paper); margin-bottom: 0.85rem;
+}
+.s-title .accent { color: var(--mark); }
+.s-sub {
+  font-size: 1.05rem; color: var(--paper-dim); line-height: 1.55;
+  max-width: 36rem; letter-spacing: -0.005em;
+}
+@media (max-width: 700px) {
+  .s-head { grid-template-columns: 1fr; gap: 0.85rem; }
+}
+
+/* ── PROBLEM ── */
+.problem {
+  display: grid; grid-template-columns: 140px 1fr;
+  gap: 2.5rem;
+  padding-bottom: 5rem;
+}
+.problem-statement {
+  font-family: var(--f); font-weight: 600;
+  font-size: clamp(1.4rem, 2.6vw, 1.95rem);
+  letter-spacing: -0.025em; line-height: 1.3;
+  color: var(--paper); max-width: 44rem;
+}
+.problem-statement .accent { color: var(--mark); }
+.problem-prose {
+  margin-top: 2rem; max-width: 38rem;
+  font-size: 1rem; color: var(--paper-dim); line-height: 1.75;
+}
+.problem-prose p + p { margin-top: 1.1rem; }
+.problem-prose strong { color: var(--paper); font-weight: 500; }
+@media (max-width: 700px) {
+  .problem { grid-template-columns: 1fr; gap: 0.85rem; }
+}
+
+/* ── WORKFLOW CARDS ── */
+.workflow-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--line);
+  margin-bottom: 1.25rem;
+}
+.workflow-card {
+  padding: 2rem 1.75rem 2rem; background: var(--ink-soft);
+  border-right: 1px solid var(--line);
+  display: flex; flex-direction: column;
+  min-height: 280px;
+}
+.workflow-card:last-child { border-right: none; }
+.workflow-num {
+  font-family: var(--f-mono); font-size: 0.7rem;
+  letter-spacing: 0.18em; color: var(--mark);
+  margin-bottom: 1.5rem;
+}
+.workflow-head {
+  font-family: var(--f); font-weight: 600;
+  font-size: 1.4rem; letter-spacing: -0.025em; line-height: 1.15;
+  color: var(--paper); margin-bottom: 0.85rem;
+}
+.workflow-desc {
+  font-size: 0.92rem; color: var(--paper-dim); line-height: 1.55;
+  margin-bottom: 1.5rem; flex: 1;
+}
+.workflow-code {
+  font-family: var(--f-mono); font-size: 0.78rem;
+  color: var(--paper); background: var(--ink); border: 1px solid var(--line);
+  padding: 0.9rem 1rem; line-height: 1.6;
+}
+.workflow-code .c { color: var(--mark); }
+.workflow-code .m { color: var(--paper-mute); }
+@media (max-width: 900px) {
+  .workflow-grid { grid-template-columns: 1fr; }
+  .workflow-card { border-right: none; border-bottom: 1px solid var(--line); min-height: 0; }
+  .workflow-card:last-child { border-bottom: none; }
+}
+
+/* ── CONCEPT ── */
+.concept-split {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 3rem; padding-bottom: 3.75rem;
+  align-items: start;
+}
+.concept-prose {
+  font-size: 1rem; color: var(--paper-dim); line-height: 1.85;
+  max-width: 32rem; padding-top: 0.25rem;
+}
+.concept-prose p + p { margin-top: 1.15rem; }
+.concept-prose strong { color: var(--paper); font-weight: 500; }
+.concept-map {
+  display: flex; flex-direction: column;
+  border: 1px solid var(--line);
+}
+.concept-map-row {
+  display: grid; grid-template-columns: 140px 1fr;
+  border-bottom: 1px solid var(--line);
+}
+.concept-map-row:last-child { border-bottom: none; }
+.concept-map-key {
+  font-family: var(--f-mono); font-size: 0.6rem;
+  color: var(--mark); letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 1.25rem 1.25rem; border-right: 1px solid var(--line);
+  display: flex; align-items: center; background: var(--ink-soft);
+}
+.concept-map-val { padding: 1.25rem 1.4rem; }
+.concept-map-val strong {
+  display: block; font-size: 0.95rem; color: var(--paper);
+  font-weight: 500; margin-bottom: 0.25rem; letter-spacing: -0.015em;
+}
+.concept-map-val span {
+  font-size: 0.82rem; color: var(--paper-mute);
+  line-height: 1.55;
+}
+@media (max-width: 900px) {
+  .concept-split { grid-template-columns: 1fr; gap: 2.5rem; }
+  .concept-prose { max-width: none; }
+}
+@media (max-width: 520px) {
+  .concept-map-row { grid-template-columns: 1fr; }
+  .concept-map-key { border-right: none; border-bottom: 1px solid var(--line); padding: 0.85rem 1.25rem; }
+}
+
+/* ── CAPSTONES ── */
+.workflow-capstone {
+  display: flex; align-items: flex-start; gap: 1.1rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--line);
+  background: var(--ink-soft);
+  margin-bottom: 3.75rem;
+}
+.workflow-capstone .capstone-mark {
+  font-family: var(--f-mono); font-size: 1.1rem; line-height: 1.45;
+  color: var(--mark); flex-shrink: 0; font-weight: 500;
+}
+.workflow-capstone p {
+  font-size: 0.95rem; color: var(--paper-dim); line-height: 1.55;
+  letter-spacing: -0.005em;
+}
+.workflow-capstone p strong { color: var(--paper); font-weight: 500; }
+
+/* ── FEATURE SPLITS ── */
+.feature {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 3rem; padding-bottom: 3.75rem;
+  align-items: start;
+}
+.feature.flip > .feature-copy { order: 2; }
+.feature.flip > .feature-demo { order: 1; }
+.feature-copy { padding-top: 1rem; }
+.feature-copy .eyebrow { display: block; margin-bottom: 1rem; }
+.feature-head {
+  font-family: var(--f); font-weight: 600;
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  letter-spacing: -0.03em; line-height: 1.1;
+  color: var(--paper); margin-bottom: 1rem;
+}
+.feature-head .accent { color: var(--mark); }
+.feature-desc {
+  font-size: 1rem; color: var(--paper-dim); line-height: 1.6;
+  margin-bottom: 1.75rem;
+}
+.feature-list { list-style: none; }
+.feature-list li {
+  font-size: 0.92rem; color: var(--paper-dim);
+  padding: 0.7rem 0 0.7rem 1.4rem; line-height: 1.55;
+  border-bottom: 1px solid var(--line);
+  position: relative;
+}
+.feature-list li:last-child { border-bottom: none; }
+.feature-list li::before {
+  content: ""; position: absolute; left: 0; top: 1.05rem;
+  width: 8px; height: 1.5px; background: var(--mark);
+}
+.feature-list li strong { color: var(--paper); font-weight: 500; }
+@media (max-width: 900px) {
+  .feature { grid-template-columns: 1fr; gap: 2rem; }
+  .feature.flip > .feature-copy { order: 1; }
+  .feature.flip > .feature-demo { order: 2; }
+}
+
+/* ── TERMINAL ── */
+.term {
+  background: var(--ink-soft); border: 1px solid var(--line-mid);
+  font-family: var(--f-mono); font-size: 0.78rem;
+  line-height: 1.75;
+  position: relative; overflow: hidden;
+  box-shadow: 0 1px 0 rgba(244,239,229,0.02) inset, 0 12px 36px -16px rgba(0,0,0,0.6);
+}
+.term-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0.7rem 0.95rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--ink);
+}
+.term-bar .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line-mid); }
+.term-bar .dot.live { background: var(--mark); }
+.term-bar .title {
+  font-family: var(--f-mono); font-size: 0.62rem;
+  color: var(--paper-mute); letter-spacing: 0.14em; text-transform: uppercase;
+  margin-left: 6px;
+}
+.term-body {
+  padding: 1rem 1.25rem 1.2rem;
+  color: var(--paper-dim);
+  min-height: 220px;
+}
+.term-body .cmd { color: var(--paper); }
+.term-body .prompt { color: var(--mark); user-select: none; }
+.term-body .flag { color: var(--paper); }
+.term-body .arg { color: var(--paper-dim); }
+.term-body .ok { color: var(--ok); }
+.term-body .info { color: var(--paper-mute); }
+.term-body .warn { color: var(--no); }
+.term-body .key { color: var(--mark); }
+.term-body .dim { color: var(--paper-mute); }
+.term-body br + .prompt { display: inline-block; margin-top: 0.3rem; }
+.term-body .blank { display: block; height: 0.4rem; }
+.term-body .cursor {
+  display: inline-block; width: 7px; height: 0.95rem;
+  background: var(--mark); vertical-align: -2px;
+  animation: blink 1.05s steps(2, start) infinite;
+}
+@keyframes blink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
+
+/* ── BOUNDARIES (LINE TABLE) ── */
+.bounds {
+  border: 1px solid var(--line);
+  margin-bottom: 3.75rem;
+}
+.bound {
+  display: grid; grid-template-columns: 28px 1fr;
+  gap: 1.25rem; align-items: baseline;
+  padding: 1.1rem 1.5rem;
+  border-bottom: 1px solid var(--line);
+}
+.bound:last-child { border-bottom: none; }
+.bound .glyph {
+  font-family: var(--f-mono); font-size: 1.05rem;
+  color: var(--no); line-height: 1;
+}
+.bound .text {
+  font-size: 0.95rem; color: var(--paper); line-height: 1.5;
+  letter-spacing: -0.005em;
+}
+.bound .text small {
+  display: block; margin-top: 0.2rem;
+  font-size: 0.82rem; color: var(--paper-dim);
+}
+
+/* ── FAQ ── */
+.faq { padding-bottom: 3.75rem; }
+.faq-list { display: flex; flex-direction: column; border: 1px solid var(--line); }
+.faq-item { border-bottom: 1px solid var(--line); }
+.faq-item:last-child { border-bottom: none; }
+.faq-q {
+  width: 100%; text-align: left; padding: 1.25rem 1.5rem;
+  display: flex; align-items: baseline; justify-content: space-between; gap: 1.5rem;
+  font-family: var(--f); font-weight: 500; font-size: 0.95rem;
+  color: var(--paper); letter-spacing: -0.01em; line-height: 1.45;
+  background: var(--ink-soft); transition: background 0.15s;
+}
+.faq-q:hover { background: var(--surface); }
+.faq-q .faq-icon {
+  font-family: var(--f-mono); font-size: 0.85rem; color: var(--mark);
+  flex-shrink: 0; transition: transform 0.2s ease;
+}
+.faq-item.open .faq-icon { transform: rotate(45deg); }
+.faq-a {
+  max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease;
+  padding: 0 1.5rem;
+}
+.faq-item.open .faq-a {
+  max-height: 300px; padding: 1rem 1.5rem 1.35rem;
+}
+.faq-a p {
+  font-size: 0.88rem; color: var(--paper-dim); line-height: 1.65;
+}
+
+/* ── FINAL CTA ── */
+.final {
+  padding: 5rem 0 4.5rem;
+  text-align: center;
+  border-top: 1px solid var(--line);
+  position: relative; overflow: hidden;
+}
+.final-bg {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 60% 70% at 50% 30%, rgba(224,78,44,0.06) 0%, transparent 60%);
+}
+.final-inner { position: relative; max-width: 36rem; margin: 0 auto; }
+.final-eyebrow { display: inline-block; margin-bottom: 2rem; }
+.final-h {
+  font-family: var(--f); font-weight: 600;
+  font-size: clamp(2.5rem, 5.5vw, 4rem);
+  letter-spacing: -0.04em; line-height: 1; color: var(--paper);
+  margin-bottom: 1.25rem;
+}
+.final-h .accent { color: var(--mark); }
+.final-sub {
+  font-size: 1.05rem; color: var(--paper-dim); line-height: 1.55;
+  margin-bottom: 2.5rem;
+}
+.final .install-block { margin: 0 auto 1.5rem; }
+.final-note {
+  font-family: var(--f-mono); font-size: 0.62rem;
+  color: var(--paper-mute); letter-spacing: 0.14em; text-transform: uppercase;
+  margin-top: 1.5rem;
+}
+
+/* ── FOOTER ── */
+.footer { border-top: 1px solid var(--line); padding: 2.5rem 0 2rem; }
+.footer-grid {
+  display: grid; grid-template-columns: 2fr repeat(3, 1fr);
+  gap: 3rem; margin-bottom: 3rem;
+}
+.footer-brand { max-width: 22rem; }
+.footer-wm { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+.footer-wm-mark { flex-shrink: 0; }
+.footer-wm-text { font-family: var(--f); font-weight: 600; font-size: 0.98rem; letter-spacing: -0.025em; color: var(--paper); }
+.footer-wm-text b { color: var(--mark); font-weight: 600; }
+.footer-tag {
+  font-size: 0.88rem; color: var(--paper-dim); line-height: 1.55;
+  margin-bottom: 1.25rem;
+}
+.footer-cmd {
+  font-family: var(--f-mono); font-size: 0.78rem;
+  color: var(--paper-dim);
+}
+.footer-cmd .prompt { color: var(--mark); }
+.footer-col-head {
+  font-family: var(--f-mono); font-size: 0.6rem;
+  color: var(--paper-dim); letter-spacing: 0.16em; text-transform: uppercase;
+  margin-bottom: 1.1rem;
+}
+.footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 0.65rem; }
+.footer-col a {
+  font-size: 0.88rem; color: var(--paper-dim);
+  transition: color 0.15s;
+}
+.footer-col a:hover { color: var(--paper); }
+.footer-bottom {
+  border-top: 1px solid var(--line); padding-top: 1.5rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  font-family: var(--f-mono); font-size: 0.62rem;
+  color: var(--paper-dim); letter-spacing: 0.12em;
+}
+.footer-bottom b { color: var(--mark); font-weight: 500; }
+@media (max-width: 800px) {
+  .footer-grid { grid-template-columns: repeat(2, 1fr); gap: 2rem; }
+  .footer-brand { grid-column: 1 / -1; }
+  .footer-bottom { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+}
+
+/* ── REVEAL ON SCROLL ── */
+.reveal { opacity: 0; transform: translateY(12px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.in { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .reveal { opacity: 1; transform: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ───────────────── NAV ───────────────── -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="wordmark" href="/" aria-label="3Notch home">
+      <svg class="wm-mark" viewBox="0 0 80 80" width="16" height="16" fill="none" aria-hidden="true"><line x1="10" y1="22" x2="70" y2="22" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/><line x1="10" y1="40" x2="70" y2="40" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/><line x1="10" y1="58" x2="70" y2="58" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/></svg>
+      <span class="wm-text"><b>3</b>Notch</span>
+    </a>
+    <div class="nav-links">
+      <a class="nav-link" href="#setup">How it works</a>
+      <a class="nav-link" href="#how">Use cases</a>
+      <a class="nav-link" href="/docs/">Docs</a>
+      <a class="nav-cta" href="https://github.com/coldlogicAI/3notch" rel="noopener" aria-label="View on GitHub">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2c-3.2.7-3.87-1.36-3.87-1.36-.52-1.34-1.27-1.69-1.27-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.47.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.62 1.58.23 2.76.12 3.05.73.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.41-5.25 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.68.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </div>
+</nav>
+
+<main>
+
+<!-- ───────────────── HERO ───────────────── -->
+<section class="hero">
+  <div class="hero-bg" aria-hidden="true"></div>
+  <div class="hero-grid" aria-hidden="true"></div>
+  <div class="w">
+    <div class="hero-inner">
+      <div class="hero-eyebrow">
+        <span class="dot" aria-hidden="true"></span>
+        <span>open source</span>
+        <span class="sep">·</span>
+        <span>works with every AI tool</span>
+        <span class="sep">·</span>
+        <span>nothing leaves your machine</span>
+      </div>
+
+      <div class="hero-split">
+        <div>
+          <h1 class="hero-h1">Mark your<br>trail<span class="accent">.</span></h1>
+
+          <p class="hero-sub">
+            Your AI session died. Six hours of decisions, constraints, and working state&mdash;gone. The next agent starts from scratch because <strong>nothing portable survived the switch</strong>.
+          </p>
+          <p class="hero-sub">
+            3Notch saves the working state your AI tools won't. Local checkpoints that survive rate limits, context compaction, and model switches. Portable packets when context needs to move across tools, repos, or machines.
+          </p>
+
+          <div class="hero-actions" style="margin-top:1.5rem;">
+            <a class="hero-link" href="#setup">
+              How it works
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
+            <a class="hero-link muted" href="/docs/">Read the docs</a>
+            <a class="hero-link muted" href="https://github.com/coldlogicAI/3notch" rel="noopener">GitHub</a>
+          </div>
+        </div>
+
+        <div>
+          <div class="agent-prompt" role="group" aria-label="Agent setup prompt" style="max-width:none;margin:0;">
+            <div class="agent-prompt-head">
+              <span class="agent-prompt-label">Paste this into your agent</span>
+              <button class="install-cmd-copy" type="button" data-copy="Install @3notch/cli and read its README at https://github.com/coldlogicAI/3notch — then set up context checkpoints for this repo. When a session crashes or I hit a rate limit, save where I was so the next session can pick up. When I need to switch tools or move work to another repo, package the handoff as a portable packet. Configure the MCP connection for Claude Code, keep checkpoints in prompt mode, and preserve my existing project instructions and settings." aria-label="Copy agent setup prompt">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="0" ry="0"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="label">Copy prompt</span>
+              </button>
+            </div>
+            <div class="agent-prompt-body">
+              <strong>Install 3Notch and set up context checkpoints for this repo.</strong> When a session crashes or I hit a rate limit, save where I was so the next session can pick up. When I switch tools, package the handoff.
+            </div>
+          </div>
+
+          <div class="direct-install" role="group" aria-label="Direct install command" style="max-width:none;margin-top:1rem;">
+            <span class="direct-install-label">Or run</span>
+            <code>npm install -g @3notch/cli</code>
+            <button class="install-cmd-copy" type="button" data-copy="npm install -g @3notch/cli" aria-label="Copy direct install command">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span class="label">Copy</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-tags">
+        <span class="hero-tag">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><line x1="3.5" y1="6.5" x2="20.5" y2="6.5"/><line x1="3.5" y1="12" x2="20.5" y2="12"/><line x1="3.5" y1="17.5" x2="20.5" y2="17.5"/></svg>
+          No cloud
+        </span>
+        <span class="hero-tag">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><line x1="3.5" y1="6.5" x2="20.5" y2="6.5"/><line x1="3.5" y1="12" x2="20.5" y2="12"/><line x1="3.5" y1="17.5" x2="20.5" y2="17.5"/></svg>
+          No account
+        </span>
+        <span class="hero-tag">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><line x1="3.5" y1="6.5" x2="20.5" y2="6.5"/><line x1="3.5" y1="12" x2="20.5" y2="12"/><line x1="3.5" y1="17.5" x2="20.5" y2="17.5"/></svg>
+          No telemetry
+        </span>
+        <span class="hero-tag">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><line x1="3.5" y1="6.5" x2="20.5" y2="6.5"/><line x1="3.5" y1="12" x2="20.5" y2="12"/><line x1="3.5" y1="17.5" x2="20.5" y2="17.5"/></svg>
+          No lock-in
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule-mark">
+
+
+<!-- ───────────────── 01 · THE PROBLEM ───────────────── -->
+<section class="w" id="concept">
+  <div class="s-head reveal">
+    <div class="s-num">THE PROBLEM</div>
+    <div class="s-head-body">
+      <h2 class="s-title">The code survives. The working state <span class="accent">doesn't</span>.</h2>
+      <p class="s-sub">Rate limited at 2 AM. Context window compacted mid-refactor. Switched models because the cap hit at the worst moment. Every time, you rebuild from zero&mdash;re-explaining the goal, the constraints, what you already tried.</p>
+    </div>
+  </div>
+
+  <div class="concept-split reveal">
+    <div class="concept-prose">
+      <p>Your commits, docs, and wiki hold durable knowledge. But the objective you were chasing, the decisions you'd made, the blockers you'd identified, what you'd already verified&mdash;that state dies with the session. <strong>No AI vendor will fix this.</strong> Anthropic won't ship "easily move your context to Codex." OpenAI won't ship "easily move to Claude."</p>
+      <p>A neutral, locally-owned format is the only place this problem gets solved.</p>
+    </div>
+
+    <div class="concept-map">
+      <div class="concept-map-row">
+        <div class="concept-map-key">Session crashed?</div>
+        <div class="concept-map-val">
+          <strong>Pick up where you left off</strong>
+          <span>3Notch already saved your working state. The next session offers to resume.</span>
+        </div>
+      </div>
+      <div class="concept-map-row">
+        <div class="concept-map-key">Switching models?</div>
+        <div class="concept-map-val">
+          <strong>Take your context with you</strong>
+          <span>The outgoing agent writes what's done, what's blocked, what's next. The incoming agent reads it.</span>
+        </div>
+      </div>
+      <div class="concept-map-row">
+        <div class="concept-map-key">Different tool?</div>
+        <div class="concept-map-val">
+          <strong>Package the handoff</strong>
+          <span>Bundle the relevant files, decisions, and next steps into a portable packet.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule-mark">
+
+
+<!-- ───────────────── 02 · HOW IT WORKS ───────────────── -->
+<section class="w" id="setup">
+  <div class="s-head reveal">
+    <div class="s-num">HOW IT WORKS</div>
+    <div class="s-head-body">
+      <h2 class="s-title">Session dies. Context <span class="accent">survives</span>.</h2>
+      <p class="s-sub">When a session hits a rate limit or compacts, 3Notch saves the working state automatically. When you start a new session, it offers to pick up where you left off.</p>
+    </div>
+  </div>
+
+  <div class="feature reveal">
+    <div class="feature-copy">
+      <span class="eyebrow">Without 3Notch</span>
+      <h3 class="feature-head">Start over. Every time.</h3>
+      <p class="feature-desc">Your session crashes at 2 AM. You open a new one, re-explain the project, re-describe what you were building, re-list what's done and what isn't. Forty minutes later you're back where you were&mdash;if you remembered everything.</p>
+    </div>
+    <div class="feature-demo">
+      <div class="term">
+        <div class="term-bar">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="title">new session</span>
+        </div>
+        <pre class="term-body"><span class="prompt">agent</span> <span class="dim">How can I help you today?</span>
+<span class="blank"></span>
+<span class="prompt">you</span> <span class="cmd">ok so we were working on the auth</span>
+<span class="prompt">you</span> <span class="cmd">middleware refactor and we'd already</span>
+<span class="prompt">you</span> <span class="cmd">finished the token validation but the</span>
+<span class="prompt">you</span> <span class="cmd">session management piece still needs...</span>
+<span class="prompt">you</span> <span class="cmd">actually wait, let me check what we</span>
+<span class="prompt">you</span> <span class="cmd">committed vs what was in progress...</span>
+<span class="blank"></span>
+<span class="warn">40 minutes to get back to where you were.</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="feature flip reveal">
+    <div class="feature-copy">
+      <span class="eyebrow">With 3Notch</span>
+      <h3 class="feature-head">Resume in seconds.</h3>
+      <p class="feature-desc">3Notch saved a checkpoint when the last session ended. The new session finds it, shows you what it contains, and picks up with full context after you approve.</p>
+    </div>
+    <div class="feature-demo">
+      <div class="term">
+        <div class="term-bar">
+          <span class="dot live"></span><span class="dot"></span><span class="dot"></span>
+          <span class="title">new session &middot; 3notch</span>
+        </div>
+        <pre class="term-body"><span class="key">3notch</span> <span class="cmd">Found checkpoint: auth-middleware-refactor</span>
+<span class="info">  objective: refactor auth middleware</span>
+<span class="info">  completed: token validation, route guards</span>
+<span class="info">  blocked: session store migration</span>
+<span class="info">  next: implement Redis session adapter</span>
+<span class="blank"></span>
+<span class="prompt">agent</span> <span class="cmd">Resume from this checkpoint? (y/n)</span>
+<span class="prompt">you</span> <span class="cmd">y</span>
+<span class="blank"></span>
+<span class="ok">&#10003; Resuming. Picking up at Redis session adapter.</span><span class="cursor"></span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule-mark">
+
+
+<!-- ───────────────── 03 · THREE BREAKS ───────────────── -->
+<section class="w" id="how">
+  <div class="s-head reveal">
+    <div class="s-num">USE CASES</div>
+    <div class="s-head-body">
+      <h2 class="s-title">Three ways your context breaks. One tool to <span class="accent">fix</span> all of them.</h2>
+    </div>
+  </div>
+
+  <div class="workflow-grid reveal">
+    <article class="workflow-card">
+      <div class="workflow-num">Session crashed</div>
+      <h3 class="workflow-head">Rate limited. Compacted. Model went down.</h3>
+      <p class="workflow-desc">Doesn't matter why&mdash;3Notch already saved where you were. Your next session offers to pick up exactly where this one stopped.</p>
+      <pre class="workflow-code"><span class="c">$</span> notch packet list
+<span class="m">  auth-refactor</span>  <span class="c">checkpoint</span>
+  next: Redis session adapter
+  <span class="c">✓</span> ready to resume</pre>
+    </article>
+    <article class="workflow-card">
+      <div class="workflow-num">Switching models</div>
+      <h3 class="workflow-head">Moving from Claude to Codex because the cap hit?</h3>
+      <p class="workflow-desc">The outgoing agent writes a checkpoint: what's done, what's blocked, what's next. The incoming agent reads it and confirms before continuing.</p>
+      <pre class="workflow-code"><span class="c">$</span> notch packet show latest
+<span class="m">  completed:</span> 4 of 6 tasks
+<span class="m">  blocked:</span> API schema change
+<span class="m">  next:</span> update client types
+  <span class="c">✓</span> portable across tools</pre>
+    </article>
+    <article class="workflow-card">
+      <div class="workflow-num">Different tool, different repo</div>
+      <h3 class="workflow-head">Built in Claude Code, need to continue in Cursor?</h3>
+      <p class="workflow-desc">Package the relevant files, decisions, and next steps into a portable packet. The receiving tool picks it up with full context.</p>
+      <pre class="workflow-code"><span class="c">$</span> notch packet pack latest
+<span class="m">  auth-refactor.notchpkt</span>
+  3 files · sha256 verified
+  <span class="c">✓</span> move it however you want</pre>
+    </article>
+  </div>
+
+  <div class="workflow-capstone reveal">
+    <span class="capstone-mark" aria-hidden="true">+</span>
+    <p><strong>You stay in control.</strong> A new session offers the checkpoint once and loads it only after you approve. Nothing commits, pushes, or travels automatically.</p>
+  </div>
+</section>
+
+<hr class="rule-mark">
+
+
+<!-- ───────────────── 04 · UNDER THE HOOD ───────────────── -->
+<section class="w" id="packets">
+  <div class="s-head reveal">
+    <div class="s-num">UNDER THE HOOD</div>
+    <div class="s-head-body">
+      <h2 class="s-title">Plain Markdown. No database. Completely <span class="accent">local</span>.</h2>
+      <p class="s-sub">A 3Notch checkpoint is a Markdown file you can read, edit, and version like any other file in your repo. Selected files travel alongside it, hash-verified. Everything stays on your machine unless you move it yourself.</p>
+    </div>
+  </div>
+
+  <div class="feature reveal">
+    <div class="feature-copy">
+      <span class="eyebrow">What you'd expect from a CLI tool</span>
+      <h3 class="feature-head">Readable by you. Useful to the next agent.</h3>
+      <ul class="feature-list">
+        <li><strong>You control what's saved</strong> — only context you or your agent explicitly supply. Nothing runs in the background.</li>
+        <li><strong>Secret scanning built in</strong> — every write is scanned for credentials. Packets land clean or not at all.</li>
+        <li><strong>Works with any AI tool</strong> — Claude Code, Codex, Cursor, ChatGPT, or whatever ships next. MCP server included.</li>
+        <li><strong>Your transport, your call</strong> — move packets via Git, email, AirDrop, Tailscale, or anything else you trust.</li>
+        <li><strong>Zero dependencies</strong> — no SQLite, no native compilation. Pure TypeScript, runs everywhere Node does.</li>
+      </ul>
+    </div>
+    <div class="feature-demo">
+      <div class="term">
+        <div class="term-bar">
+          <span class="dot live"></span><span class="dot"></span><span class="dot"></span>
+          <span class="title">.notch/outbox/auth-refactor/</span>
+        </div>
+        <pre class="term-body"><span class="cmd">auth-refactor/</span>
+<span class="info">  ├─ packet.md</span>
+<span class="info">  │  stream: auth-refactor</span>
+<span class="info">  │  completed: token validation</span>
+<span class="info">  │  next: Redis session adapter</span>
+<span class="info">  ├─ manifest.json   <span class="dim">sha256 verified</span></span>
+<span class="info">  └─ artifacts/</span>
+<span class="info">     ├─ session-store.ts</span>
+<span class="info">     └─ migration.sql</span>
+<span class="blank"></span>
+<span class="ok">&#10003;</span> <span class="cmd">Readable now. Portable anywhere.</span><span class="cursor"></span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<hr class="rule-mark">
+
+
+<!-- ───────────────── FAQ ───────────────── -->
+<section class="w faq" id="faq">
+  <div class="s-head reveal">
+    <div class="s-num">FAQ</div>
+    <div class="s-head-body">
+      <h2 class="s-title">Common questions<span class="accent">.</span></h2>
+    </div>
+  </div>
+
+  <div class="faq-list reveal">
+    <div class="faq-item">
+      <button class="faq-q" type="button" aria-expanded="false">
+        How do I save context when switching AI models?
+        <span class="faq-icon" aria-hidden="true">+</span>
+      </button>
+      <div class="faq-a">
+        <p>3Notch creates portable checkpoints that capture your current objective, completed work, decisions, blockers, and next steps. When you switch from one AI tool to another&mdash;say Claude to Codex&mdash;the outgoing agent writes a checkpoint and the incoming agent reads it to resume with full context. One install command: <code style="font-family:var(--f-mono);font-size:0.82rem;color:var(--paper);">npm install -g @3notch/cli</code></p>
+      </div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" type="button" aria-expanded="false">
+        How do I recover context after an AI rate limit or session crash?
+        <span class="faq-icon" aria-hidden="true">+</span>
+      </button>
+      <div class="faq-a">
+        <p>3Notch saves working state when a session hits a rate limit or compacts its context window. When you start a new session, 3Notch offers the latest checkpoint for review and loads it after you approve. You resume in seconds instead of spending 30&ndash;40 minutes re-explaining your project.</p>
+      </div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" type="button" aria-expanded="false">
+        Does 3Notch work with Claude Code, Codex, and Cursor?
+        <span class="faq-icon" aria-hidden="true">+</span>
+      </button>
+      <div class="faq-a">
+        <p>Yes. 3Notch is vendor-neutral and works with any AI coding tool. It includes a built-in MCP server for tools that support Model Context Protocol (Claude Code, Claude Desktop, Cursor), and portable <code style="font-family:var(--f-mono);font-size:0.82rem;color:var(--paper);">.notchpkt</code> archives that can be imported into any tool. Checkpoints are plain Markdown files readable by any agent.</p>
+      </div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" type="button" aria-expanded="false">
+        Is 3Notch a memory tool or vector database?
+        <span class="faq-icon" aria-hidden="true">+</span>
+      </button>
+      <div class="faq-a">
+        <p>Neither. Memory tools help a single AI tool remember more. 3Notch makes working context <em>move</em> between tools. Checkpoints are plain Markdown files with structured frontmatter&mdash;no database, no embeddings, no cloud service. You can read, edit, and version them like any other file in your repo.</p>
+      </div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" type="button" aria-expanded="false">
+        Is 3Notch free?
+        <span class="faq-icon" aria-hidden="true">+</span>
+      </button>
+      <div class="faq-a">
+        <p>Completely free, open-source software under the MIT license. No cloud service, no account, no telemetry, no paid tier. Everything runs locally on your machine.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule-mark">
+
+
+<!-- ───────────────── FINAL CTA ───────────────── -->
+<section class="final">
+  <div class="final-bg" aria-hidden="true"></div>
+  <div class="w">
+    <div class="final-inner">
+      <span class="eyebrow final-eyebrow">open source · MIT · works everywhere</span>
+      <h2 class="final-h">Stop rebuilding<br>context<span class="accent">.</span></h2>
+      <p class="final-sub">One command to install. Works with Claude, Codex, Cursor, and whatever you switch to next.</p>
+
+      <div class="install-cmd" style="max-width:36rem;margin:0 auto 1.5rem;">
+        <div class="install-cmd-text">
+          <span class="prompt">$</span>
+          <span class="body">npm install -g @3notch/cli</span>
+        </div>
+        <button class="install-cmd-copy" type="button" data-copy="npm install -g @3notch/cli" aria-label="Copy install command">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span class="label">Copy</span>
+        </button>
+      </div>
+
+      <div class="agent-prompt" style="margin-left:auto;margin-right:auto;text-align:left;">
+        <div class="agent-prompt-head">
+          <span class="agent-prompt-label">Paste this into your agent</span>
+          <button class="install-cmd-copy" type="button" data-copy="Install @3notch/cli and read its README at https://github.com/coldlogicAI/3notch — then set up context checkpoints for this repo. When a session crashes or I hit a rate limit, save where I was so the next session can pick up. When I need to switch tools or move work to another repo, package the handoff as a portable packet. Configure the MCP connection for Claude Code, keep checkpoints in prompt mode, and preserve my existing project instructions and settings." aria-label="Copy agent setup prompt">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="0" ry="0"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span class="label">Copy prompt</span>
+          </button>
+        </div>
+        <div class="agent-prompt-body"><strong>Install 3Notch and set up context checkpoints for this repo.</strong> When a session crashes or I hit a rate limit, save where I was so the next session can pick up. When I switch tools, package the handoff.</div>
+      </div>
+
+      <div class="hero-actions" style="justify-content:center;margin-top:1.5rem;">
+        <a class="hero-link" href="https://github.com/coldlogicAI/3notch" rel="noopener">
+          View on GitHub
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+        <a class="hero-link muted" href="/docs/">Read the docs</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ───────────────── FOOTER ───────────────── -->
+<footer class="footer">
+  <div class="w">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-wm">
+          <svg class="footer-wm-mark" viewBox="0 0 80 80" width="16" height="16" fill="none" aria-hidden="true"><line x1="10" y1="22" x2="70" y2="22" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/><line x1="10" y1="40" x2="70" y2="40" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/><line x1="10" y1="58" x2="70" y2="58" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/></svg>
+          <span class="footer-wm-text"><b>3</b>Notch</span>
+        </div>
+        <p class="footer-tag">Save the working state your AI tools won't.</p>
+        <div class="footer-cmd">Local. Portable. Open source.</div>
+      </div>
+
+      <div class="footer-col">
+        <div class="footer-col-head">Product</div>
+        <ul>
+          <li><a href="#concept">The problem</a></li>
+          <li><a href="#setup">How it works</a></li>
+          <li><a href="#how">Use cases</a></li>
+          <li><a href="#packets">Under the hood</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <div class="footer-col-head">Source</div>
+        <ul>
+          <li><a href="https://github.com/coldlogicAI/3notch" rel="noopener">GitHub</a></li>
+          <li><a href="/docs/">Documentation</a></li>
+          <li><a href="https://www.npmjs.com/package/@3notch/cli" rel="noopener">npm</a></li>
+          <li><a href="https://github.com/coldlogicAI/3notch/blob/main/LICENSE" rel="noopener">MIT License</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <div class="footer-col-head">More</div>
+        <ul>
+          <li><a href="https://github.com/coldlogicAI/3notch/blob/main/CHANGELOG.md" rel="noopener">Changelog</a></li>
+          <li><a href="https://github.com/coldlogicAI/3notch/blob/main/CONTRIBUTING.md" rel="noopener">Contributing</a></li>
+          <li><a href="https://github.com/coldlogicAI/3notch/blob/main/SECURITY.md" rel="noopener">Security</a></li>
+          <li><a href="https://github.com/coldlogicAI/3notch/issues" rel="noopener">Report a bug</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span><b>3</b>Notch · Open Source · MIT · © 2026</span>
+      <span>Stop rebuilding context.</span>
+    </div>
+  </div>
+</footer>
+
+
+<script>
+  // Copy-to-clipboard for setup prompts and install commands
+  document.querySelectorAll('[data-copy]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const text = btn.getAttribute('data-copy');
+      const label = btn.querySelector('.label');
+      const showCopied = () => {
+        const original = label.textContent;
+        label.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          label.textContent = original;
+          btn.classList.remove('copied');
+        }, 1600);
+      };
+      try {
+        await navigator.clipboard.writeText(text);
+        showCopied();
+      } catch (_) {
+        const field = document.createElement('textarea');
+        field.value = text;
+        field.setAttribute('readonly', '');
+        field.style.position = 'fixed';
+        field.style.opacity = '0';
+        document.body.appendChild(field);
+        field.select();
+        document.execCommand('copy');
+        field.remove();
+        showCopied();
+      }
+    });
+  });
+
+  // FAQ accordion
+  document.querySelectorAll('.faq-q').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const item = btn.closest('.faq-item');
+      const isOpen = item.classList.contains('open');
+      item.classList.toggle('open');
+      btn.setAttribute('aria-expanded', !isOpen);
+    });
+  });
+
+  // Reveal on scroll
+  const io = ('IntersectionObserver' in window) ? new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (e.isIntersecting) {
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+      }
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 }) : null;
+  if (io) {
+    document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+  } else {
+    document.querySelectorAll('.reveal').forEach((el) => el.classList.add('in'));
+  }
+</script>
+
+</body>
+</html>

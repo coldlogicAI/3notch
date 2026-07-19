@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>This trail goes cold — 3Notch</title>
+<meta name="description" content="404 — this trail goes cold here.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0B0A08">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink:        #0B0A08;
+  --ink-soft:   #111009;
+  --line:       #242018;
+  --paper:      #F4EFE5;
+  --paper-dim:  #8A847B;
+  --paper-mute: #4D4843;
+  --mark:       #E04E2C;
+  --f:          'Geist', system-ui, -apple-system, sans-serif;
+  --f-mono:     'Geist Mono', ui-monospace, monospace;
+}
+body {
+  background: var(--ink); color: var(--paper);
+  font-family: var(--f); font-weight: 400;
+  min-height: 100vh; display: flex; flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: var(--mark); color: var(--paper); }
+a { color: inherit; text-decoration: none; }
+
+.nav {
+  border-bottom: 1px solid var(--line);
+}
+.nav-inner {
+  max-width: 1160px; margin: 0 auto; padding: 0 2rem;
+  display: flex; align-items: center; height: 56px;
+}
+.wordmark { display: flex; align-items: center; gap: 10px; }
+.wm-mark { flex-shrink: 0; }
+.wm-text { font-weight: 600; font-size: 0.98rem; letter-spacing: -0.025em; line-height: 1; }
+.wm-text b { color: var(--mark); font-weight: 600; }
+
+main {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 4rem 2rem;
+}
+.inner {
+  max-width: 32rem; text-align: left;
+}
+.code {
+  font-family: var(--f-mono); font-size: 0.66rem;
+  color: var(--mark); letter-spacing: 0.18em; text-transform: uppercase;
+  margin-bottom: 2rem;
+  display: inline-flex; align-items: center; gap: 9px;
+}
+.code .dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--mark);
+}
+h1 {
+  font-weight: 600; font-size: clamp(2.5rem, 6vw, 4rem);
+  letter-spacing: -0.04em; line-height: 1;
+  margin-bottom: 1.25rem;
+}
+h1 .accent { color: var(--mark); }
+p {
+  color: var(--paper-dim); font-size: 1.05rem;
+  line-height: 1.55; margin-bottom: 2.5rem; max-width: 28rem;
+}
+.actions { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+.btn {
+  font-family: var(--f-mono); font-size: 0.7rem;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 11px 16px; border: 1px solid var(--line);
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn:hover { border-color: var(--mark); color: var(--mark); }
+.btn.primary { border-color: var(--mark); color: var(--mark); }
+.btn.primary:hover { background: rgba(224,78,44,0.08); }
+
+footer {
+  border-top: 1px solid var(--line); padding: 1.5rem 2rem;
+}
+.foot-inner {
+  max-width: 1160px; margin: 0 auto;
+  font-family: var(--f-mono); font-size: 0.62rem;
+  color: var(--paper-mute); letter-spacing: 0.12em;
+}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="wordmark" href="/" aria-label="3Notch home">
+      <svg class="wm-mark" viewBox="0 0 80 80" width="16" height="16" fill="none" aria-hidden="true"><line x1="10" y1="22" x2="70" y2="22" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/><line x1="10" y1="40" x2="70" y2="40" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/><line x1="10" y1="58" x2="70" y2="58" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/></svg>
+      <span class="wm-text"><b>3</b>Notch</span>
+    </a>
+  </div>
+</nav>
+
+<main>
+  <div class="inner">
+    <div class="code">
+      <span class="dot"></span>
+      <span>HTTP 404 · NO TRAIL FOUND</span>
+    </div>
+    <h1>This trail goes<br>cold here<span class="accent">.</span></h1>
+    <p>The packet you're looking for isn't in this store. The mark may have moved, or the path was mistyped.</p>
+    <div class="actions">
+      <a class="btn primary" href="/">← Back to the trail</a>
+      <a class="btn" href="https://github.com/coldlogicAI/3notch" rel="noopener">View on GitHub</a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="foot-inner"><b style="color:var(--mark);font-weight:500;">3</b>Notch · v0.5.0 · OSS · MIT</div>
+</footer>
+</body>
+</html>

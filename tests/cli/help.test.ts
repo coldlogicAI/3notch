@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import { createProgram } from '../../src/cli/program.js';
+import { readJsonRepoFile } from '../helpers/package-inspection.js';
 
 type CommanderExit = {
   exitCode: number;
+};
+
+type PackageJson = {
+  version: string;
 };
 
 function isCommanderExit(error: unknown): error is CommanderExit {
@@ -64,10 +69,11 @@ describe('CLI skeleton', () => {
   });
 
   it('prints the current version', async () => {
+    const packageJson = await readJsonRepoFile<PackageJson>('package.json');
     const result = await runCli(['--version']);
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe('');
-    expect(result.stdout.trim()).toBe('0.5.0');
+    expect(result.stdout.trim()).toBe(packageJson.version);
   });
 });
