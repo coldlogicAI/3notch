@@ -60,6 +60,14 @@ Use status checks when helpful:
 - Call get_status for a store summary.
 - Call run_doctor for diagnostics.
 
+If .notch/config.json enables continuation checkpoints:
+- Follow the configured prompt or auto mode only at the listed semantic triggers; do not change that policy unless the user explicitly asks.
+- A continuation is an ordinary handoff packet targeted to next-agent, tagged continuation, stream-<current-stream>, and source-agent.
+- Supersede only the latest continuation in the same stream.
+- Preserve the objective, completed work, decisions, constraints, verification, blockers, relevant files, exact next action, and what not to redo.
+- Hook-generated fallback packets are unreviewed. Offer a matching checkpoint once, and call get_packet only after the user confirms.
+- Never read a Claude transcript path or claim that a checkpoint contains the complete conversation.
+
 Available 3Notch MCP tools:
 ${v1McpToolNames.map((tool) => `- ${tool}`).join('\n')}`;
 }

@@ -11,6 +11,7 @@ Task-shaped how-tos for the main flows.
 - [Private context seeding](guides/private-context-seeding.md) — carrying reviewed preferences into a new repo.
 - [Targeted brief workflow](guides/targeted-brief-workflow.md) — scoped task briefs vs cross-boundary packets.
 - [MCP setup](guides/mcp-setup.md) — server flags, available tools, agent instruction packs.
+- [Continuation checkpoints](guides/continuation-checkpoints.md) — opt-in Claude task aggregation, compaction fallback, rate-limit recovery, and resume confirmation.
 
 ## Reference
 

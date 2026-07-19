@@ -14,6 +14,7 @@ Local-first does not mean same-repo only. It means there is no hosted relay, bac
 - Hides private records from MCP unless the server is started with `--include-private`.
 - Scans writes for configured patterns, JWT-like strings, private-key markers, and high-entropy token-like strings.
 - Scans the bytes of text-like artifacts (`.md`, `.html`, source files, etc.) before they are copied into a packet bundle.
+- When explicitly configured, consumes documented Claude hook fields (`task_*`, `compact_summary`, or `last_assistant_message`) and Git metadata to create continuation fallbacks.
 
 ## What 3Notch Does Not Do
 
@@ -21,6 +22,7 @@ Local-first does not mean same-repo only. It means there is no hosted relay, bac
 - It does not deliver packets to a remote recipient.
 - It does not accept packets from a network listener.
 - It does not scrape hidden chat databases, browser state, or project history.
+- It does not open the `transcript_path` supplied with Claude hook events.
 - It does not execute arbitrary shell commands through MCP.
 - It does not aggregate data across stores or users.
 
@@ -48,4 +50,5 @@ Review unknown packets with `notch packet preview <id>` before relying on them.
 - When an agent reads a packet, the content may be sent to that agent's LLM provider by the client.
 - 3Notch does not encrypt records at rest. Use OS disk encryption and keep `.notch/private/` gitignored.
 - The scanner is a guardrail, not a proof that content is safe.
+- Project-sensitivity continuation packets are Git-visible under `.notch/outbox/`; private sensitivity routes them to ignored `.notch/private/outbox/`.
 - 3Notch is not a policy engine, DLP system, or audit platform.

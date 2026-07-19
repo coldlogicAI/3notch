@@ -9,6 +9,14 @@ export type PacketStatus = RecordStatus | ReplyStatus;
 export type PacketPurpose = 'handoff' | 'seed';
 export type PacketArtifactPurpose = 'asset' | 'source' | 'reference' | 'output';
 export type Sensitivity = 'project' | 'private';
+export type ContinuationMode = 'off' | 'script' | 'prompt' | 'auto';
+export type ClaudeCodeContinuationEvent =
+  | 'SessionStart'
+  | 'TaskCreated'
+  | 'TaskCompleted'
+  | 'PostCompact'
+  | 'StopFailure:rate_limit'
+  | 'Stop';
 export type TransferStatus = 'draft' | 'outbox' | 'imported' | 'archived';
 export type ReplyType = 'question' | 'clarification' | 'counter-decision' | 'objection' | 'confirmation';
 export type AuditOperation =
@@ -121,6 +129,15 @@ export type NotchConfig = {
     maxArtifactBytes?: number;
     maxPacketBytes?: number;
     scanTextExtensions?: string[];
+  };
+  continuation?: {
+    mode: ContinuationMode;
+    sensitivity: Sensitivity;
+    streamOverride?: string;
+    semanticTriggers: string[];
+    claudeCode: {
+      events: ClaudeCodeContinuationEvent[];
+    };
   };
 };
 

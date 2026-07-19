@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>3Notch V4 — Continuation Checkpoints</title>
+  <style>
+    :root { --bg:#f2f0e9; --surface:#fdfcf7; --ink:#21201c; --dim:#85816f; --accent:#d97757; --ok:#6a8f5f; --line:#23221e; }
+    body { font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif; background:var(--bg); color:var(--ink); max-width:880px; margin:0 auto; padding:48px 28px; line-height:1.6; }
+    .box { border:1.5px solid var(--line); border-radius:14px; background:var(--surface); padding:20px 24px; margin:18px 0; }
+    .kicker { text-transform:uppercase; letter-spacing:.12em; font-size:13px; color:var(--dim); }
+    .timeline { border-left:2px solid var(--line); margin-left:6px; padding-left:28px; }
+    .phase { position:relative; margin:28px 0; }
+    .phase::before { content:""; position:absolute; width:10px; height:10px; border-radius:50%; background:var(--accent); left:-34px; top:12px; }
+    code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; background:#e9e6db; border-radius:4px; padding:2px 4px; }
+    .accept { color:var(--dim); font-style:italic; }
+    .decision { border-bottom:1px solid #d8d4c8; padding:10px 0; }
+    .status { color:var(--ok); }
+    @media print { body { background:white; } }
+  </style>
+</head>
+<body>
+  <p class="kicker">Active plan · 2026-07-19 · codex/continuation-checkpoints</p>
+  <h1>3Notch V4 — Continuation Checkpoints</h1>
+  <p>Opt-in, local continuation packets for recovering from rate limits, compaction, and agent switches without reading transcripts or blocking workflows.</p>
+
+  <section class="box">
+    <p class="kicker">Decision gate</p>
+    <div class="decision"><span class="status">●</span> <strong>D1</strong> Hybrid authoring: agent-drafted semantic checkpoints plus deterministic script fallbacks.</div>
+    <div class="decision"><span class="status">●</span> <strong>D2</strong> Hooks are non-blocking and consume only documented event fields plus Git metadata.</div>
+    <div class="decision"><span class="status">●</span> <strong>D3</strong> Default Claude events are SessionStart, TaskCreated, TaskCompleted, PostCompact, and rate-limit StopFailure; Stop is warned and opt-in.</div>
+    <div class="decision"><span class="status">●</span> <strong>D4</strong> Continuations remain immutable packets linked with tags and supersedes.</div>
+    <div class="decision"><span class="status">●</span> <strong>D5</strong> Remote MCP, transcript scraping, model routing, and automatic Git/network actions remain out of scope.</div>
+  </section>
+
+  <main class="timeline">
+    <section class="phase">
+      <h2>1. Policy and hook wiring</h2>
+      <div class="box">Add continuation configuration, explicit onboarding flags, safe local Claude settings merging, warnings, and doctor drift checks.<p class="accept"><strong>Accept:</strong> enabling, syncing, and disabling hooks preserves unrelated settings and missing configuration stays off.</p></div>
+    </section>
+    <section class="phase">
+      <h2>2. Script recovery layer</h2>
+      <div class="box">Accumulate structured task events under ignored derived state and flush one packet on compaction, rate-limit failure, or opted-in Stop.<p class="accept"><strong>Accept:</strong> no transcript access, no workflow blocking, no per-task packet spam, and secret-scan failures remain non-fatal to Claude.</p></div>
+    </section>
+    <section class="phase">
+      <h2>3. Packet and agent integration</h2>
+      <div class="box">Add tag/supersedes parity, stream-aware continuation chains, Git provenance, resume offers, and Claude agent drafting instructions.<p class="accept"><strong>Accept:</strong> agent drafts supersede fallbacks within one stream and resume never loads content without confirmation.</p></div>
+    </section>
+    <section class="phase">
+      <h2>4. Verification and delivery</h2>
+      <div class="box">Complete unit, CLI, MCP, schema, e2e, and built-CLI checks; update public documentation; release as a focused PR.<p class="accept"><strong>Accept:</strong> all repository done criteria pass and the source branch contains only V4 work.</p></div>
+    </section>
+  </main>
+
+  <section class="box">
+    <p class="kicker">Deviations</p>
+    <!-- builders append here -->
+    <p><strong>2026-07-19:</strong> The plan used colon-delimited tag examples. Existing packet metadata canonicalizes tags to slugs, so implementation uses <code>stream-&lt;slug&gt;</code> and <code>source-&lt;event&gt;</code> while preserving the same filtering semantics.</p>
+  </section>
+  <p style="color:var(--accent);font-style:italic">The recovery layer stays useful precisely because it records less than a transcript and more than a Git diff.</p>
+</body>
+</html>

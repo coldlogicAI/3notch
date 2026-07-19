@@ -23,6 +23,7 @@ type CreatePacketOptions = {
   sensitivity?: Sensitivity;
   summary?: string;
   supersedes?: string;
+  tag?: string[];
   task?: string;
   title?: string;
   toAgent?: string;
@@ -42,6 +43,7 @@ type ListPacketOptions = {
   outbox?: boolean;
   private?: boolean;
   purpose?: PacketPurpose;
+  tag?: string[];
 };
 
 type ShowPacketOptions = {
@@ -71,6 +73,7 @@ export function registerPacketCommand(program: Command): void {
     .option('--purpose <purpose>', 'packet purpose: handoff or seed')
     .option('--sensitivity <sensitivity>', 'packet sensitivity: project or private')
     .option('--supersedes <id>', 'record ID this packet supersedes')
+    .option('--tag <tag>', 'add a packet tag; repeat for multiple tags', collect, [])
     .option('--private', 'create a private seed packet')
     .option('--file <path[:purpose]>', 'copy a file into packet artifacts; purpose: asset, source, reference, or output; favicon/icon/logo/image become asset', collect, [])
     .option('--ref <path>', 'include a source file reference without copying bytes', collect, [])
@@ -92,6 +95,7 @@ export function registerPacketCommand(program: Command): void {
         ...(options.purpose && !options.private ? { purpose: options.purpose } : {}),
         ...(options.sensitivity && !options.private ? { sensitivity: options.sensitivity } : {}),
         ...(options.supersedes ? { supersedes: options.supersedes } : {}),
+        tags: options.tag ?? [],
         ...(options.task ? { task: options.task } : {}),
         ...(options.toAgent ? { toAgent: options.toAgent } : {}),
         ...(options.toPerson ? { toPerson: options.toPerson } : {}),
@@ -232,6 +236,7 @@ export function registerPacketCommand(program: Command): void {
     .option('--outbox', 'list outbox packets only')
     .option('--private', 'include private packets')
     .option('--purpose <purpose>', 'filter by purpose')
+    .option('--tag <tag>', 'require a packet tag; repeat to require all tags', collect, [])
     .option('--limit <n>', 'maximum number of packets')
     .action(async (options: ListPacketOptions, command: Command) => {
       const context = getCliContext(command);
@@ -241,6 +246,7 @@ export function registerPacketCommand(program: Command): void {
         includePrivate: Boolean(options.private),
         ...(options.limit ? { limit: Number(options.limit) } : {}),
         ...(options.purpose ? { purpose: options.purpose } : {}),
+        ...(options.tag?.length ? { tags: options.tag } : {}),
       });
 
       if (context.output.json) {

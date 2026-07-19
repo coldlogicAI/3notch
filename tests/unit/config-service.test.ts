@@ -56,4 +56,28 @@ describe('config service', () => {
       ]);
     });
   });
+
+  it('treats missing continuation config as off and recognizes an explicit continuation policy', async () => {
+    await withTempProject({}, async (project) => {
+      const storePath = await createBareStore(project.path, { name: 'fixture-app' });
+      const withoutPolicy = await loadConfig({ cwd: project.path });
+
+      expect(withoutPolicy.config.continuation).toBeUndefined();
+      expect(withoutPolicy.warnings).toEqual([]);
+
+      const configPath = path.join(storePath, 'config.json');
+      const config = JSON.parse(await readFile(configPath, 'utf8')) as Record<string, unknown>;
+      config.continuation = {
+        mode: 'script',
+        sensitivity: 'project',
+        semanticTriggers: [],
+        claudeCode: { events: ['PostCompact'] },
+      };
+      await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8');
+
+      const withPolicy = await loadConfig({ cwd: project.path });
+      expect(withPolicy.config.continuation?.mode).toBe('script');
+      expect(withPolicy.warnings).toEqual([]);
+    });
+  });
 });

@@ -11,6 +11,7 @@ import { rebuildIndex } from './index-service.js';
 import { atomicWriteFile, isValidScannedRecord, renderMarkdownRecord, scanMarkdownRecords, writePacketBundleWithCollisionHandling, writeRecordWithCollisionHandling, type ValidScannedRecord } from './store-service.js';
 import { packetRootPath, packetSlugFromMarkdownPath, toStoreRelativePath } from './store-layout.js';
 import { toSlug } from './id-service.js';
+import { readGitSnapshot } from './git-service.js';
 import { NotchException, type NotchError } from '../types/errors.js';
 import type { LoadedConfig } from './config-service.js';
 import type { NotchPacket, PacketPurpose, PacketRecordRef, ReplyStatus, ReplyType, Sensitivity, SourceLink } from '../types/records.js';
@@ -22,6 +23,7 @@ export type CreatePacketInput = {
   files?: ArtifactFileInput[];
   includedRecords?: PacketRecordRef[];
   importNotes?: string | undefined;
+  idDiscriminator?: string | undefined;
   mcp?: boolean | undefined;
   nextSteps?: string | undefined;
   outputPath?: string | undefined;
@@ -124,12 +126,14 @@ export async function createPacket(
     ...(input.actor ? { actor: input.actor } : {}),
     ...(input.agent ? { agent: input.agent } : {}),
     cwd: context.projectRoot,
+    ...(input.idDiscriminator ? { idDiscriminator: input.idDiscriminator } : {}),
     ...(input.mcp ? { mcp: true } : {}),
     recordType: 'packet',
     ...(input.sourceTool ? { sourceTool: input.sourceTool } : {}),
     tags: input.tags ?? [],
     title: input.title,
   });
+  const gitSnapshot = await readGitSnapshot(context.projectRoot);
   const packet: NotchPacket = {
     ...created.meta,
     recordType: 'packet',
@@ -142,6 +146,8 @@ export async function createPacket(
       projectName: context.config.project.name,
       storePath: context.storePath,
       repoRoot: context.config.project.root,
+      ...(gitSnapshot.branch ? { branch: gitSnapshot.branch } : {}),
+      ...(gitSnapshot.commit ? { commit: gitSnapshot.commit } : {}),
     },
     recipient: {
       ...(input.toAgent ? { targetAgent: input.toAgent } : {}),
@@ -333,6 +339,8 @@ export async function listPackets(
     includePrivate?: boolean | undefined;
     limit?: number | undefined;
     purpose?: PacketPurpose | undefined;
+    sensitivity?: Sensitivity | undefined;
+    tags?: string[] | undefined;
   } = {},
 ): Promise<Array<{ direction: 'inbox' | 'outbox'; markdownPath: string; packet: NotchPacket; path: string; rootPath: string }>> {
   const records = await scanMarkdownRecords(context.storePath, {
@@ -352,6 +360,8 @@ export async function listPackets(
     }))
     .filter((entry) => direction === 'both' || entry.direction === direction)
     .filter((entry) => !filters.purpose || entry.packet.purpose === filters.purpose)
+    .filter((entry) => !filters.sensitivity || entry.packet.sensitivity === filters.sensitivity)
+    .filter((entry) => !filters.tags || filters.tags.every((tag) => entry.packet.tags.includes(toSlug(tag))))
     .sort((a, b) => b.packet.createdAt.localeCompare(a.packet.createdAt))
     .slice(0, filters.limit ?? 50);
 }

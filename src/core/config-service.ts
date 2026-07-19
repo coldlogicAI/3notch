@@ -19,7 +19,15 @@ export type LoadedConfig = {
   warnings: NotchError[];
 };
 
-const knownConfigTopLevelFields = new Set(['schemaVersion', 'project', 'store', 'privacy', 'defaults', 'artifacts']);
+const knownConfigTopLevelFields = new Set([
+  'schemaVersion',
+  'project',
+  'store',
+  'privacy',
+  'defaults',
+  'artifacts',
+  'continuation',
+]);
 
 export async function resolveProjectRoot(cwd = process.cwd()): Promise<string> {
   let current = path.resolve(cwd);

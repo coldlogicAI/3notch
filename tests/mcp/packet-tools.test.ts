@@ -8,6 +8,45 @@ import { createBareStore } from '../helpers/store-fixtures.js';
 import { withTempProject } from '../helpers/temp-project.js';
 
 describe('MCP packet tools', () => {
+  it('creates tagged superseding packets and lists packets requiring all tags', async () => {
+    await withTempProject({}, async (project) => {
+      await createBareStore(project.path, { name: 'mcp-tagged-packets' });
+      const harness = await createMcpHarness(createNotchMcpServer({ cwd: project.path }));
+
+      try {
+        const previous = await harness.callTool('create_packet', {
+          summary: 'Previous continuation state.',
+          tags: ['continuation'],
+          title: 'Previous checkpoint',
+          toAgent: 'codex',
+        }) as { structuredContent: { packet: { id: string } } };
+        const next = await harness.callTool('create_packet', {
+          summary: 'New continuation state.',
+          supersedes: previous.structuredContent.packet.id,
+          tags: ['continuation', 'stream-feature-a'],
+          title: 'Next checkpoint',
+          toAgent: 'codex',
+        }) as { structuredContent: { packet: { id: string; supersedes: string; tags: string[] } } };
+
+        expect(next.structuredContent.packet).toMatchObject({
+          supersedes: previous.structuredContent.packet.id,
+          tags: ['continuation', 'stream-feature-a'],
+        });
+        await expect(harness.callTool('list_packets', {
+          tags: ['continuation', 'stream-feature-a'],
+        })).resolves.toMatchObject({
+          structuredContent: {
+            packets: [expect.objectContaining({
+              packet: expect.objectContaining({ id: next.structuredContent.packet.id }),
+            })],
+          },
+        });
+      } finally {
+        await harness.close();
+      }
+    });
+  });
+
   it('creates, imports, lists, and gets packets without exposing private packets by default', async () => {
     await withTempProject({}, async (project) => {
       await createBareStore(project.path, { name: 'mcp-packet-app' });

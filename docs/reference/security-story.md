@@ -4,7 +4,7 @@
 
 ## Curate
 
-3Notch stores only context a human or agent explicitly supplies. It does not scrape hidden chat databases, scan arbitrary project history, or run background collection. Source links should identify where claims came from without copying unnecessary content.
+3Notch stores context a human, agent, or explicitly installed lifecycle hook supplies. It does not scrape hidden chat databases, open Claude transcript paths, scan arbitrary project history, or run a daemon. Hook fallbacks whitelist documented event fields and Git metadata; source links should identify where claims came from without copying unnecessary content.
 
 ## Scan
 
@@ -50,6 +50,8 @@ Received packets are ground truth.
 - Hash mismatches at import raise `NOTCH_ARTIFACT_HASH_MISMATCH` and abort before any inbox state is written.
 
 When context changes, author a successor packet with `--supersedes <id>` or a typed reply with `notch reply`. Do not mutate an imported packet.
+
+Continuation checkpoints follow the same rule: each stream is an immutable `supersedes` chain, and automatic fallbacks remain unreviewed until a human confirms them.
 
 ## Honest Limits
 

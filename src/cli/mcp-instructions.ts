@@ -8,15 +8,21 @@ export type McpServerDefinition = {
   command: string;
 };
 
-export function notchMcpServerDefinition(storePath: string): McpServerDefinition {
+export function notchMcpServerDefinition(storePath: string, includePrivate = false): McpServerDefinition {
   return {
     command: 'notch',
-    args: ['mcp', 'serve', '--store', storePath],
+    args: ['mcp', 'serve', '--store', storePath, ...(includePrivate ? ['--include-private'] : [])],
   };
 }
 
-export function mcpInstructions(client: string, storePath: string, projectRoot = process.cwd()): string {
-  const server = notchMcpServerDefinition(storePath);
+export function mcpInstructions(
+  client: string,
+  storePath: string,
+  projectRoot = process.cwd(),
+  includePrivate = false,
+): string {
+  const server = notchMcpServerDefinition(storePath, includePrivate);
+  const serverCommand = `notch mcp serve --store ${JSON.stringify(storePath)}${includePrivate ? ' --include-private' : ''}`;
 
   switch (client) {
     case 'claude-desktop':
@@ -24,7 +30,7 @@ export function mcpInstructions(client: string, storePath: string, projectRoot =
 Config file: ${claudeDesktopConfigPath()}
 
 Server command:
-notch mcp serve --store ${JSON.stringify(storePath)}
+${serverCommand}
 
 Paste or verify this mcpServers entry:
 
@@ -37,7 +43,7 @@ Private seed packets stay hidden unless you intentionally add --include-private 
 Config file: ${path.join(projectRoot, '.mcp.json')}
 
 Server command:
-notch mcp serve --store ${JSON.stringify(storePath)}
+${serverCommand}
 
 Paste or verify this project-local config:
 
@@ -50,7 +56,7 @@ Delete .mcp.json to opt out for this project.`;
 Config file: ${codexConfigPath()}
 
 Server command:
-notch mcp serve --store ${JSON.stringify(storePath)}
+${serverCommand}
 
 Paste this TOML block:
 
@@ -65,7 +71,7 @@ Private seed packets stay hidden unless you intentionally add --include-private 
 Config file: ${path.join(projectRoot, '.cursor', 'mcp.json')}
 
 Server command:
-notch mcp serve --store ${JSON.stringify(storePath)}
+${serverCommand}
 
 Paste or merge this JSON:
 
@@ -78,7 +84,7 @@ Private seed packets stay hidden unless you intentionally add --include-private 
 Config file: ${chatGptDesktopConfigPath()}
 
 Server command:
-notch mcp serve --store ${JSON.stringify(storePath)}
+${serverCommand}
 
 Paste or merge this local MCP server definition:
 
@@ -90,7 +96,7 @@ Private seed packets stay hidden unless you intentionally add --include-private 
       return `${clientHeading(client)}
 Add 3Notch as a local MCP server with this command:
 
-notch mcp serve --store ${JSON.stringify(storePath)}
+${serverCommand}
 
 Private seed packets stay hidden unless you intentionally add --include-private.`;
   }

@@ -6,10 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-### Fixed
-- `notch --version` now matches the published package version, with regression coverage preventing future drift.
+## [0.5.0] - 2026-07-19
 
 ### Added
+- Opt-in Claude Code continuation checkpoints with script, prompt, and auto modes.
+- Non-blocking SessionStart, task, post-compaction, rate-limit, and optional Stop hook handling without transcript reads.
+- Stream-aware continuation packet chains, structured task aggregation, Git provenance, and confirmation-gated resume offers.
+- Packet tag and `supersedes` parity across CLI and MCP, plus tag-filtered packet listing.
 - Repo hygiene: expanded `.gitignore` for IDE state, vim swap, Vitest cache, Windows OS junk, and per-developer AI assistant directories.
 - Documentation index at `docs/README.md`; restructured guides under `docs/guides/` and reference docs under `docs/reference/`.
 - `notch onboard` now creates `.notch/README.md` with durable agent-facing handoff instructions.
@@ -22,6 +25,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `notch onboard` now points users to `.notch/README.md` first and keeps `notch prompt` as a web-chat / copy-paste fallback.
 - Common `--file <path:purpose>` aliases such as `:favicon`, `:icon`, `:logo`, and `:image` normalize to `asset`; unknown labels fail with a clear artifact-purpose error.
 - All user-facing docs rewritten to be version-agnostic and current to V3 (artifact bundling, `nextSteps`, pack/unpack, full MCP tool surface).
+
+### Fixed
+- `notch --version` now matches the published package version, with regression coverage preventing future drift.
 
 ### Removed
 - Stale `docs/website-branding/` (brand source files are maintained outside this repo).

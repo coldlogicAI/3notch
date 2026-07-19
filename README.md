@@ -63,6 +63,16 @@ notch onboard --yes --mcp claude-desktop
 
 Both clients now read and write the same store. When one creates a packet, the other can list and read it immediately — no transfer step.
 
+### Continue after compaction or rate limits
+
+Claude Code can maintain opt-in continuation checkpoints without reading its transcript:
+
+```bash
+notch onboard --yes --mcp claude-code --checkpoints prompt
+```
+
+Structured task hooks accumulate progress without creating one packet per checklist item. Compaction and rate-limit boundaries can write one unreviewed fallback from Claude's exposed hook fields plus Git state. In `prompt` or `auto` mode, Claude also drafts richer checkpoints at configured milestones. See [Continuation checkpoints](docs/guides/continuation-checkpoints.md).
+
 ### 3. Cross-repo on one machine
 
 ```bash
@@ -170,6 +180,7 @@ Full index: [docs/README.md](docs/README.md).
 | Move context between tools | [docs/guides/cross-tool-handoff.md](docs/guides/cross-tool-handoff.md) |
 | Carry preferences into a new repo | [docs/guides/private-context-seeding.md](docs/guides/private-context-seeding.md) |
 | Brief an agent on scoped work | [docs/guides/targeted-brief-workflow.md](docs/guides/targeted-brief-workflow.md) |
+| Set up continuation checkpoints | [docs/guides/continuation-checkpoints.md](docs/guides/continuation-checkpoints.md) |
 | Set up MCP clients | [docs/guides/mcp-setup.md](docs/guides/mcp-setup.md) |
 | Understand privacy posture | [docs/reference/privacy.md](docs/reference/privacy.md) |
 | Understand the security model | [docs/reference/security-story.md](docs/reference/security-story.md) |
@@ -181,12 +192,12 @@ Full index: [docs/README.md](docs/README.md).
 
 - Local-first files by default. No cloud dependency, no hosted relay, no account system.
 - No telemetry.
-- No hidden chat or project scraping.
+- No hidden chat or project scraping. Opt-in Claude hooks consume only documented event fields and Git metadata; they never open transcript paths.
 - No semantic derivation, auto-tagging, similarity threading, contradiction flagging, wiki UI, graph view, hosted sync, or cross-store aggregation.
 - No arbitrary shell execution through MCP.
 - No SQLite or native database dependency.
 - No transport verbs (`send`, `pass`). Your existing tools move bytes; 3Notch validates, scans, and stores them.
-- No `decision`, `question`, `conflict`, or `stale` record types. Same-repo continuity is solved by CLAUDE.md, native tool memory, and `git commit`.
+- No `decision`, `question`, `conflict`, or `stale` record types. Same-tool memory remains the client's job; continuation checkpoints are ordinary packets for recovery and intentional agent boundaries.
 
 A regression-guard test (`tests/unit/no-deferred-commands.test.ts`) prevents accidental re-introduction.
 
