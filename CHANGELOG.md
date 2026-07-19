@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+- `notch --version` now matches the published package version, with regression coverage preventing future drift.
+
 ### Added
 - Repo hygiene: expanded `.gitignore` for IDE state, vim swap, Vitest cache, Windows OS junk, and per-developer AI assistant directories.
 - Documentation index at `docs/README.md`; restructured guides under `docs/guides/` and reference docs under `docs/reference/`.
