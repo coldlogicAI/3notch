@@ -16,10 +16,24 @@
     .accept { color:var(--dim); font-style:italic; }
     .decision { border-bottom:1px solid #d8d4c8; padding:10px 0; }
     .status { color:var(--ok); }
+    .tab-nav { display:flex; gap:8px; margin:0 0 28px; border-bottom:1.5px solid var(--line); }
+    .tab-btn { appearance:none; border:0; border-bottom:3px solid transparent; background:transparent; color:var(--dim); cursor:pointer; font:700 15px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; padding:12px 16px; }
+    .tab-btn.active { border-bottom-color:var(--accent); color:var(--ink); }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+    .debrief-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+    .debrief-grid .box { margin:0; }
+    @media (max-width:700px) { .debrief-grid { grid-template-columns:1fr; } }
     @media print { body { background:white; } }
   </style>
 </head>
 <body>
+  <nav class="tab-nav" role="tablist" aria-label="V4 plan views">
+    <button class="tab-btn active" id="plan-tab" type="button" role="tab" aria-selected="true" aria-controls="plan-panel">Plan</button>
+    <button class="tab-btn" id="debrief-tab" type="button" role="tab" aria-selected="false" aria-controls="debrief-panel">Debrief</button>
+  </nav>
+
+  <section class="tab-panel active" id="plan-panel" role="tabpanel" aria-labelledby="plan-tab">
   <p class="kicker">Active plan · 2026-07-19 · codex/continuation-checkpoints</p>
   <h1>3Notch V4 — Continuation Checkpoints</h1>
   <p>Opt-in, local continuation packets for recovering from rate limits, compaction, and agent switches without reading transcripts or blocking workflows.</p>
@@ -58,5 +72,73 @@
     <p><strong>2026-07-19:</strong> The plan used colon-delimited tag examples. Existing packet metadata canonicalizes tags to slugs, so implementation uses <code>stream-&lt;slug&gt;</code> and <code>source-&lt;event&gt;</code> while preserving the same filtering semantics.</p>
   </section>
   <p style="color:var(--accent);font-style:italic">The recovery layer stays useful precisely because it records less than a transcript and more than a Git diff.</p>
+  </section>
+
+  <section class="tab-panel" id="debrief-panel" role="tabpanel" aria-labelledby="debrief-tab" hidden>
+    <p class="kicker">Build debrief · 2026-07-19</p>
+    <h1>What V4 actually changed</h1>
+    <p>The approved D1–D5 plan shipped in four workstreams: policy and hook wiring, deterministic recovery, packet and agent integration, and verified delivery. The implementation was rebased over PRs #1–#3; the public website is delivered separately in PR #5.</p>
+
+    <div class="debrief-grid">
+      <section class="box">
+        <p class="kicker">User-visible behavior</p>
+        <h2>Configure once, recover locally</h2>
+        <p><code>notch onboard</code> can wire Claude Code checkpoints in <code>script</code>, <code>prompt</code>, <code>auto</code>, or <code>off</code> mode. Setup preserves unrelated settings, warns before project-visible or high-frequency behavior, and <code>notch doctor</code> reports drift.</p>
+      </section>
+      <section class="box">
+        <p class="kicker">User-visible behavior</p>
+        <h2>One fallback, not task spam</h2>
+        <p>Task events accumulate locally. Post-compaction and rate-limit events can write one unreviewed fallback with structured progress and Git provenance. Optional Stop writes only when the deterministic state changed.</p>
+      </section>
+      <section class="box">
+        <p class="kicker">User-visible behavior</p>
+        <h2>Resume only after confirmation</h2>
+        <p>A later session offers the newest matching checkpoint once but does not load its body until the user approves. Agent-authored semantic checkpoints can supersede a mechanical fallback in the same stream.</p>
+      </section>
+      <section class="box">
+        <p class="kicker">Mechanism</p>
+        <h2>The packet model stayed intact</h2>
+        <p>Continuations remain ordinary immutable packets. Tags identify the stream and source event; <code>supersedes</code> orders checkpoints; project/private sensitivity controls the outbox; CLI and MCP expose matching tag and lineage fields.</p>
+      </section>
+    </div>
+
+    <section class="box">
+      <p class="kicker">Deviation</p>
+      <p><strong>Recorded verbatim:</strong> “2026-07-19: The plan used colon-delimited tag examples. Existing packet metadata canonicalizes tags to slugs, so implementation uses <code>stream-&lt;slug&gt;</code> and <code>source-&lt;event&gt;</code> while preserving the same filtering semantics.”</p>
+      <p><strong>Plan said:</strong> tags such as <code>stream:&lt;slug&gt;</code>. <strong>Territory forced:</strong> the shipped tag schema accepts canonical slugs, not colons. <strong>Lesson:</strong> extend an established serialization contract through its existing canonical form instead of creating a one-feature exception.</p>
+    </section>
+
+    <section class="box">
+      <p class="kicker">Intuition</p>
+      <p>The deterministic layer is a seat belt, not memory: it records only documented hook fields, accumulated tasks, and Git state. Semantic checkpoints carry the richer objective and decisions when an agent still has them. Both stay visible, local, unreviewed, and confirmation-gated because recovery quality should not erase the privacy boundary.</p>
+    </section>
+
+    <section class="box">
+      <p class="kicker">What did not change</p>
+      <ul>
+        <li>No transcript reading, hidden project scraping, complete-conversation claim, hosted relay, remote MCP mode, model router, or cloud service.</li>
+        <li>No automatic commit, push, import, artifact copy, or packet transport.</li>
+        <li>No packet per Claude checklist item and no new continuation record type.</li>
+        <li>A fallback cannot recover reasoning absent from tasks, a compact summary, Git state, a final message, or an earlier semantic checkpoint.</li>
+        <li>The website is on a preview deployment and separate PR; production is unchanged until that PR is reviewed and merged after PR #4.</li>
+      </ul>
+    </section>
+  </section>
+
+  <script>
+    const tabs = document.querySelectorAll('.tab-btn');
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((item) => {
+          const selected = item === tab;
+          item.classList.toggle('active', selected);
+          item.setAttribute('aria-selected', String(selected));
+          const panel = document.getElementById(item.getAttribute('aria-controls'));
+          panel.classList.toggle('active', selected);
+          panel.hidden = !selected;
+        });
+      });
+    });
+  </script>
 </body>
 </html>
