@@ -274,9 +274,102 @@ describe('notch packet', () => {
         expect(unpacked.packet.id).toBe(created.packet.id);
         expect(unpacked.packet.nextSteps).toBe('Use artifacts/showcase.html.');
         expect(await readFile(path.join(path.dirname(unpacked.inboxPath), 'artifacts/showcase.html'), 'utf8')).toBe('<main>bundle</main>\n');
+
+        const duplicate = await runCli(['--json', 'packet', 'unpack', archivePath], { cwd: destination.path });
+        expect(duplicate.exitCode).toBe(6);
+        expect(JSON.parse(duplicate.stderr)).toMatchObject({
+          error: {
+            code: 'NOTCH_RECORD_ALREADY_EXISTS',
+            message: expect.stringContaining(created.packet.id),
+          },
+        });
+
+        const destinationPackets = await runCli(['--json', 'packet', 'list'], { cwd: destination.path });
+        expect(JSON.parse(destinationPackets.stdout).packets).toHaveLength(1);
+        const show = await runCli(['packet', 'show', created.packet.id], { cwd: destination.path });
+        expect(show.exitCode).toBe(0);
       });
     });
   }, 15_000);
+
+  it('serializes simultaneous imports of the same packet', async () => {
+    await withTempProject({ prefix: 'notch-source-' }, async (source) => {
+      await withTempProject({ prefix: 'notch-dest-' }, async (destination) => {
+        await runCli(['onboard', '--yes', '--name', 'concurrent-source'], { cwd: source.path });
+        await runCli(['onboard', '--yes', '--name', 'concurrent-destination'], { cwd: destination.path });
+        const created = await runCli([
+          '--json',
+          'packet',
+          'create',
+          '--title',
+          'Concurrent packet',
+          '--summary',
+          'Concurrent import regression.',
+          '--to-agent',
+          'codex',
+        ], { cwd: source.path });
+        const packetId = JSON.parse(created.stdout).packet.id as string;
+        const archivePath = path.join(source.path, 'concurrent.notchpkt');
+        await runCli(['packet', 'pack', packetId, '--output', archivePath], { cwd: source.path });
+
+        const results = await Promise.all([
+          runCli(['--json', 'packet', 'unpack', archivePath], { cwd: destination.path }),
+          runCli(['--json', 'packet', 'unpack', archivePath], { cwd: destination.path }),
+        ]);
+        const exitCodes = results.map((result) => result.exitCode).sort();
+        const rejected = results.find((result) => result.exitCode === 6);
+
+        expect(exitCodes).toEqual([0, 6]);
+        expect(JSON.parse(rejected?.stderr ?? '{}')).toMatchObject({
+          error: { code: 'NOTCH_RECORD_ALREADY_EXISTS' },
+        });
+
+        const destinationPackets = await runCli(['--json', 'packet', 'list'], { cwd: destination.path });
+        expect(JSON.parse(destinationPackets.stdout).packets).toHaveLength(1);
+      });
+    });
+  }, 20_000);
+
+  it('allows simultaneous imports of different packets', async () => {
+    await withTempProject({ prefix: 'notch-source-' }, async (source) => {
+      await withTempProject({ prefix: 'notch-dest-' }, async (destination) => {
+        await runCli(['onboard', '--yes', '--name', 'different-source'], { cwd: source.path });
+        await runCli(['onboard', '--yes', '--name', 'different-destination'], { cwd: destination.path });
+        const archives: Array<{ archivePath: string; packetId: string }> = [];
+
+        for (const title of ['First packet', 'Second packet']) {
+          const created = await runCli([
+            '--json',
+            'packet',
+            'create',
+            '--title',
+            title,
+            '--summary',
+            'Different concurrent import regression.',
+            '--to-agent',
+            'codex',
+          ], { cwd: source.path });
+          const packetId = JSON.parse(created.stdout).packet.id as string;
+          const archivePath = path.join(source.path, `${packetId}.notchpkt`);
+          await runCli(['packet', 'pack', packetId, '--output', archivePath], { cwd: source.path });
+          archives.push({ archivePath, packetId });
+        }
+
+        const results = await Promise.all(
+          archives.map(({ archivePath }) => runCli(['--json', 'packet', 'unpack', archivePath], { cwd: destination.path })),
+        );
+
+        expect(results.map((result) => result.exitCode)).toEqual([0, 0]);
+        const destinationPackets = await runCli(['--json', 'packet', 'list'], { cwd: destination.path });
+        expect(JSON.parse(destinationPackets.stdout).packets).toHaveLength(2);
+
+        for (const { packetId } of archives) {
+          const shown = await runCli(['packet', 'show', packetId], { cwd: destination.path });
+          expect(shown.exitCode).toBe(0);
+        }
+      });
+    });
+  }, 20_000);
 
   it('runs the secret scanner against stdin imports', async () => {
     await withTempProject({ prefix: 'notch-source-' }, async (source) => {

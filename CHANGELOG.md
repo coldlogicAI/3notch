@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Unit coverage for V2 single-file `pack` / `unpack` round-trip.
 
 ### Changed
+- Packet imports now use a short-lived local store lock so retries and simultaneous writers cannot create duplicate IDs or leave ambiguous packet lookup.
 - `assertImmutablePacketFolder` is now called before bundle writes so the "sealed folder" contract is enforced at write time, not just implied by collision suffixing.
 - `notch onboard` now points users to `.notch/README.md` first and keeps `notch prompt` as a web-chat / copy-paste fallback.
 - Common `--file <path:purpose>` aliases such as `:favicon`, `:icon`, `:logo`, and `:image` normalize to `asset`; unknown labels fail with a clear artifact-purpose error.
