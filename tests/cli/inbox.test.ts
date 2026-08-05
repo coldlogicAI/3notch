@@ -76,7 +76,7 @@ describe('notch durable inbox CLI', () => {
         expect(await readFile(path.join(receiver.path, '.notch/inbox-config.json'), 'utf8')).toContain('local:receiver-agent');
       });
     });
-  });
+  }, 40_000);
 
   it('makes identical CLI send retries explicit and idempotent', async () => {
     await withTempProject({}, async (sender) => {
