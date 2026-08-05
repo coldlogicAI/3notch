@@ -2,7 +2,7 @@
 
 3Notch is local-first, explicit, and file-based.
 
-Local-first does not mean same-repo only. It means there is no hosted relay, background receiver, account system, cloud inbox, telemetry, or remote connector. Cross-repo and cross-machine movement happens through local files and the user's existing transport (scp, rsync, iCloud, Tailscale, email, git). Cross-tool handoff happens through local MCP calls the user or agent explicitly initiates.
+Local-first does not mean same-repo only. It means there is no hosted relay, background receiver, account system, cloud inbox, telemetry, or remote connector. Cross-repo and cross-machine movement happens through explicit local files, the user's existing transport, or an intentionally configured durable mailbox root. Cross-tool handoff happens through local MCP calls the user or agent explicitly initiates.
 
 ## What 3Notch Does
 
@@ -12,6 +12,7 @@ Local-first does not mean same-repo only. It means there is no hosted relay, bac
 - Writes private seed context to `.notch/private/` (gitignored by default).
 - Hides `.notch/index/` and `.notch/logs/` as derived output (gitignored).
 - Hides private records from MCP unless the server is started with `--include-private`.
+- Stores durable-inbox configuration in ignored `.notch/inbox-config.json`, validates project packets before delivery, and retains acknowledged archives under the chosen mailbox root.
 - Scans writes for configured patterns, JWT-like strings, private-key markers, and high-entropy token-like strings.
 - Scans the bytes of text-like artifacts (`.md`, `.html`, source files, etc.) before they are copied into a packet bundle.
 - When explicitly configured, consumes documented Claude hook fields (`task_*`, `compact_summary`, or `last_assistant_message`) and Git metadata to create continuation fallbacks.
@@ -19,7 +20,7 @@ Local-first does not mean same-repo only. It means there is no hosted relay, bac
 ## What 3Notch Does Not Do
 
 - It does not verify another person or device.
-- It does not deliver packets to a remote recipient.
+- It does not host or deliver packets to an internet recipient. The optional durable inbox writes only to the explicit local or mounted root the user configures.
 - It does not accept packets from a network listener.
 - It does not scrape hidden chat databases, browser state, or project history.
 - It does not open the `transcript_path` supplied with Claude hook events.
@@ -41,6 +42,7 @@ You receive a packet only when you explicitly import one:
 ```bash
 notch packet import /path/to/packet.md
 notch packet unpack /path/to/<id>.notchpkt
+notch inbox pull <delivery-id> --import
 ```
 
 Review unknown packets with `notch packet preview <id>` before relying on them.
@@ -52,3 +54,4 @@ Review unknown packets with `notch packet preview <id>` before relying on them.
 - The scanner is a guardrail, not a proof that content is safe.
 - Project-sensitivity continuation packets are Git-visible under `.notch/outbox/`; private sensitivity routes them to ignored `.notch/private/outbox/`.
 - 3Notch is not a policy engine, DLP system, or audit platform.
+- Durable inbox blocks private/seed packets and does not provide encryption, authenticated identity, team authorization, or guaranteed sync-folder delivery.

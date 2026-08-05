@@ -32,6 +32,15 @@ describe('archive service', () => {
         'manifest.json',
         'packet.md',
       ]);
+      expect(() => readArchiveEntries(first, { maxArchiveBytes: first.byteLength - 1 })).toThrowError(
+        expect.objectContaining({ notchError: expect.objectContaining({ code: 'NOTCH_ARCHIVE_TOO_LARGE' }) }),
+      );
+      expect(() => readArchiveEntries(first, { maxEntries: 2 })).toThrowError(
+        expect.objectContaining({ notchError: expect.objectContaining({ code: 'NOTCH_ARCHIVE_TOO_LARGE' }) }),
+      );
+      expect(() => readArchiveEntries(first, { maxUnpackedBytes: 32 })).toThrowError(
+        expect.objectContaining({ notchError: expect.objectContaining({ code: 'NOTCH_ARCHIVE_TOO_LARGE' }) }),
+      );
 
       const unpacked = await unpackPacketArchiveToTemp(first);
       try {
@@ -99,13 +108,45 @@ describe('archive service', () => {
       notchError: { code: 'NOTCH_ARCHIVE_UNSAFE' },
     });
   });
+
+  it('rejects duplicate paths, invalid sizes, and corrupted tar headers', () => {
+    const duplicateArchive = buildHostileArchive([
+      { name: 'packet.md', content: Buffer.from('first') },
+      { name: 'packet.md', content: Buffer.from('second') },
+    ]);
+    const invalidSizeArchive = buildHostileArchive(
+      [{ name: 'packet.md', content: Buffer.from('body') }],
+      (header) => {
+        header.fill(0, 124, 136);
+        header.write('0000000000x\0', 124, 12, 'ascii');
+        writeTarChecksum(header);
+      },
+    );
+    const corruptedHeaderArchive = buildHostileArchive(
+      [{ name: 'packet.md', content: Buffer.from('body') }],
+      (header) => {
+        header[0] = header[0] === 112 ? 113 : 112;
+      },
+    );
+
+    for (const archive of [duplicateArchive, invalidSizeArchive, corruptedHeaderArchive]) {
+      expect(() => readArchiveEntries(archive)).toThrowError(expect.objectContaining({
+        notchError: expect.objectContaining({ code: 'NOTCH_ARCHIVE_UNSAFE' }),
+      }));
+    }
+  });
 });
 
-function buildHostileArchive(entries: Array<{ name: string; content: Buffer }>): Buffer {
+function buildHostileArchive(
+  entries: Array<{ name: string; content: Buffer }>,
+  mutateHeader?: (header: Buffer, index: number) => void,
+): Buffer {
   const tarParts: Buffer[] = [];
 
-  for (const entry of entries) {
-    tarParts.push(buildTarHeader(entry.name, entry.content.byteLength), entry.content);
+  for (const [index, entry] of entries.entries()) {
+    const header = buildTarHeader(entry.name, entry.content.byteLength);
+    mutateHeader?.(header, index);
+    tarParts.push(header, entry.content);
     const remainder = entry.content.byteLength % 512;
 
     if (remainder !== 0) {
@@ -130,7 +171,12 @@ function buildTarHeader(name: string, size: number): Buffer {
   header.write('ustar', 257, 6, 'utf8');
   header.write('00', 263, 2, 'utf8');
 
+  writeTarChecksum(header);
+  return header;
+}
+
+function writeTarChecksum(header: Buffer): void {
+  header.fill(0x20, 148, 156);
   const checksum = header.reduce((sum, byte) => sum + byte, 0);
   header.write(`${checksum.toString(8).padStart(7, '0')}\0`, 148, 8, 'ascii');
-  return header;
 }

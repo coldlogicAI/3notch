@@ -207,6 +207,53 @@
         "asReviewed": { "type": "boolean" }
       }
     },
+    "inbox_init": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "root"],
+      "properties": {
+        "actorName": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "root": { "type": "string", "minLength": 1 }
+      }
+    },
+    "send_packet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["packetPath", "to"],
+      "properties": {
+        "actorName": { "type": "string", "minLength": 1 },
+        "packetPath": { "type": "string", "minLength": 1 },
+        "to": { "type": "string", "pattern": "^local:[a-z0-9](?:[a-z0-9._-]{0,62}[a-z0-9])?$" }
+      }
+    },
+    "list_inbox": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "includeAll": { "type": "boolean" }
+      }
+    },
+    "pull_inbox_packet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deliveryId"],
+      "properties": {
+        "actorName": { "type": "string", "minLength": 1 },
+        "deliveryId": { "type": "string", "pattern": "^delivery_[a-f0-9]{24}$" },
+        "import": { "type": "boolean" },
+        "asReviewed": { "type": "boolean" }
+      }
+    },
+    "ack_inbox_delivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deliveryId"],
+      "properties": {
+        "actorName": { "type": "string", "minLength": 1 },
+        "deliveryId": { "type": "string", "pattern": "^delivery_[a-f0-9]{24}$" }
+      }
+    },
     "get_status": {
       "type": "object",
       "additionalProperties": false,

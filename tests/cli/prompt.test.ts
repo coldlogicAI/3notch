@@ -14,13 +14,18 @@ const v2Tools = [
   'get_packet',
   'create_seed_packet',
   'import_seed_packet',
+  'inbox_init',
+  'send_packet',
+  'list_inbox',
+  'pull_inbox_packet',
+  'ack_inbox_delivery',
   'create_mark',
   'create_reply',
   'check_store',
   'get_status',
   'run_doctor',
 ];
-const deferredSurface = ['pass', 'send', 'conflict', 'stale'];
+const deferredSurface = ['pass', 'conflict', 'stale'];
 
 describe('notch prompt', () => {
   it.each(clients)('prints agent instructions for %s', async (client) => {

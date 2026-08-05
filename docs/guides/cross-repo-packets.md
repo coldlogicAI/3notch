@@ -17,7 +17,7 @@ notch packet create \
 
 The packet is written to `.notch/outbox/`. When `--file` is used, it lands as a folder containing `packet.md`, `manifest.json`, and copied bytes under `artifacts/`, preserving each file's project-relative path. Without `--file`, it lands as a single `.md` file.
 
-Recipient fields (`--to-agent`, `--to-person`, `--to-repo`) label intent. They do not authenticate or deliver anything — local filesystems and your own transport (scp, rsync, iCloud, Tailscale, email, git) move the bytes.
+Recipient fields (`--to-agent`, `--to-person`, `--to-repo`) label intent. They do not authenticate or deliver anything. Manual transports move the bytes directly; [durable inbox](durable-inbox.md) uses a separately registered `local:` address.
 
 ## File vs Reference
 

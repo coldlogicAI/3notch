@@ -18,6 +18,11 @@ const expectedTools = [
   'get_packet',
   'create_seed_packet',
   'import_seed_packet',
+  'inbox_init',
+  'send_packet',
+  'list_inbox',
+  'pull_inbox_packet',
+  'ack_inbox_delivery',
   'get_status',
   'run_doctor',
 ];
@@ -52,5 +57,17 @@ describe('MCP tool input schemas', () => {
       title: 'Continuation checkpoint',
     })).toBe(true);
     expect(validateList({ tags: ['continuation', 'stream-feature-a'] })).toBe(true);
+  });
+
+  it('fails closed on unsafe durable inbox addresses and delivery IDs', () => {
+    const ajv = new Ajv2020({ strict: true });
+    ajv.addSchema(sharedSchema);
+    const validateSend = ajv.compile(getMcpToolInputSchema('send_packet'));
+    const validatePull = ajv.compile(getMcpToolInputSchema('pull_inbox_packet'));
+
+    expect(validateSend({ packetPath: '/tmp/packet.notchpkt', to: 'local:review-agent' })).toBe(true);
+    expect(validateSend({ packetPath: '/tmp/packet.notchpkt', to: 'local:../review-agent' })).toBe(false);
+    expect(validatePull({ deliveryId: 'delivery_aaaaaaaaaaaaaaaaaaaaaaaa', import: true })).toBe(true);
+    expect(validatePull({ deliveryId: '../../delivery', import: true })).toBe(false);
   });
 });

@@ -72,7 +72,11 @@
               "create_mark",
               "create_reply",
               "create_seed_packet",
-              "import_seed_packet"
+              "import_seed_packet",
+              "inbox_init",
+              "send_packet",
+              "pull_inbox_packet",
+              "ack_inbox_delivery"
             ]
           },
           "uniqueItems": true

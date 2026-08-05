@@ -3,6 +3,8 @@ import { Ajv2020, type ErrorObject, type ValidateFunction } from 'ajv/dist/2020.
 import auditSchema from '../schemas/audit.schema.json' with { type: 'json' };
 import briefSchema from '../schemas/brief.schema.json' with { type: 'json' };
 import configSchema from '../schemas/config.schema.json' with { type: 'json' };
+import inboxConfigSchema from '../schemas/inbox-config.schema.json' with { type: 'json' };
+import inboxDeliverySchema from '../schemas/inbox-delivery.schema.json' with { type: 'json' };
 import mcpToolsSchema from '../schemas/mcp-tools.schema.json' with { type: 'json' };
 import packetSchema from '../schemas/packet.schema.json' with { type: 'json' };
 import projectBriefSchema from '../schemas/project-brief.schema.json' with { type: 'json' };
@@ -14,6 +16,8 @@ export const SCHEMA_IDS = {
   audit: 'https://3notch.dev/schemas/audit.schema.json',
   brief: 'https://3notch.dev/schemas/brief.schema.json',
   config: 'https://3notch.dev/schemas/config.schema.json',
+  inboxConfig: 'https://3notch.dev/schemas/inbox-config.schema.json',
+  inboxDelivery: 'https://3notch.dev/schemas/inbox-delivery.schema.json',
   mcpTools: 'https://3notch.dev/schemas/mcp-tools.schema.json',
   packet: 'https://3notch.dev/schemas/packet.schema.json',
   projectBrief: 'https://3notch.dev/schemas/project-brief.schema.json',
@@ -31,6 +35,8 @@ const schemas = {
   audit: auditSchema,
   brief: briefSchema,
   config: configSchema,
+  inboxConfig: inboxConfigSchema,
+  inboxDelivery: inboxDeliverySchema,
   mcpTools: mcpToolsSchema,
   packet: packetSchema,
   projectBrief: projectBriefSchema,

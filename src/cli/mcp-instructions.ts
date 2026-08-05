@@ -1,7 +1,7 @@
 import os from 'node:os';
 import path from 'node:path';
 
-export type McpConfigClient = 'claude-code' | 'claude-desktop' | 'codex' | 'cursor' | 'chatgpt-desktop';
+export type McpConfigClient = 'claude-code' | 'claude-desktop' | 'codex' | 'cursor' | 'grok' | 'chatgpt-desktop';
 
 export type McpServerDefinition = {
   args: string[];
@@ -78,6 +78,18 @@ Paste or merge this JSON:
 ${jsonSnippet(server)}
 
 Private seed packets stay hidden unless you intentionally add --include-private to args.`;
+
+    case 'grok':
+      return `${clientHeading('Grok')}
+Project config: ${path.join(projectRoot, '.grok', 'config.toml')}
+
+Add the local stdio server:
+grok mcp add --scope project 3notch -- ${serverCommand}
+
+Verify it:
+grok mcp doctor 3notch
+
+Grok can also read a project .mcp.json created for another compatible client. Private seed packets stay hidden unless you intentionally add --include-private.`;
 
     case 'chatgpt-desktop':
       return `${clientHeading('ChatGPT Desktop')}

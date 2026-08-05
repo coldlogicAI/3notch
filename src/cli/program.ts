@@ -5,6 +5,7 @@ import { registerBriefCommand } from './commands/brief.js';
 import { registerCheckCommand } from './commands/check.js';
 import { registerDoctorCommand } from './commands/doctor.js';
 import { registerHookCommand } from './commands/hook.js';
+import { registerInboxCommand } from './commands/inbox.js';
 import { registerMarkCommand } from './commands/mark.js';
 import { registerMcpCommand } from './commands/mcp.js';
 import { registerOnboardCommand } from './commands/onboard.js';
@@ -41,6 +42,8 @@ Examples:
   $ notch packet create --title "Auth handoff" --to-agent codex --summary "..." --file src/auth.ts --next-steps "Review auth flow."
   $ notch packet pack <packet-id>
   $ notch packet unpack <packet-id>.notchpkt
+  $ notch inbox init --name review-agent --root /shared/3notch-mailbox
+  $ notch send <packet-id>.notchpkt --to local:review-agent
   $ notch scan README.md
   $ notch seed from ../old-project --review
   $ notch mcp serve
@@ -53,6 +56,7 @@ Examples:
   registerReplyCommand(program);
   registerBriefCommand(program);
   registerPacketCommand(program);
+  registerInboxCommand(program);
   registerSeedCommand(program);
   registerStatusCommand(program);
   registerCheckCommand(program);

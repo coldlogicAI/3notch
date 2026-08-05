@@ -29,7 +29,7 @@ The scanner intentionally blocks some benign documentation prose. When that happ
 
 ## Audit
 
-Every successful write, blocked write, and skipped artifact scan appends a line to `.notch/logs/audit.jsonl`. The log is local and gitignored, but it gives evidence that a record was created, imported, blocked, or skipped — with timestamps, actor resolution, and source-tool attribution.
+Every successful write, blocked write, and skipped artifact scan appends a line to `.notch/logs/audit.jsonl`. Durable inbox also traces init, send, pull/import, ack, rejection, and failure using IDs, hashes, routing labels, byte counts, states, and error codes—not packet content. The log is local and gitignored.
 
 ## Review
 
@@ -48,6 +48,7 @@ Received packets are ground truth.
 - A single-file packet's markdown content is content-hash-checked before any overwrite is permitted.
 - A packet folder is the immutable unit: `packet.md`, `manifest.json`, and every file under `artifacts/` must continue to match the SHA-256 values recorded in the packet's frontmatter and manifest.
 - Hash mismatches at import raise `NOTCH_ARTIFACT_HASH_MISMATCH` and abort before any inbox state is written.
+- Durable delivery verifies the archive SHA-256 before pull/import. Mismatch marks the retained delivery rejected and aborts before packet import.
 
 When context changes, author a successor packet with `--supersedes <id>` or a typed reply with `notch reply`. Do not mutate an imported packet.
 
@@ -59,4 +60,6 @@ Continuation checkpoints follow the same rule: each stream is an immutable `supe
 - 3Notch does not encrypt records at rest. Use OS disk encryption and keep `.notch/private/` gitignored.
 - The scanner is a guardrail, not a proof that content is safe.
 - Bundle integrity is verified by SHA-256 hashing, not signing. Anyone with write access to a `.notchpkt` archive can produce a valid-looking bundle. Hashing proves bytes did not change in transit; it does not prove who authored them.
+- Durable inbox addresses are local labels, not authenticated identities or access control. Anyone with filesystem access to the mailbox root may be able to read or change deliveries.
+- Local atomic rename and one-host serialization do not provide distributed locks or guaranteed delivery semantics for sync products and network filesystems.
 - 3Notch is not a policy engine, DLP system, hosted audit platform, or remote sync service.

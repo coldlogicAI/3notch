@@ -58,6 +58,12 @@ notch packet unpack <packet-id>.notchpkt
 
 `.notchpkt` is a gzipped tar with deterministic entry ordering. Hashes are re-verified at unpack against the manifest before anything lands in the inbox.
 
+## Async Agents Through A Local Mailbox
+
+When the source and receiver operate at different times, configure one explicit durable-inbox root and exchange registered `local:` addresses. The sender packs once; the receiver lists, verifies/imports, and acknowledges later. The same tools are available over MCP, so the two sides may use different model clients.
+
+See [durable-inbox.md](durable-inbox.md). This flow is local filesystem delivery, not authenticated identity, hosted chat, or guaranteed network sync.
+
 ## Web-Chat (no local MCP)
 
 For Claude.ai and other browser chats that can't reach a local MCP server, use the bridge prompt and stdin import:
@@ -74,6 +80,6 @@ See [../prompts/web-chat-to-project.md](../prompts/web-chat-to-project.md) for t
 
 - The source must hand over the context it wants stored. 3Notch does not derive it for you.
 - Source links and exclusions belong in the packet, not as out-of-band conversation.
-- Same-store handoff is fastest. Cross-repo and cross-machine require an explicit import.
+- Same-store handoff is fastest. Manual cross-repo/cross-machine movement and durable inbox both require an explicit validated import.
 - Inbox packets are immutable. To change context, author a successor with `--supersedes` or a typed reply with `notch reply`.
 - Private seed records (`.notch/private/`) are hidden from MCP unless the server is started with `--include-private`.
