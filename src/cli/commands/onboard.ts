@@ -412,6 +412,10 @@ function defaultConfig(projectName: string, projectRoot: string): NotchConfig {
         'create_reply',
         'create_seed_packet',
         'import_seed_packet',
+        'inbox_init',
+        'send_packet',
+        'pull_inbox_packet',
+        'ack_inbox_delivery',
       ],
     },
   };
@@ -477,7 +481,7 @@ This project uses 3Notch for explicit, reviewable context handoffs between AI to
 2. Use \`notch packet list\`, \`notch packet show <id>\`, and \`notch packet preview <id>\` to inspect existing handoffs.
 3. When the user asks you to hand context to another repo, person, or tool, create a packet with \`notch packet create\`.
 4. Use \`--file <path[:purpose]>\` when the receiver needs copied bytes. Copied files keep their project-relative path under \`artifacts/\`. If you are unsure, omit \`:purpose\`; the default is \`asset\`. Valid artifact purposes are \`asset\`, \`source\`, \`reference\`, and \`output\`; common labels like \`favicon\`, \`icon\`, \`logo\`, and \`image\` are accepted as \`asset\`. Use \`--ref <path>\` only when the receiver shares the same filesystem path.
-5. Use \`notch packet pack <id>\` and \`notch packet unpack <archive>\` when a packet needs to move between machines.
+5. Use \`notch packet pack <id>\` and \`notch packet unpack <archive>\` for manual cross-machine movement. Use \`notch inbox init\`, \`notch send\`, \`notch inbox pull --import\`, and \`notch inbox ack\` only when the user intentionally configures a shared local mailbox root.
 6. Run \`notch check\` after imports or relationship-heavy changes. Run \`notch doctor\` when the store seems unhealthy.
 
 ## Continuation Checkpoints
@@ -490,7 +494,7 @@ Claude Code checkpoints are opt-in through \`notch onboard --mcp claude-code --c
 - Do not scrape hidden chat history or private project files.
 - Do not expose \`.notch/private/\` unless the user intentionally enables private context.
 - Do not edit imported inbox packets in place. Create a successor packet or a typed reply instead.
-- 3Notch does not send packets over a network. The user chooses how packet files move.
+- Durable inbox writes only to an explicit local filesystem root. It does not run a network listener or authenticate recipient labels.
 
 ## Useful Commands
 
@@ -499,6 +503,10 @@ notch packet create --title "Handoff" --summary "..." --to-agent codex --file pa
 notch packet preview <packet-id>
 notch packet pack <packet-id>
 notch packet unpack <packet-id>.notchpkt
+notch inbox init --name review-agent --root /shared/3notch-mailbox
+notch send <packet-id>.notchpkt --to local:review-agent
+notch inbox pull <delivery-id> --import
+notch inbox ack <delivery-id>
 notch check
 notch doctor
 \`\`\`

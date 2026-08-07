@@ -37,6 +37,8 @@ CLI commands:
 - `notch brief`, `notch brief create`, `notch brief list`, `notch brief show <id>`
 - `notch packet create`, `notch packet import <file>`, `notch packet import -`, `notch packet list`, `notch packet show <id>`, `notch packet preview <id>`
 - `notch packet pack <id>`, `notch packet unpack <archive>`
+- `notch inbox init`, `notch inbox list`, `notch inbox pull <delivery-id>`, `notch inbox ack <delivery-id>`
+- `notch send <archive> --to <local-address>`
 - `notch seed from <repo-or-store-path>`
 - `notch prompt --client <client>`
 - `notch scan <file-or-stdin>`
@@ -51,13 +53,13 @@ MCP tools:
 - `create_seed_packet`, `import_seed_packet`
 - `create_mark`, `create_reply`, `check_store`
 - `get_status`, `run_doctor`
+- `inbox_init`, `send_packet`, `list_inbox`, `pull_inbox_packet`, `ack_inbox_delivery`
 
 ## Deferred (do not implement)
 
 These are deliberately out of scope. Same-repo same-tool continuity is solved by CLAUDE.md, native tool memory, and `git commit`. 3Notch's wedge is cross-boundary transport.
 
 - `notch pass`, MCP `create_pass`/`get_latest_pass`/`get_recent_passes`
-- `notch send` (sugar for create + import; the two-step is fine)
 - `notch decision *`, MCP `record_decision`/`get_decisions`
 - `notch question *`, MCP `add_open_question`/`get_open_questions`
 - `notch conflict *`, MCP `create_conflict`/`list_conflicts`/`resolve_conflict`
@@ -70,6 +72,7 @@ A regression-guard test (`tests/unit/no-deferred-commands.test.ts`) prevents acc
 - When the user presents a product idea or asks "is this the right path?", discuss and pressure-test it before changing specs, plans, or repo files.
 - Treat cross-repo packets, cross-tool handoff, and private context seeding as the core product loops.
 - No telemetry, cloud sync, hosted service, dashboard, vector database, or SQLite/native DB.
+- Durable inbox remains a dependency-free local filesystem spool. Do not turn it into chat, a daemon, hosted identity, background sync, or model invocation.
 - Do not build hidden chat or project scraping. MCP tools write selected or summarized context the user or agent explicitly supplies during a session.
 - Preserve human-readable `.notch/` source files as the source of truth.
 - Use `.notch/outbox/` for created packets, `.notch/inbox/` for imported packets, and ignored `.notch/private/` for user preferences, workflow conventions, and seed packets.

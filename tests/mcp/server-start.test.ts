@@ -24,6 +24,7 @@ describe('MCP server foundation', () => {
       try {
         const tools = await harness.listTools();
         expect(tools.sort()).toEqual([
+          'ack_inbox_delivery',
           'check_store',
           'create_brief',
           'create_mark',
@@ -36,9 +37,13 @@ describe('MCP server foundation', () => {
           'get_targeted_brief',
           'import_packet',
           'import_seed_packet',
+          'inbox_init',
           'list_briefs',
+          'list_inbox',
           'list_packets',
+          'pull_inbox_packet',
           'run_doctor',
+          'send_packet',
         ].sort());
         expect(tools).not.toContain('create_pass');
         await expect(harness.client.ping()).resolves.toEqual({});

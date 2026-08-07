@@ -18,6 +18,11 @@ export const v1McpToolNames = [
   'get_packet',
   'create_seed_packet',
   'import_seed_packet',
+  'inbox_init',
+  'send_packet',
+  'list_inbox',
+  'pull_inbox_packet',
+  'ack_inbox_delivery',
   'create_mark',
   'create_reply',
   'check_store',
@@ -59,6 +64,13 @@ Use status checks when helpful:
 - Call check_store for deterministic corpus integrity findings.
 - Call get_status for a store summary.
 - Call run_doctor for diagnostics.
+
+Use durable inbox for asynchronous handoff after both stores have intentionally configured the same local mailbox root:
+- Call send_packet only for a packed project handoff the user wants delivered to a registered local: address. Never use it for private or seed packets.
+- Call list_inbox to discover pending deliveries.
+- Call pull_inbox_packet without import to verify first, or with import=true to run normal 3Notch validation and import.
+- Call ack_inbox_delivery only after review, successful import, or an intentional skip. Acknowledgement retains packet bytes.
+- Treat local addresses as labels, not authenticated identities, and never claim the local adapter is encrypted or network-guaranteed.
 
 If .notch/config.json enables continuation checkpoints:
 - Follow the configured prompt or auto mode only at the listed semantic triggers; do not change that policy unless the user explicitly asks.

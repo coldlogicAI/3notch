@@ -73,6 +73,17 @@ describe('notch onboard', () => {
     });
   });
 
+  it('prints project-scoped Grok MCP setup without changing client files', async () => {
+    await withTempProject({}, async (project) => {
+      const result = await runCli(['onboard', '--yes', '--mcp', 'grok'], { cwd: project.path });
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('grok mcp add --scope project 3notch');
+      expect(result.stdout).toContain('grok mcp doctor 3notch');
+      expect(result.stdout).toContain('.grok/config.toml');
+    });
+  });
+
   it('supports JSON output', async () => {
     await withTempProject({}, async (project) => {
       const result = await runCli(['--json', 'onboard', '--yes', '--name', 'json-app'], {

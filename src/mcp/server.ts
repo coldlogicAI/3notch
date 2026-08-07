@@ -10,6 +10,7 @@ import { createTargetedBrief, getProjectBrief, getTargetedBrief, listTargetedBri
 import { checkStore } from '../core/check-service.js';
 import { loadConfig } from '../core/config-service.js';
 import { runDoctor } from '../core/doctor-service.js';
+import { ackInboxDelivery, initializeDurableInbox, listInboxDeliveries, pullInboxDelivery, sendInboxPacket } from '../core/inbox-service.js';
 import { createMark, createPacket, createReply, getPacket, listPackets } from '../core/packet-service.js';
 import { createSeedPacket, importSeedPacket } from '../core/seed-service.js';
 import { getStatus } from '../core/status-service.js';
@@ -33,7 +34,10 @@ export type NotchMcpServerOptions = {
 type ToolDefinition = {
   description: string;
   name: keyof typeof mcpToolInputSchemas;
+  openWorld?: boolean;
+  outputSchema?: Record<string, unknown>;
   readOnly: boolean;
+  title?: string;
 };
 
 const toolDefinitions: ToolDefinition[] = [
@@ -49,6 +53,43 @@ const toolDefinitions: ToolDefinition[] = [
   { name: 'get_packet', description: 'Read a packet by ID or slug.', readOnly: true },
   { name: 'create_seed_packet', description: 'Create a private seed packet from explicit input.', readOnly: false },
   { name: 'import_seed_packet', description: 'Import an explicit private seed packet file.', readOnly: false },
+  {
+    name: 'inbox_init',
+    title: 'Initialize durable inbox',
+    description: 'Use only after the user chooses an explicit local mailbox root and address for async cross-agent packet delivery. This writes local configuration and registers the address; it does not create authenticated identity.',
+    readOnly: false,
+    openWorld: true,
+    outputSchema: inboxInitOutputSchema(),
+  },
+  {
+    name: 'send_packet',
+    title: 'Send packed packet',
+    description: 'Use after notch packet pack when the user wants an async handoff to a registered local: address in another repo or model client. This is an externally visible write to the configured mailbox and refuses private or seed packets.',
+    readOnly: false,
+    openWorld: true,
+    outputSchema: inboxActionOutputSchema(true),
+  },
+  {
+    name: 'list_inbox',
+    title: 'List durable inbox',
+    description: 'List pending async packet deliveries for this store. Use includeAll only when reviewing pulled, acknowledged, or rejected history.',
+    readOnly: true,
+    outputSchema: inboxListOutputSchema(),
+  },
+  {
+    name: 'pull_inbox_packet',
+    title: 'Pull inbox packet',
+    description: 'Verify an async delivery by SHA-256 and existing packet/security checks; set import to true to import it through normal 3Notch validation. Import does not acknowledge or delete the retained delivery.',
+    readOnly: false,
+    outputSchema: inboxActionOutputSchema(false),
+  },
+  {
+    name: 'ack_inbox_delivery',
+    title: 'Acknowledge inbox delivery',
+    description: 'Mark a reviewed, imported, or intentionally skipped delivery as acknowledged. Packet bytes remain retained for audit and this tool never deletes them.',
+    readOnly: false,
+    outputSchema: inboxActionOutputSchema(false),
+  },
   { name: 'get_status', description: 'Return 3Notch project status.', readOnly: true },
   { name: 'check_store', description: 'Return deterministic corpus integrity findings.', readOnly: true },
   { name: 'run_doctor', description: 'Run 3Notch store diagnostics.', readOnly: true },
@@ -62,23 +103,25 @@ export function createNotchMcpServer(options: NotchMcpServerOptions = {}): Serve
     { name: '3notch', version: VERSION },
     {
       capabilities: { tools: {} },
-      instructions: '3Notch exposes local, explicit, reviewable context packet tools. It does not scrape chat history or execute shell commands.',
+      instructions: '3Notch exposes local, explicit, reviewable packets. For async handoff: create and pack a project packet, send_packet to a registered local: address, list_inbox at the receiver, pull_inbox_packet with import=true, review, then ack_inbox_delivery. Durable inbox labels are not authenticated identities; private/seed packets are blocked. 3Notch does not scrape chats, invoke other models, run shells, host a relay, or delete acknowledged packets.',
     },
   );
 
   server.setRequestHandler(ListToolsRequestSchema, () => ({
     tools: toolDefinitions.map((tool) => ({
       name: tool.name,
+      ...(tool.title ? { title: tool.title } : {}),
       description: tool.description,
       inputSchema: getMcpToolInputSchema(tool.name) as {
         type: 'object';
         properties?: Record<string, object>;
         required?: string[];
       },
+      ...(tool.outputSchema ? { outputSchema: tool.outputSchema } : {}),
       annotations: {
         readOnlyHint: tool.readOnly,
         destructiveHint: false,
-        openWorldHint: false,
+        openWorldHint: tool.openWorld ?? false,
       },
     })),
   }));
@@ -284,6 +327,59 @@ async function executeTool(
         sourceTool: 'notch-mcp',
       }) as unknown as Record<string, unknown>;
     }
+    case 'inbox_init': {
+      return await initializeDurableInbox(context, {
+        name: requiredString(args.name, 'name'),
+        root: assertAbsoluteMcpPath(requiredString(args.root, 'root'), 'root'),
+      }, {
+        actor: mcpActorName(args, options),
+        mcp: true,
+        sourceTool: 'notch-mcp',
+      }) as unknown as Record<string, unknown>;
+    }
+    case 'send_packet': {
+      return await sendInboxPacket(context, {
+        packetPath: await assertSafeMcpPacketPath(requiredString(args.packetPath, 'packetPath')),
+        to: requiredString(args.to, 'to'),
+      }, {
+        actor: mcpActorName(args, options),
+        mcp: true,
+        sourceTool: 'notch-mcp',
+      }) as unknown as Record<string, unknown>;
+    }
+    case 'list_inbox': {
+      return await listInboxDeliveries(context, { includeAll: Boolean(args.includeAll) }) as unknown as Record<string, unknown>;
+    }
+    case 'pull_inbox_packet': {
+      if (Boolean(args.asReviewed) && !args.import) {
+        throw new NotchException({
+          code: 'NOTCH_INBOX_IMPORT_REQUIRED',
+          message: 'asReviewed requires import=true.',
+          recovery: 'Set import=true, or omit asReviewed to verify without importing.',
+          severity: 'error',
+          exitCode: 1,
+        });
+      }
+
+      return await pullInboxDelivery(context, {
+        deliveryId: requiredString(args.deliveryId, 'deliveryId'),
+        import: Boolean(args.import),
+        asReviewed: Boolean(args.asReviewed),
+      }, {
+        actor: mcpActorName(args, options),
+        mcp: true,
+        sourceTool: 'notch-mcp',
+      }) as unknown as Record<string, unknown>;
+    }
+    case 'ack_inbox_delivery': {
+      return await ackInboxDelivery(context, {
+        deliveryId: requiredString(args.deliveryId, 'deliveryId'),
+      }, {
+        actor: mcpActorName(args, options),
+        mcp: true,
+        sourceTool: 'notch-mcp',
+      }) as unknown as Record<string, unknown>;
+    }
     case 'get_status': {
       return await getStatus(context) as unknown as Record<string, unknown>;
     }
@@ -378,4 +474,103 @@ async function assertSafeMcpPacketPath(packetPath: string): Promise<string> {
   }
 
   return packetPath;
+}
+
+function assertAbsoluteMcpPath(inputPath: string, field: string): string {
+  if (!path.isAbsolute(inputPath)) {
+    throw new NotchException({
+      code: 'NOTCH_MCP_PATH_INVALID',
+      message: `MCP ${field} requires an absolute path.`,
+      path: inputPath,
+      recovery: 'Ask the user to choose an explicit absolute local path.',
+      severity: 'error',
+      exitCode: 4,
+    });
+  }
+
+  return inputPath;
+}
+
+function inboxActionOutputSchema(includeIdempotent: boolean): Record<string, unknown> {
+  return {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+      'ok',
+      'deliveryId',
+      'packetId',
+      'packetHash',
+      'state',
+      'packetPath',
+      ...(includeIdempotent ? ['idempotent'] : []),
+      'nextAction',
+    ],
+    properties: {
+      ok: { const: true },
+      deliveryId: { type: 'string', pattern: '^delivery_[a-f0-9]{24}$' },
+      packetId: { type: 'string', minLength: 1 },
+      packetHash: { type: 'string', pattern: '^[a-f0-9]{64}$' },
+      state: { enum: ['pending', 'pulled', 'acked', 'rejected'] },
+      packetPath: { type: 'string', minLength: 1 },
+      importedPacketId: { type: 'string', minLength: 1 },
+      ...(includeIdempotent ? { idempotent: { type: 'boolean' } } : {}),
+      nextAction: { type: 'string', minLength: 1 },
+    },
+  };
+}
+
+function inboxInitOutputSchema(): Record<string, unknown> {
+  return {
+    type: 'object',
+    additionalProperties: false,
+    required: ['ok', 'address', 'root', 'transport', 'alreadyInitialized', 'nextAction'],
+    properties: {
+      ok: { const: true },
+      address: { type: 'string', pattern: '^local:' },
+      root: { type: 'string', minLength: 1 },
+      transport: { const: 'local' },
+      alreadyInitialized: { type: 'boolean' },
+      nextAction: { type: 'string', minLength: 1 },
+    },
+  };
+}
+
+function inboxListOutputSchema(): Record<string, unknown> {
+  return {
+    type: 'object',
+    additionalProperties: false,
+    required: ['ok', 'address', 'deliveries', 'nextAction'],
+    properties: {
+      ok: { const: true },
+      address: { type: 'string', pattern: '^local:' },
+      deliveries: {
+        type: 'array',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['schemaVersion', 'deliveryId', 'transport', 'from', 'to', 'packetId', 'packetHash', 'bytes', 'state', 'createdAt', 'updatedAt'],
+          properties: {
+            schemaVersion: { const: '1.0.0' },
+            deliveryId: { type: 'string' },
+            transport: { const: 'local' },
+            from: { type: 'string' },
+            to: { type: 'string' },
+            packetId: { type: 'string' },
+            packetHash: { type: 'string' },
+            bytes: { type: 'integer' },
+            state: { enum: ['pending', 'pulled', 'acked', 'rejected'] },
+            createdAt: { type: 'string' },
+            updatedAt: { type: 'string' },
+            pulledAt: { type: 'string' },
+            ackedAt: { type: 'string' },
+            rejectedAt: { type: 'string' },
+            importedAt: { type: 'string' },
+            importedPacketId: { type: 'string' },
+            errorCode: { type: 'string' },
+          },
+        },
+      },
+      nextAction: { type: 'string', minLength: 1 },
+    },
+  };
 }

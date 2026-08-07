@@ -21,6 +21,11 @@ export type TransferStatus = 'draft' | 'outbox' | 'imported' | 'archived';
 export type ReplyType = 'question' | 'clarification' | 'counter-decision' | 'objection' | 'confirmation';
 export type AuditOperation =
   | 'create'
+  | 'inbox-ack'
+  | 'inbox-init'
+  | 'inbox-pull'
+  | 'inbox-reject'
+  | 'inbox-send'
   | 'import'
   | 'rebuild-index'
   | 'scan-skip'
@@ -229,6 +234,12 @@ export type AuditEntry = {
   reason?: string;
   supersedes?: string;
   errorCode?: string;
+  deliveryId?: string;
+  deliveryState?: 'pending' | 'pulled' | 'acked' | 'rejected';
+  packetHash?: string;
+  from?: string;
+  to?: string;
+  bytes?: number;
 };
 
 export type ProjectStatusSummary = {

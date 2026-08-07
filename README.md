@@ -84,6 +84,26 @@ notch packet pack <packet-id>
 notch packet unpack <packet-id>.notchpkt
 ```
 
+### Async agents or repos — use durable inbox
+
+When two agents cannot rely on one live chat or shared store, point both at one explicit local mailbox root:
+
+```bash
+# Run once in each store with a unique name and the same root
+notch inbox init --name review-agent --root /shared/3notch-mailbox
+
+# Pack and send from the source
+notch packet pack <packet-id>
+notch send <packet-id>.notchpkt --to local:review-agent
+
+# Verify and import at the receiver
+notch inbox list
+notch inbox pull <delivery-id> --import
+notch inbox ack <delivery-id>
+```
+
+The local address is a routing label, not authenticated identity. Deliveries are hashed, validated, scanned, retained after ack, and traced locally. See [Durable inbox](docs/guides/durable-inbox.md).
+
 ### Browser-only chats (fallback)
 
 Web chats that can't reach local MCP use a clipboard bridge:
@@ -113,7 +133,7 @@ Checkpoints and packets are plain Markdown files with structured frontmatter. Yo
 3. You preview the checkpoint before another tool relies on it.
 4. The next session, tool, or repo reads and resumes from it.
 
-Targeting fields (`--to-agent`, `--to-repo`) are routing metadata, not delivery controls — your existing transport moves the bytes.
+Targeting fields (`--to-agent`, `--to-repo`) remain intent metadata. Manual transports move archives directly; durable inbox uses a separate registered `local:` address as its delivery control.
 
 ## Commands
 
@@ -124,6 +144,8 @@ notch packet import <file-or-folder>  import a packet into .notch/inbox/
 notch packet preview <id>           show what an agent will read
 notch packet pack <id>              produce a .notchpkt archive
 notch packet unpack <archive>       import a .notchpkt archive
+notch inbox init/list/pull/ack       configure and process durable deliveries
+notch send <archive> --to <address>  send a packed project handoff
 notch packet list / show            list / inspect packets
 notch reply <id>                    typed reply to a packet
 notch mark                          self-addressed private capture
@@ -141,8 +163,8 @@ notch mcp serve                     local stdio MCP server
 
 `notch mcp serve` exposes these tools over local stdio:
 
-- Read-only: `get_brief`, `list_briefs`, `get_targeted_brief`, `get_packet`, `list_packets`, `get_status`, `check_store`, `run_doctor`
-- Write: `create_brief`, `create_packet`, `create_mark`, `create_reply`, `create_seed_packet`, `import_packet`, `import_seed_packet`
+- Read-only: `get_brief`, `list_briefs`, `get_targeted_brief`, `get_packet`, `list_packets`, `list_inbox`, `get_status`, `check_store`, `run_doctor`
+- Write: `create_brief`, `create_packet`, `create_mark`, `create_reply`, `create_seed_packet`, `import_packet`, `import_seed_packet`, `inbox_init`, `send_packet`, `pull_inbox_packet`, `ack_inbox_delivery`
 
 Private records under `.notch/private/` are hidden unless the server starts with `--include-private`. See [docs/guides/mcp-setup.md](docs/guides/mcp-setup.md) for client-specific setup.
 
@@ -154,6 +176,7 @@ Full index: [docs/README.md](docs/README.md).
 | --- | --- |
 | Move context between repos | [docs/guides/cross-repo-packets.md](docs/guides/cross-repo-packets.md) |
 | Move context between tools | [docs/guides/cross-tool-handoff.md](docs/guides/cross-tool-handoff.md) |
+| Deliver packets asynchronously | [docs/guides/durable-inbox.md](docs/guides/durable-inbox.md) |
 | Carry preferences into a new repo | [docs/guides/private-context-seeding.md](docs/guides/private-context-seeding.md) |
 | Brief an agent on scoped work | [docs/guides/targeted-brief-workflow.md](docs/guides/targeted-brief-workflow.md) |
 | Set up continuation checkpoints | [docs/guides/continuation-checkpoints.md](docs/guides/continuation-checkpoints.md) |
@@ -170,7 +193,7 @@ Full index: [docs/README.md](docs/README.md).
 - No telemetry.
 - No vector database or native database dependency.
 - No arbitrary shell execution through MCP.
-- Your existing tools move bytes; 3Notch validates, scans, and stores them.
+- Manual transports or the explicit local durable inbox move bytes; 3Notch validates, scans, hashes, and stores them.
 
 A regression-guard test (`tests/unit/no-deferred-commands.test.ts`) prevents accidental scope creep.
 
@@ -185,7 +208,8 @@ A regression-guard test (`tests/unit/no-deferred-commands.test.ts`) prevents acc
 - **Claude Code → web-chat sharing** (reverse of the current bridge).
 
 **Moving packets between machines and people**
-- **Cross-machine transport recipes** for Tailscale, iCloud, Syncthing, git, scp/rsync — opinionated adapter docs.
+- **Hosted authenticated transport** that preserves the durable-inbox CLI/MCP contract without putting accounts or network listeners in the local core.
+- **Cross-machine transport recipes** for Tailscale, iCloud, Syncthing, git, scp/rsync — opinionated adapter docs and honest sync guarantees.
 - **Cross-user / teammate workflows** — conventions for handing packets through whatever channel a team already uses.
 
 **Distribution polish**

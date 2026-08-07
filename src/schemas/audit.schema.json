@@ -16,7 +16,7 @@
   "properties": {
     "schemaVersion": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/schemaVersion" },
     "at": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/timestamp" },
-    "operation": { "enum": ["create", "import", "rebuild-index", "scan-skip", "secret-blocked", "validation-failed"] },
+    "operation": { "enum": ["create", "import", "inbox-ack", "inbox-init", "inbox-pull", "inbox-reject", "inbox-send", "rebuild-index", "scan-skip", "secret-blocked", "validation-failed"] },
     "result": { "enum": ["success", "blocked", "failed"] },
     "actor": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/actor" },
     "actorNameResolution": { "enum": ["cli-flag", "git-config", "environment", "unknown", "mcp-client"] },
@@ -29,6 +29,12 @@
     "path": { "type": "string", "minLength": 1 },
     "reason": { "type": "string", "minLength": 1 },
     "supersedes": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordId" },
-    "errorCode": { "type": "string", "minLength": 1 }
+    "errorCode": { "type": "string", "minLength": 1 },
+    "deliveryId": { "type": "string", "pattern": "^delivery_[a-f0-9]{24}$" },
+    "deliveryState": { "enum": ["pending", "pulled", "acked", "rejected"] },
+    "packetHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "from": { "type": "string", "pattern": "^local:[a-z0-9](?:[a-z0-9._-]{0,62}[a-z0-9])?$" },
+    "to": { "type": "string", "pattern": "^local:[a-z0-9](?:[a-z0-9._-]{0,62}[a-z0-9])?$" },
+    "bytes": { "type": "integer", "minimum": 1 }
   }
 }

@@ -13,6 +13,7 @@ notch onboard --yes --mcp claude-code
 notch onboard --yes --mcp claude-desktop
 notch onboard --yes --mcp codex
 notch onboard --yes --mcp cursor
+notch onboard --yes --mcp grok
 ```
 
 For opt-in Claude Code continuation checkpoints, configure MCP and hooks together:
@@ -24,6 +25,8 @@ notch onboard --yes --mcp claude-code --checkpoints prompt
 This safely merges command hooks into `.claude/settings.local.json`. See [Continuation checkpoints](continuation-checkpoints.md) for modes, events, and privacy boundaries.
 
 `notch onboard --mcp claude-code` writes a project-local `.mcp.json`. `notch onboard --mcp claude-desktop` updates `~/Library/Application Support/Claude/claude_desktop_config.json` with a backup. Other clients print copy-paste snippets.
+
+For Grok CLI, 3Notch prints the project-scoped `grok mcp add` command and a `grok mcp doctor` verification command. Grok can also reuse a compatible project `.mcp.json`; 3Notch does not duplicate that file when it already exists.
 
 ## Server Flags
 
@@ -41,6 +44,7 @@ Read-only:
 - `get_brief`, `list_briefs`, `get_targeted_brief`
 - `get_packet`, `list_packets`
 - `get_status`, `check_store`, `run_doctor`
+- `list_inbox` — list pending or retained durable deliveries
 
 Write tools (require client tool-permission grant):
 
@@ -50,6 +54,12 @@ Write tools (require client tool-permission grant):
 - `create_reply` — typed packet reply
 - `create_seed_packet`
 - `import_packet`, `import_seed_packet`
+- `inbox_init` — register an explicit local mailbox root and address
+- `send_packet` — send an already-packed project packet to a registered `local:` address
+- `pull_inbox_packet` — verify and optionally import a delivery
+- `ack_inbox_delivery` — acknowledge without deleting retained bytes
+
+Durable inbox tools use the same schemas and structured results in every MCP client. See [Durable inbox](durable-inbox.md) for the pack → send → list → pull/import → ack flow, local audit events, and security limits.
 
 There are no shell-execution, chat-scraping, remote-connector, or background-collection tools. Any tool name not in this list does not exist.
 

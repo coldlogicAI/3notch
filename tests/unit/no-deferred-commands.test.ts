@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { mcpToolInputSchemas } from '../../src/mcp/tool-schemas.js';
 import { readRepoFile } from '../helpers/package-inspection.js';
 
-const deferredCliCommands = ['pass', 'send', 'decision', 'question', 'conflict', 'stale'];
+const deferredCliCommands = ['pass', 'decision', 'question', 'conflict', 'stale'];
 const deferredMcpTools = [
   'create_pass',
   'get_latest_pass',
@@ -25,6 +25,7 @@ describe('deferred surface guard', () => {
       'src/cli/commands/brief.ts',
       'src/cli/commands/check.ts',
       'src/cli/commands/doctor.ts',
+      'src/cli/commands/inbox.ts',
       'src/cli/commands/mark.ts',
       'src/cli/commands/mcp.ts',
       'src/cli/commands/onboard.ts',

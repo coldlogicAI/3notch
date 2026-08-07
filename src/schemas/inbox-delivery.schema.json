@@ -1,0 +1,38 @@
+{
+  "$id": "https://3notch.dev/schemas/inbox-delivery.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "deliveryId",
+    "transport",
+    "from",
+    "to",
+    "packetId",
+    "packetHash",
+    "bytes",
+    "state",
+    "createdAt",
+    "updatedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "deliveryId": { "type": "string", "pattern": "^delivery_[a-f0-9]{24}$" },
+    "transport": { "const": "local" },
+    "from": { "type": "string", "pattern": "^local:[a-z0-9](?:[a-z0-9._-]{0,62}[a-z0-9])?$" },
+    "to": { "type": "string", "pattern": "^local:[a-z0-9](?:[a-z0-9._-]{0,62}[a-z0-9])?$" },
+    "packetId": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "packetHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "bytes": { "type": "integer", "minimum": 1 },
+    "state": { "enum": ["pending", "pulled", "acked", "rejected"] },
+    "createdAt": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/timestamp" },
+    "updatedAt": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/timestamp" },
+    "pulledAt": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/timestamp" },
+    "ackedAt": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/timestamp" },
+    "rejectedAt": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/timestamp" },
+    "importedAt": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/timestamp" },
+    "importedPacketId": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "errorCode": { "type": "string", "minLength": 1, "maxLength": 128 }
+  }
+}

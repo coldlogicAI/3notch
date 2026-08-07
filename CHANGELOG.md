@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+- Receiver size-policy failures remain retryable after limits change, legacy size rejections can recover, and rejected deliveries no longer produce false-success resend results.
+- Durable inbox listing ignores unmanaged sync-folder clutter while continuing to reject malformed entries in the managed delivery-ID namespace.
+
+## [0.6.0] - 2026-08-04
+
+### Added
+- Explicit local durable inbox commands: `notch inbox init/list/pull/ack` and `notch send` for asynchronous packed-packet delivery between separately configured stores.
+- Matching vendor-neutral MCP tools for Claude, Codex, Grok, Cursor, and other stdio MCP clients, with structured output schemas and safety annotations.
+- Retained delivery state, deterministic retry identity, redacted lifecycle audit events, and an end-to-end request/reply test across two clean stores.
+
+### Security
+- Durable delivery fails closed on unregistered recipients, traversal-shaped addresses, symlinks, malformed metadata, conflicting retries, changed hashes, private/seed packets, secret-bearing content, and configured size limits.
+- Archive reads now cap compressed bytes, decompressed bytes, and entry count, and reject invalid tar checksums, numeric fields, padding, duplicate paths, and trailing data.
+- Refreshed dependencies and pinned `tsup` to a patched esbuild line; `npm audit` reports zero known vulnerabilities.
+
+### Changed
+- Packed packet import remains the authority for received content; durable inbox adds delivery around the existing packet, artifact, secret-scan, relationship, and review model without a daemon, database, account, or hosted relay.
+
 ## [0.5.0] - 2026-07-19
 
 ### Added
