@@ -369,6 +369,38 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
 .hero-tag:last-child { border-right: none; margin-right: 0; padding-right: 0; }
 .hero-tag svg { width: 16px; height: 16px; color: var(--mark); flex-shrink: 0; }
 
+/* ── MARKET SIGNAL ── */
+.market-signal { padding: 2.25rem 0; }
+.market-signal-inner {
+  display: grid; grid-template-columns: 140px minmax(0, 1fr) 220px;
+  gap: 2.5rem; align-items: center;
+}
+.market-signal-label {
+  font-family: var(--f-mono); font-size: 0.62rem; color: var(--mark);
+  letter-spacing: 0.18em; text-transform: uppercase; font-weight: 500;
+}
+.market-signal-quote {
+  margin: 0; font-size: clamp(1.15rem, 2vw, 1.55rem);
+  line-height: 1.4; letter-spacing: -0.018em; color: var(--paper);
+  font-weight: 500;
+}
+.market-signal-quote::before { content: "\201C"; color: var(--mark); }
+.market-signal-quote::after { content: "\201D"; color: var(--mark); }
+.market-signal-source {
+  font-family: var(--f-mono); font-size: 0.68rem;
+  line-height: 1.6; color: var(--paper-mute);
+}
+.market-signal-source a {
+  color: var(--paper-dim); border-bottom: 1px solid var(--line-mid);
+  transition: color 0.15s, border-color 0.15s;
+}
+.market-signal-source a:hover { color: var(--mark); border-color: var(--mark); }
+.market-signal-source strong { display: block; color: var(--paper); font-weight: 500; }
+@media (max-width: 800px) {
+  .market-signal-inner { grid-template-columns: 1fr; gap: 0.8rem; }
+  .market-signal-source { max-width: 28rem; }
+}
+
 /* ── SECTION HEADS ── */
 .s-head {
   padding: 3.75rem 0 0;
@@ -850,6 +882,20 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
 </section>
 
 <hr class="rule-mark">
+
+<!-- ───────────────── MARKET SIGNAL ───────────────── -->
+<aside class="market-signal w" aria-labelledby="market-signal-label">
+  <div class="market-signal-inner reveal">
+    <div class="market-signal-label" id="market-signal-label">The pain, in the wild</div>
+    <blockquote class="market-signal-quote">We desperately need a universal way to share context across different models.</blockquote>
+    <div class="market-signal-source">
+      <strong>Wise · <a href="https://x.com/trikcode" rel="noopener">@trikcode</a></strong>
+      After losing six hours of active work during a model switch.
+    </div>
+  </div>
+</aside>
+
+<hr class="rule">
 
 
 <!-- ───────────────── 01 · THE PROBLEM ───────────────── -->
