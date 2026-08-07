@@ -38,7 +38,7 @@ notch send <packet-id>.notchpkt --to local:review-agent
 
 Before a shared-mailbox write, 3Notch checks that the source is a regular `.notchpkt`, caps compressed and unpacked work, validates packet and artifact schemas, verifies artifact hashes, scans packet text and text-like artifacts, and blocks private or seed packets. The recipient must already be registered; a typo does not create a new mailbox.
 
-Retrying the same packet ID and exact bytes is harmless and returns the existing delivery. Reusing a packet ID with different archive bytes fails.
+Retrying the same packet ID and exact bytes returns the existing active or completed delivery. Reusing a packet ID with different archive bytes fails. A terminally rejected delivery is never reported as a successful resend; correct the packet and create a new packet ID instead.
 
 ## Receive
 
@@ -119,8 +119,8 @@ Events include routing labels, delivery and packet IDs, SHA-256, byte count, sta
 - The local adapter does not authenticate addresses, authorize users, sign senders, or encrypt archives.
 - Anyone with filesystem access to the mailbox root may be able to read or change it. Use OS permissions and disk encryption appropriate to the data.
 - SHA-256 detects changed bytes; it does not prove who authored them.
-- One-host locking and atomic renames are tested. Dropbox, iCloud, Syncthing, network mounts, and similar products have their own conflict and availability behavior; V1 does not claim distributed locks or guaranteed delivery across them.
+- One-host locking and atomic renames are tested. Unmanaged sync-conflict files are ignored during listing, while malformed entries using the managed delivery-ID namespace still fail closed. Dropbox, iCloud, Syncthing, network mounts, and similar products have their own conflict and availability behavior; V1 does not claim distributed locks or guaranteed delivery across them.
 - There is no daemon, polling loop, notification service, account, hosted relay, retention deletion, or remote network listener.
 - Private and seed packets are intentionally blocked from this shared-mailbox flow.
 
-If no config exists, run `notch inbox init`. If a delivery is rejected, use `notch inbox list --all`, preserve the evidence, and ask the sender to retry from the original archive rather than editing mailbox files.
+If no config exists, run `notch inbox init`. A local size-limit failure remains pending: review the source, raise the receiver limit when appropriate, and pull the same delivery again. For a terminal rejection, use `notch inbox list --all`, preserve the evidence, and ask the sender for a corrected packet with a new packet ID rather than editing mailbox files.

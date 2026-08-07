@@ -12,3 +12,8 @@
 - Hardened the archive boundary for untrusted delivery: reject oversized files before reading, bound decompression and entry count, verify tar header checksums and numeric fields, and reject malformed padding, duplicate paths, unsafe entries, missing end markers, and trailing data.
 - Refreshed the lockfile without forced major upgrades. The source graph and clean installed tarball both report zero npm advisories; a scoped `tsup` override keeps esbuild on the patched `0.28.1` line.
 - Final verification passed after a clean `npm ci`: lint, type-check, build, 234 tests across 78 files, and 23 e2e tests across 11 files. The packed `@3notch/cli@0.6.0` tarball installed into an empty prefix and completed a real request → import → typed reply → import → ack loop with lineage preserved and both stores passing `notch check`.
+
+## 2026-08-07
+
+- Fixed PR review regressions in durable-inbox recovery and enumeration: receiver size-policy failures stay retryable, legacy size rejections clear after successful revalidation, terminal rejections cannot return false-success resend results, and unmanaged sync-folder clutter no longer blocks listing while malformed managed delivery entries still fail closed.
+- Regression verification passed: lint, type-check, production build, 235 tests across 78 files, 23 e2e tests across 11 files, and the built CLI help smoke check.

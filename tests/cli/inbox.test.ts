@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -46,6 +46,14 @@ describe('notch durable inbox CLI', () => {
           packetHash: expect.stringMatching(/^[a-f0-9]{64}$/u),
         });
 
+        await writeFile(
+          path.join(
+            mailboxRoot,
+            'recipients/receiver-agent/deliveries',
+            `${sent.deliveryId} (conflicted copy)`,
+          ),
+          'sync conflict',
+        );
         const humanList = await runCli(['inbox', 'list'], { cwd: receiver.path });
         const list = await runCli(['--json', 'inbox', 'list'], { cwd: receiver.path });
         expect(humanList.stdout).toContain(`${sent.deliveryId}\tpending\tlocal:sender-agent`);

@@ -205,7 +205,10 @@ export async function pullInboxDelivery(
       input.deliveryId,
       { maxBytes: limits.maxArchiveBytes },
       async (locked) => {
-        if (locked.delivery.state === 'rejected') {
+        const recoveringPolicyRejection = locked.delivery.state === 'rejected'
+          && isRetryableDeliveryError(locked.delivery.errorCode);
+
+        if (locked.delivery.state === 'rejected' && !recoveringPolicyRejection) {
           throw invalidState(locked.delivery, 'Rejected deliveries cannot be pulled.');
         }
 
@@ -226,7 +229,7 @@ export async function pullInboxDelivery(
         } catch (error) {
           const notchError = errorToNotchError(error);
 
-          if (isRejectedDeliveryError(notchError.code)) {
+          if (isTerminalDeliveryError(notchError.code)) {
             const now = new Date().toISOString();
             await locked.update({
               state: 'rejected',
@@ -265,6 +268,7 @@ export async function pullInboxDelivery(
               pulledAt: locked.delivery.pulledAt ?? now,
               importedAt: now,
               importedPacketId: imported.packet.id,
+              ...(recoveringPolicyRejection ? { clearRejection: true } : {}),
             });
 
             return inboxResult(updated, locked.packetPath, 'Acknowledge the imported delivery after reviewing the packet.');
@@ -275,7 +279,12 @@ export async function pullInboxDelivery(
 
         const now = new Date().toISOString();
         const updated = locked.delivery.state === 'pending'
-          ? await locked.update({ state: 'pulled', pulledAt: now })
+          || recoveringPolicyRejection
+          ? await locked.update({
+              state: 'pulled',
+              pulledAt: locked.delivery.pulledAt ?? now,
+              ...(recoveringPolicyRejection ? { clearRejection: true } : {}),
+            })
           : locked.delivery;
 
         return inboxResult(
@@ -309,7 +318,7 @@ export async function pullInboxDelivery(
     return result;
   } catch (error) {
     const notchError = errorToNotchError(error);
-    const rejected = isRejectedDeliveryError(notchError.code);
+    const rejected = isTerminalDeliveryError(notchError.code);
     await auditFailure(context, author, rejected ? 'inbox-reject' : 'inbox-pull', error, {
       deliveryId: input.deliveryId,
       ...(rejected ? { deliveryState: 'rejected' as const } : {}),
@@ -634,18 +643,20 @@ async function auditFailure(
   });
 }
 
-function isRejectedDeliveryError(code: string): boolean {
+function isTerminalDeliveryError(code: string): boolean {
   return [
-    'NOTCH_ARCHIVE_TOO_LARGE',
     'NOTCH_ARCHIVE_UNSAFE',
     'NOTCH_INBOX_DELIVERY_CONFLICT',
     'NOTCH_INBOX_DELIVERY_INVALID',
     'NOTCH_INBOX_HASH_MISMATCH',
     'NOTCH_INBOX_PRIVATE_PACKET_BLOCKED',
-    'NOTCH_PACKET_TOO_LARGE',
     'NOTCH_RECORD_INVALID',
     'NOTCH_SECRET_DETECTED',
   ].includes(code);
+}
+
+function isRetryableDeliveryError(code: string | undefined): boolean {
+  return code === 'NOTCH_ARCHIVE_TOO_LARGE' || code === 'NOTCH_PACKET_TOO_LARGE';
 }
 
 function validLocalAddress(value: string | undefined): value is string {

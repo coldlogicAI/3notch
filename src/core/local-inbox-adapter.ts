@@ -39,6 +39,7 @@ export type LockedLocalDelivery = {
     importedAt?: string;
     importedPacketId?: string;
     errorCode?: string;
+    clearRejection?: boolean;
   }) => Promise<InboxDelivery>;
 };
 
@@ -282,7 +283,11 @@ export class LocalInboxAdapter implements InboxTransportAdapter {
         continue;
       }
 
-      if (!entry.isDirectory() || !deliveryIdPattern.test(entry.name)) {
+      if (!deliveryIdPattern.test(entry.name)) {
+        continue;
+      }
+
+      if (!entry.isDirectory()) {
         throw malformedDelivery(path.join(deliveriesPath, entry.name), 'Unexpected entry in the delivery store.');
       }
 
@@ -313,6 +318,10 @@ export class LocalInboxAdapter implements InboxTransportAdapter {
       try {
         packet = await this.readVerifiedPacket(deliveryPath, delivery, options.maxBytes);
       } catch (error) {
+        if (!isTerminalDeliveryReadError(error)) {
+          throw error;
+        }
+
         const now = new Date().toISOString();
         delivery = await this.writeDeliveryMetadata(deliveryPath, {
           ...delivery,
@@ -341,6 +350,12 @@ export class LocalInboxAdapter implements InboxTransportAdapter {
             ...(changes.importedPacketId ? { importedPacketId: changes.importedPacketId } : {}),
             ...(changes.errorCode ? { errorCode: changes.errorCode } : {}),
           };
+
+          if (changes.clearRejection) {
+            delete next.rejectedAt;
+            delete next.errorCode;
+          }
+
           delivery = await this.writeDeliveryMetadata(deliveryPath, next);
           return delivery;
         },
@@ -418,6 +433,18 @@ export class LocalInboxAdapter implements InboxTransportAdapter {
     }
 
     await this.readVerifiedPacket(deliveryPath, existing, Number.MAX_SAFE_INTEGER);
+
+    if (existing.state === 'rejected') {
+      throw new NotchException({
+        code: 'NOTCH_INBOX_STATE_INVALID',
+        message: `Delivery ${expected.deliveryId} was rejected and was not resent.`,
+        path: deliveryPath,
+        recovery: 'Correct the packet, create a new packet ID, and send that archive. For a local size-limit failure, raise the receiver limit and pull the existing delivery again.',
+        severity: 'error',
+        exitCode: 6,
+      });
+    }
+
     return {
       delivery: existing,
       idempotent: true,
@@ -686,4 +713,15 @@ function symlinkError(filePath: string): NotchException {
     severity: 'error',
     exitCode: 5,
   });
+}
+
+function isTerminalDeliveryReadError(error: unknown): boolean {
+  if (!(error instanceof NotchException)) {
+    return false;
+  }
+
+  return [
+    'NOTCH_INBOX_DELIVERY_INVALID',
+    'NOTCH_INBOX_HASH_MISMATCH',
+  ].includes(error.notchError.code);
 }

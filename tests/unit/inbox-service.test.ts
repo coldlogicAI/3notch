@@ -13,6 +13,7 @@ import {
   pullInboxDelivery,
   sendInboxPacket,
 } from '../../src/core/inbox-service.js';
+import { LocalInboxAdapter } from '../../src/core/local-inbox-adapter.js';
 import { createPacket } from '../../src/core/packet-service.js';
 import type { NotchConfig, PacketPurpose, Sensitivity } from '../../src/types/records.js';
 import { createBareStore } from '../helpers/store-fixtures.js';
@@ -226,6 +227,73 @@ describe('durable inbox service', () => {
           packetPath: bombPath,
           to: 'local:receiver',
         })).rejects.toMatchObject({ notchError: { code: 'NOTCH_ARCHIVE_TOO_LARGE' } });
+      });
+    });
+  });
+
+  it('keeps size-limit failures retryable and recovers legacy size rejections without a false resend success', async () => {
+    await withTempProject({}, async (sender) => {
+      await withTempProject({}, async (receiver) => {
+        await createBareStore(sender.path, { name: 'sender' });
+        await createBareStore(receiver.path, { name: 'receiver' });
+        const senderContext = await loadConfig({ cwd: sender.path });
+        let receiverContext = await loadConfig({ cwd: receiver.path });
+        const mailboxRoot = path.join(sender.path, 'mailbox');
+        await initializeDurableInbox(senderContext, { name: 'sender', root: mailboxRoot });
+        await initializeDurableInbox(receiverContext, { name: 'receiver', root: mailboxRoot });
+        await mkdir(path.join(sender.path, 'artifacts'));
+        await writeFile(path.join(sender.path, 'artifacts/retry.txt'), 'a'.repeat(100));
+        const packed = await packPacket(senderContext, sender.path, {
+          file: 'artifacts/retry.txt',
+          title: 'Retry after receiver limit change',
+        });
+        const sent = await sendInboxPacket(senderContext, {
+          packetPath: packed.archivePath,
+          to: 'local:receiver',
+        });
+
+        await setArtifactLimits(receiverContext, { maxArtifactBytes: 50, maxPacketBytes: 1000 });
+        receiverContext = await loadConfig({ cwd: receiver.path });
+        await expect(pullInboxDelivery(receiverContext, {
+          deliveryId: sent.deliveryId,
+          import: true,
+        })).rejects.toMatchObject({ notchError: { code: 'NOTCH_PACKET_TOO_LARGE' } });
+        expect(await listInboxDeliveries(receiverContext)).toMatchObject({
+          deliveries: [expect.objectContaining({ deliveryId: sent.deliveryId, state: 'pending' })],
+        });
+
+        await new LocalInboxAdapter(mailboxRoot).withDelivery(
+          'local:receiver',
+          sent.deliveryId,
+          { maxBytes: Number.MAX_SAFE_INTEGER },
+          async (locked) => {
+            const rejectedAt = new Date().toISOString();
+            await locked.update({
+              state: 'rejected',
+              rejectedAt,
+              errorCode: 'NOTCH_PACKET_TOO_LARGE',
+            });
+          },
+        );
+        await expect(sendInboxPacket(senderContext, {
+          packetPath: packed.archivePath,
+          to: 'local:receiver',
+        })).rejects.toMatchObject({ notchError: { code: 'NOTCH_INBOX_STATE_INVALID' } });
+
+        await setArtifactLimits(receiverContext, { maxArtifactBytes: 1024, maxPacketBytes: 1024 });
+        receiverContext = await loadConfig({ cwd: receiver.path });
+        expect(await pullInboxDelivery(receiverContext, {
+          deliveryId: sent.deliveryId,
+          import: true,
+        })).toMatchObject({
+          deliveryId: sent.deliveryId,
+          importedPacketId: packed.packetId,
+          state: 'pulled',
+        });
+        const recovered = (await listInboxDeliveries(receiverContext, { includeAll: true })).deliveries[0];
+        expect(recovered).toMatchObject({ deliveryId: sent.deliveryId, state: 'pulled' });
+        expect(recovered).not.toHaveProperty('rejectedAt');
+        expect(recovered).not.toHaveProperty('errorCode');
       });
     });
   });

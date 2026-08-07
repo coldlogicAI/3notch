@@ -175,13 +175,21 @@ describe('local durable inbox adapter', () => {
     });
   });
 
-  it('rejects malformed metadata and unexpected delivery-store entries', async () => {
+  it('ignores unmanaged delivery-store clutter but rejects malformed managed entries', async () => {
     await withTempProject({}, async (project) => {
       const root = path.join(project.path, 'mailbox');
       const adapter = new LocalInboxAdapter(root);
       await adapter.initializeRecipient('local:receiver');
       const deliveriesPath = path.join(root, 'recipients/receiver/deliveries');
       await writeFile(path.join(deliveriesPath, 'unexpected.txt'), 'not a delivery');
+      await writeFile(
+        path.join(deliveriesPath, 'delivery_aaaaaaaaaaaaaaaaaaaaaaaa (conflicted copy)'),
+        'sync conflict',
+      );
+
+      expect(await adapter.listDeliveries('local:receiver')).toEqual([]);
+
+      await writeFile(path.join(deliveriesPath, 'delivery_aaaaaaaaaaaaaaaaaaaaaaaa'), 'not a delivery');
 
       await expect(adapter.listDeliveries('local:receiver')).rejects.toMatchObject({
         notchError: { code: 'NOTCH_INBOX_DELIVERY_INVALID' },

@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+- Receiver size-policy failures remain retryable after limits change, legacy size rejections can recover, and rejected deliveries no longer produce false-success resend results.
+- Durable inbox listing ignores unmanaged sync-folder clutter while continuing to reject malformed entries in the managed delivery-ID namespace.
+
 ## [0.6.0] - 2026-08-04
 
 ### Added
