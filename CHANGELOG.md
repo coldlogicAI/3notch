@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+- Release runbook (`docs/guides/release.md`) and `npm run release:check` / `release:status` to catch package, changelog, site, and npm-registry version drift before and after publish.
+
 ## [0.7.0] - 2026-08-08
 
 ### Added

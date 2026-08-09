@@ -22,14 +22,17 @@ npm test               # vitest unit + integration
 npm run test:e2e       # vitest e2e (slower; uses real CLI subprocesses)
 ```
 
-Every PR must pass `lint`, `type-check`, `build`, and `test` locally. CI runs the same on Ubuntu and macOS under Node 20 and 22; please match that surface before opening a PR.
+Every PR must pass `lint`, `type-check`, `build`, `release:check`, and `test` locally. CI runs the same on Ubuntu and macOS under Node 20 and 22; please match that surface before opening a PR.
 
 For a quick built-CLI smoke after `build`:
 
 ```bash
 node dist/cli/index.js --help
 node dist/cli/index.js --version
+npm run release:check    # package / lock / changelog / site / CLI version alignment
 ```
+
+Maintainers shipping a version: follow [docs/guides/release.md](docs/guides/release.md) (manual npm publish uses a granular token and a temp npm config — never commit tokens).
 
 ## End-To-End Demo From A Fresh Clone
 

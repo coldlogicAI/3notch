@@ -44,6 +44,8 @@
     "build": "tsup",
     "lint": "eslint .",
     "prepack": "npm run build",
+    "release:check": "node scripts/release-check.mjs",
+    "release:status": "node scripts/release-check.mjs --with-npm",
     "test": "vitest run",
     "test:e2e": "vitest run tests/e2e",
     "test:watch": "vitest",
