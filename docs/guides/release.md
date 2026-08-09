@@ -114,6 +114,10 @@ Optional second token name for CI later: `3notch-cli-publish-gha` (no IP lock; s
 From the project root, with `package.json` already at the release version:
 
 ```bash
+# Publish from the tree you intend to ship (usually up-to-date main)
+git checkout main && git pull
+node -p "require('./package.json').version"   # confirm expected version
+
 npm run build
 npm run release:check
 
@@ -121,26 +125,27 @@ npm run release:check
 read -rs "NPM_TOKEN?Paste npm token from 1Password: "
 echo
 export NPM_TOKEN
+test -n "$NPM_TOKEN" || { echo "empty token"; exit 1; }
 
 npm_cfg="$(mktemp)"
 chmod 600 "$npm_cfg"
-printf '%s\n' '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > "$npm_cfg"
+# Double quotes required so ${NPM_TOKEN} expands (single quotes write the literal text)
+printf '%s\n' "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > "$npm_cfg"
 export NPM_CONFIG_USERCONFIG="$npm_cfg"
-trap 'rm -f -- "$npm_cfg"' EXIT
+trap 'rm -f -- "$npm_cfg"; unset NPM_TOKEN' EXIT
 
 npm whoami
 npm publish --access public
-
-unset NPM_TOKEN
+npm view @3notch/cli version
 npm run release:status -- --require-published
 ```
 
 What this does:
 
-- Keeps the token out of the project tree and out of your permanent user `.npmrc` if you prefer
+- Publishes the current checkout (not whatever happens to be on GitHub unless you pulled)
+- Keeps the token out of the project tree and out of a permanent project `.npmrc`
 - Uses a mode-`600` temp npm userconfig and deletes it on shell exit
-- Confirms identity before publish
-- Fails the status check until registry `latest` equals `package.json`
+- Confirms identity before publish; fails status check until registry `latest` equals `package.json`
 
 Dry-run (no registry write):
 

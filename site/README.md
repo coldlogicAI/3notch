@@ -45,6 +45,9 @@ This uses `npx serve` (no install needed). Open the URL, edit `public/index.html
 
 ## Deploy to Cloudflare Pages
 
+**Canonical path:** Wrangler → Cloudflare Pages project `3notch`.  
+There is no GitHub Pages workflow for this site in-repo. If you ever saw a GitHub deploy, it was one-off or external—not the maintained path.
+
 ### One-time setup
 
 1. **Create a Cloudflare account** at https://dash.cloudflare.com (free).
@@ -60,9 +63,10 @@ This uses `npx serve` (no install needed). Open the URL, edit `public/index.html
 
 ### Ship it
 
-From `site/`:
+From `site/` (after copy/version changes are on the branch you want live):
 
 ```bash
+cd site
 npm run deploy
 ```
 

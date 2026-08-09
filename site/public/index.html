@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>3Notch — Mark your trail.</title>
-<meta name="description" content="Your AI session died mid-task. 3Notch saves the working state so the next agent picks up where this one stopped. Local, portable, open source.">
+<meta name="description" content="Local checkpoints and portable packets for AI coding sessions. Survive rate limits, model failures, and tool switches without rebuilding context. Open source.">
 
 <!-- Canonical & social -->
 <link rel="canonical" href="https://3notch.dev/">
 <meta property="og:title" content="3Notch — Mark your trail.">
-<meta property="og:description" content="Your AI session died mid-task. 3Notch saves the working state so the next agent picks up where this one stopped. Local, portable, open source.">
+<meta property="og:description" content="Local checkpoints and portable packets for AI coding sessions. Survive rate limits, model failures, and tool switches without rebuilding context.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://3notch.dev/">
 <meta property="og:image" content="https://3notch.dev/og-image.png?v=v0.7.1">
@@ -17,7 +17,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="3Notch — Mark your trail.">
-<meta name="twitter:description" content="Your AI session died mid-task. 3Notch saves the working state so the next agent picks up where this one stopped. Local, portable, open source.">
+<meta name="twitter:description" content="Local checkpoints and portable packets for AI coding sessions. Survive rate limits, model failures, and tool switches without rebuilding context.">
 <meta name="twitter:image" content="https://3notch.dev/og-image.png?v=v0.7.1">
 <meta name="theme-color" content="#0B0A08">
 
@@ -27,7 +27,7 @@
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "3Notch",
-  "description": "3Notch is an open-source CLI tool that saves AI working state as local, portable checkpoints and packets. When a session hits a rate limit, the model goes down, the context window compacts, or you switch tools, 3Notch preserves the current objective, completed work, decisions, blockers, and next steps so the next session can resume without starting over.",
+  "description": "3Notch is an open-source CLI and MCP server for local AI working-state checkpoints and portable handoff packets. Use it when a session dies, a model fails, you switch tools, or you need async delivery between agents and repos—without a cloud account or hosted relay.",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "macOS, Windows, Linux",
   "url": "https://3notch.dev/",
@@ -58,7 +58,7 @@
       "name": "How do I save context when switching AI models?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "3Notch creates portable checkpoints that capture your current objective, completed work, decisions, blockers, and next steps. When you switch from one AI tool to another (e.g., Claude to Codex), the outgoing agent writes a checkpoint and the incoming agent reads it to resume with full context. Install with: npm install -g @3notch/cli"
+        "text": "Write a packet (or continuation checkpoint) with the objective, what finished, what is blocked, and what is next. Import or resume it in the other tool. Install: npm install -g @3notch/cli"
       }
     },
     {
@@ -66,7 +66,7 @@
       "name": "How do I recover context after an AI rate limit or session crash?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "With continuation checkpoints enabled, 3Notch saves working state when a session hits a rate limit, the model goes down (overloaded, server error, and related failures), or the context window compacts. When you start a new session, 3Notch offers the latest checkpoint for review and loads it after you approve."
+        "text": "Enable continuation checkpoints for Claude Code. 3Notch writes a fallback when the session hits a rate limit, model-down failure, or compaction, then offers that checkpoint at the next session start for your approval."
       }
     },
     {
@@ -74,7 +74,7 @@
       "name": "What is 3Notch?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "3Notch is a free, open-source CLI tool and MCP server that saves AI coding session context as portable, local Markdown files. It works with Claude Code, Codex, Cursor, ChatGPT, and any MCP-compatible AI tool. Checkpoints are plain Markdown with structured frontmatter — no database, no cloud service, no account required. Everything stays on your machine."
+        "text": "A local CLI and MCP server for AI working-state checkpoints and portable handoff packets. Markdown on disk, no hosted service, no account. Works with Claude Code, Codex, Cursor, and other tools."
       }
     },
     {
@@ -82,7 +82,7 @@
       "name": "Does 3Notch work with Claude Code, Codex, and Cursor?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes. 3Notch is vendor-neutral and works with any AI coding tool. It includes a built-in MCP server for tools that support Model Context Protocol (Claude Code, Claude Desktop, Cursor), and portable .notchpkt archives that can be imported into any tool. Checkpoints are plain Markdown files readable by any agent."
+        "text": "Yes. Use the MCP server where the client supports it, or pack and import .notchpkt archives. Packets are plain Markdown plus optional artifacts—any agent can read them."
       }
     },
     {
@@ -90,7 +90,7 @@
       "name": "Is 3Notch free?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes. 3Notch is completely free, open-source software released under the MIT license. There is no cloud service, no account, no telemetry, and no paid tier. Install it with: npm install -g @3notch/cli"
+        "text": "Yes. MIT license. No cloud product, no account, no telemetry. npm install -g @3notch/cli"
       }
     }
   ]
@@ -451,17 +451,19 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
 
 /* ── WORKFLOW CARDS ── */
 .workflow-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr);
+  display: grid; grid-template-columns: repeat(2, 1fr);
   border: 1px solid var(--line);
   margin-bottom: 1.25rem;
 }
 .workflow-card {
   padding: 2rem 1.75rem 2rem; background: var(--ink-soft);
   border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
   display: flex; flex-direction: column;
   min-height: 280px;
 }
-.workflow-card:last-child { border-right: none; }
+.workflow-card:nth-child(2n) { border-right: none; }
+.workflow-card:nth-child(n+3) { border-bottom: none; }
 .workflow-num {
   font-family: var(--f-mono); font-size: 0.7rem;
   letter-spacing: 0.18em; color: var(--mark);
@@ -485,7 +487,13 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
 .workflow-code .m { color: var(--paper-mute); }
 @media (max-width: 900px) {
   .workflow-grid { grid-template-columns: 1fr; }
-  .workflow-card { border-right: none; border-bottom: 1px solid var(--line); min-height: 0; }
+  .workflow-card,
+  .workflow-card:nth-child(2n),
+  .workflow-card:nth-child(n+3) {
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    min-height: 0;
+  }
   .workflow-card:last-child { border-bottom: none; }
 }
 
@@ -808,9 +816,9 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
         <span class="dot" aria-hidden="true"></span>
         <span>open source</span>
         <span class="sep">·</span>
-        <span>works with every AI tool</span>
+        <span>vendor-neutral</span>
         <span class="sep">·</span>
-        <span>nothing leaves your machine</span>
+        <span>stays on your machine</span>
       </div>
 
       <div class="hero-split">
@@ -818,10 +826,10 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
           <h1 class="hero-h1">Mark your<br>trail<span class="accent">.</span></h1>
 
           <p class="hero-sub">
-            Your AI session died. Six hours of decisions, constraints, and working state&mdash;gone. The next agent starts from scratch because <strong>nothing portable survived the switch</strong>.
+            Rate limited. Model died. Context compacted. You switched tools. The code is still in git&mdash;the <strong>working state is not</strong>. The next session re-learns the objective, the constraints, and what you already tried.
           </p>
           <p class="hero-sub">
-            3Notch saves the working state your AI tools won't. Local checkpoints that survive rate limits, context compaction, and model switches. Portable packets when context needs to move across tools, repos, or machines.
+            3Notch is a local CLI and MCP server for checkpoints and handoff packets. Save selected state, resume after a crash, and move context across tools, repos, or agents&mdash;without a cloud account.
           </p>
 
           <div class="hero-actions" style="margin-top:1.5rem;">
@@ -838,13 +846,13 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
           <div class="agent-prompt" role="group" aria-label="Agent setup prompt" style="max-width:none;margin:0;">
             <div class="agent-prompt-head">
               <span class="agent-prompt-label">Paste this into your agent</span>
-              <button class="install-cmd-copy" type="button" data-copy="Run `npm install -g @3notch/cli`, then `notch --help`. Read the installed package README for client configuration before making changes." aria-label="Copy agent setup prompt">
+              <button class="install-cmd-copy" type="button" data-copy="Install @3notch/cli globally, run `notch onboard` in this repo, and set up continuation checkpoints if I use Claude Code. Use packets for handoffs across tools or repos. Read the package README before changing MCP config." aria-label="Copy agent setup prompt">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="0" ry="0"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 <span class="label">Copy prompt</span>
               </button>
             </div>
             <div class="agent-prompt-body">
-              <strong>Run <code>npm install -g @3notch/cli</code>, then <code>notch --help</code>.</strong> Read the installed package README for client configuration before making changes.
+              <strong>Install <code>@3notch/cli</code>, run <code>notch onboard</code> here, enable continuation checkpoints for Claude Code if needed.</strong> Use packets for cross-tool or cross-repo handoffs. Read the package README before changing MCP config.
             </div>
           </div>
 
@@ -904,36 +912,36 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
     <div class="s-num">THE PROBLEM</div>
     <div class="s-head-body">
       <h2 class="s-title">The code survives. The working state <span class="accent">doesn't</span>.</h2>
-      <p class="s-sub">Rate limited at 2 AM. Context window compacted mid-refactor. Switched models because the cap hit at the worst moment. Every time, you rebuild from zero&mdash;re-explaining the goal, the constraints, what you already tried.</p>
+      <p class="s-sub">Git has the files. It does not have the objective you were mid-way through, the decisions you already made, or the landmines you already stepped on.</p>
     </div>
   </div>
 
   <div class="concept-split reveal">
     <div class="concept-prose">
-      <p>Your commits, docs, and wiki hold durable knowledge. But the objective you were chasing, the decisions you'd made, the blockers you'd identified, what you'd already verified&mdash;that state dies with the session. <strong>No AI vendor will fix this.</strong> Anthropic won't ship "easily move your context to Codex." OpenAI won't ship "easily move to Claude."</p>
-      <p>A neutral, locally-owned format is the only place this problem gets solved.</p>
+      <p>Vendors optimize for their own product. Claude will not make it easy to hand a live session to Codex. Codex will not make it easy to hand one to Cursor. That is not a bug in any one tool&mdash;it is the market structure.</p>
+      <p>3Notch is a neutral, local format for the state that falls between commits: what you were doing, what finished, what is blocked, and what is next. You decide what gets written. Nothing scrapes your chats in the background.</p>
     </div>
 
     <div class="concept-map">
       <div class="concept-map-row">
-        <div class="concept-map-key">Session crashed?</div>
+        <div class="concept-map-key">Session died</div>
         <div class="concept-map-val">
-          <strong>Pick up where you left off</strong>
-          <span>3Notch already saved your working state. The next session offers to resume.</span>
+          <strong>Resume from a checkpoint</strong>
+          <span>With Claude Code hooks enabled, 3Notch can write a fallback before the trail goes cold.</span>
         </div>
       </div>
       <div class="concept-map-row">
-        <div class="concept-map-key">Switching models?</div>
+        <div class="concept-map-key">Switching tools</div>
         <div class="concept-map-val">
-          <strong>Take your context with you</strong>
-          <span>The outgoing agent writes what's done, what's blocked, what's next. The incoming agent reads it.</span>
+          <strong>Write a packet, import it</strong>
+          <span>Outgoing agent records the handoff. Incoming agent reads it after you approve.</span>
         </div>
       </div>
       <div class="concept-map-row">
-        <div class="concept-map-key">Different tool?</div>
+        <div class="concept-map-key">Async agents / repos</div>
         <div class="concept-map-val">
-          <strong>Package the handoff</strong>
-          <span>Bundle the relevant files, decisions, and next steps into a portable packet.</span>
+          <strong>Durable inbox</strong>
+          <span>Pack, send to a shared mailbox, forward a text notice, pull and ack on the other side.</span>
         </div>
       </div>
     </div>
@@ -949,15 +957,15 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
     <div class="s-num">HOW IT WORKS</div>
     <div class="s-head-body">
       <h2 class="s-title">Session dies. Context <span class="accent">survives</span>.</h2>
-      <p class="s-sub">When a session hits a rate limit, the model goes down, or context compacts, 3Notch can save the working state. When you start a new session, it offers to pick up where you left off.</p>
+      <p class="s-sub">Turn on continuation checkpoints for Claude Code. When the session fails for reasons that are not your fault, 3Notch can leave a checkpoint the next session can offer you.</p>
     </div>
   </div>
 
   <div class="feature reveal">
     <div class="feature-copy">
       <span class="eyebrow">Without 3Notch</span>
-      <h3 class="feature-head">Start over. Every time.</h3>
-      <p class="feature-desc">Your session crashes at 2 AM. You open a new one, re-explain the project, re-describe what you were building, re-list what's done and what isn't. Forty minutes later you're back where you were&mdash;if you remembered everything.</p>
+      <h3 class="feature-head">Start over from memory.</h3>
+      <p class="feature-desc">New session. Blank agent. You reconstruct the plan from commits, chat scraps, and whatever you still remember. That reconstruction is slow and incomplete&mdash;and you pay for it every time the model flakes.</p>
     </div>
     <div class="feature-demo">
       <div class="term">
@@ -982,8 +990,8 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
   <div class="feature flip reveal">
     <div class="feature-copy">
       <span class="eyebrow">With 3Notch</span>
-      <h3 class="feature-head">Resume in seconds.</h3>
-      <p class="feature-desc">3Notch saved a checkpoint when the last session ended. The new session finds it, shows you what it contains, and picks up with full context after you approve.</p>
+      <h3 class="feature-head">Offer a checkpoint. You approve.</h3>
+      <p class="feature-desc">A fallback packet is already on disk: objective, tasks, git state. The next session can surface it once. Nothing loads into the agent until you say yes.</p>
     </div>
     <div class="feature-demo">
       <div class="term">
@@ -1014,44 +1022,52 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
   <div class="s-head reveal">
     <div class="s-num">USE CASES</div>
     <div class="s-head-body">
-      <h2 class="s-title">Three ways your context breaks. One tool to <span class="accent">fix</span> all of them.</h2>
+      <h2 class="s-title">Four common breaks. Same local format for <span class="accent">all</span> of them.</h2>
     </div>
   </div>
 
   <div class="workflow-grid reveal">
     <article class="workflow-card">
-      <div class="workflow-num">Session crashed</div>
-      <h3 class="workflow-head">Rate limited. Compacted. Model went down.</h3>
-      <p class="workflow-desc">Doesn't matter why&mdash;with checkpoints enabled, 3Notch already saved where you were. Your next session offers to pick up exactly where this one stopped.</p>
+      <div class="workflow-num">Session failed</div>
+      <h3 class="workflow-head">Rate limit, overload, compaction.</h3>
+      <p class="workflow-desc">Claude Code hooks can write a continuation checkpoint from task state and git&mdash;including model-down failures, not only rate limits. Next session can offer it once.</p>
       <pre class="workflow-code"><span class="c">$</span> notch packet list
 <span class="m">  auth-refactor</span>  <span class="c">checkpoint</span>
   next: Redis session adapter
-  <span class="c">✓</span> ready to resume</pre>
+  <span class="c">✓</span> ready to review</pre>
     </article>
     <article class="workflow-card">
-      <div class="workflow-num">Switching models</div>
-      <h3 class="workflow-head">Moving from Claude to Codex because the cap hit?</h3>
-      <p class="workflow-desc">The outgoing agent writes a checkpoint: what's done, what's blocked, what's next. The incoming agent reads it and confirms before continuing.</p>
-      <pre class="workflow-code"><span class="c">$</span> notch packet show latest
+      <div class="workflow-num">Switching tools</div>
+      <h3 class="workflow-head">Claude today. Codex tomorrow.</h3>
+      <p class="workflow-desc">Outgoing agent writes a handoff packet. Incoming agent imports it. No vendor bridge required&mdash;Markdown and optional artifacts on disk.</p>
+      <pre class="workflow-code"><span class="c">$</span> notch packet show &lt;id&gt;
 <span class="m">  completed:</span> 4 of 6 tasks
 <span class="m">  blocked:</span> API schema change
-<span class="m">  next:</span> update client types
-  <span class="c">✓</span> portable across tools</pre>
+<span class="m">  next:</span> update client types</pre>
     </article>
     <article class="workflow-card">
-      <div class="workflow-num">Different tool, different repo</div>
-      <h3 class="workflow-head">Built in Claude Code, need to continue in Cursor?</h3>
-      <p class="workflow-desc">Package the relevant files, decisions, and next steps into a portable packet. The receiving tool picks it up with full context.</p>
-      <pre class="workflow-code"><span class="c">$</span> notch packet pack latest
+      <div class="workflow-num">Files need to travel</div>
+      <h3 class="workflow-head">Pack a .notchpkt archive.</h3>
+      <p class="workflow-desc">Hash-verified artifacts for the other machine or repo. Move the archive with scp, git, AirDrop, or whatever you already trust.</p>
+      <pre class="workflow-code"><span class="c">$</span> notch packet pack &lt;id&gt;
 <span class="m">  auth-refactor.notchpkt</span>
   3 files · sha256 verified
-  <span class="c">✓</span> move it however you want</pre>
+  <span class="c">✓</span> your transport</pre>
+    </article>
+    <article class="workflow-card">
+      <div class="workflow-num">Async agents</div>
+      <h3 class="workflow-head">Durable inbox between stores.</h3>
+      <p class="workflow-desc">Two repos share a mailbox root. Send a packed project packet, forward the text delivery notice (chat, Slack, Claude messaging), then pull, import, and ack.</p>
+      <pre class="workflow-code"><span class="c">$</span> notch send pkt.notchpkt --to local:review
+<span class="m">  notice:</span> pull delivery_…
+<span class="c">$</span> notch inbox pull … --import
+<span class="c">$</span> notch inbox ack …</pre>
     </article>
   </div>
 
   <div class="workflow-capstone reveal">
     <span class="capstone-mark" aria-hidden="true">+</span>
-    <p><strong>You stay in control.</strong> A new session offers the checkpoint once and loads it only after you approve. Nothing commits, pushes, or travels automatically.</p>
+    <p><strong>You stay in control.</strong> Checkpoints are offered, not force-loaded. Packets do not auto-commit or leave the machine unless you move them. Local addresses are routing labels, not authenticated identity.</p>
   </div>
 </section>
 
@@ -1063,21 +1079,21 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
   <div class="s-head reveal">
     <div class="s-num">UNDER THE HOOD</div>
     <div class="s-head-body">
-      <h2 class="s-title">Plain Markdown. No database. Completely <span class="accent">local</span>.</h2>
-      <p class="s-sub">A 3Notch checkpoint is a Markdown file you can read, edit, and version like any other file in your repo. Selected files travel alongside it, hash-verified. Everything stays on your machine unless you move it yourself.</p>
+      <h2 class="s-title">Plain Markdown. No database. <span class="accent">Local</span> by default.</h2>
+      <p class="s-sub">Packets are files under <code style="font-family:var(--f-mono);font-size:0.9em;color:var(--paper);">.notch/</code>. You can open them, diff them, and keep them out of git when they should stay private.</p>
     </div>
   </div>
 
   <div class="feature reveal">
     <div class="feature-copy">
-      <span class="eyebrow">What you'd expect from a CLI tool</span>
-      <h3 class="feature-head">Readable by you. Useful to the next agent.</h3>
+      <span class="eyebrow">Under the hood</span>
+      <h3 class="feature-head">Readable by you. Usable by the next agent.</h3>
       <ul class="feature-list">
-        <li><strong>You control what's saved</strong> — only context you or your agent explicitly supply. Nothing runs in the background.</li>
-        <li><strong>Secret scanning built in</strong> — every write is scanned for credentials. Packets land clean or not at all.</li>
-        <li><strong>Works with any AI tool</strong> — Claude Code, Codex, Cursor, ChatGPT, or whatever ships next. MCP server included.</li>
-        <li><strong>Your transport, your call</strong> — move packets via Git, email, AirDrop, Tailscale, or anything else you trust.</li>
-        <li><strong>Zero dependencies</strong> — no SQLite, no native compilation. Pure TypeScript, runs everywhere Node does.</li>
+        <li><strong>Explicit writes only</strong> — you or the agent choose what to save. No chat scraping, no background daemon.</li>
+        <li><strong>Secret scanning on write</strong> — credential-like content is blocked before it lands in a packet.</li>
+        <li><strong>MCP where it helps</strong> — Claude Code, Desktop, Cursor, and other stdio clients; pack/import when MCP is not available.</li>
+        <li><strong>Your transport</strong> — scp, git, AirDrop, Tailscale, a shared mailbox root. 3Notch does not host a relay.</li>
+        <li><strong>No SQLite, no native addons</strong> — TypeScript on Node 20+.</li>
       </ul>
     </div>
     <div class="feature-demo">
@@ -1118,47 +1134,56 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
   <div class="faq-list reveal">
     <div class="faq-item">
       <button class="faq-q" type="button" aria-expanded="false">
-        How do I save context when switching AI models?
+        How do I hand off work when I switch models or tools?
         <span class="faq-icon" aria-hidden="true">+</span>
       </button>
       <div class="faq-a">
-        <p>3Notch creates portable checkpoints that capture your current objective, completed work, decisions, blockers, and next steps. When you switch from one AI tool to another&mdash;say Claude to Codex&mdash;the outgoing agent writes a checkpoint and the incoming agent reads it to resume with full context. One install command: <code style="font-family:var(--f-mono);font-size:0.82rem;color:var(--paper);">npm install -g @3notch/cli</code></p>
+        <p>Create a packet with the objective, completed work, blockers, and next steps&mdash;plus files if the other side needs them. Import it in the other tool, or pack a <code style="font-family:var(--f-mono);font-size:0.82rem;color:var(--paper);">.notchpkt</code> and move it yourself. <code style="font-family:var(--f-mono);font-size:0.82rem;color:var(--paper);">npm install -g @3notch/cli</code></p>
       </div>
     </div>
     <div class="faq-item">
       <button class="faq-q" type="button" aria-expanded="false">
-        How do I recover context after an AI rate limit or session crash?
+        What happens after a rate limit or model failure?
         <span class="faq-icon" aria-hidden="true">+</span>
       </button>
       <div class="faq-a">
-        <p>With continuation checkpoints enabled, 3Notch saves working state on rate limits, model-down failures, and context compaction. When you start a new session, it offers the latest checkpoint for review and loads it after you approve&mdash;seconds instead of re-explaining the project.</p>
+        <p>With Claude Code continuation checkpoints enabled, 3Notch can write a fallback on rate limits, model-down failures (overload, server error, and related cases), and compaction. The next session may offer that checkpoint once; you approve before anything is loaded.</p>
       </div>
     </div>
     <div class="faq-item">
       <button class="faq-q" type="button" aria-expanded="false">
-        Does 3Notch work with Claude Code, Codex, and Cursor?
+        How do two agents hand off without a shared chat?
         <span class="faq-icon" aria-hidden="true">+</span>
       </button>
       <div class="faq-a">
-        <p>Yes. 3Notch is vendor-neutral and works with any AI coding tool. It includes a built-in MCP server for tools that support Model Context Protocol (Claude Code, Claude Desktop, Cursor), and portable <code style="font-family:var(--f-mono);font-size:0.82rem;color:var(--paper);">.notchpkt</code> archives that can be imported into any tool. Checkpoints are plain Markdown files readable by any agent.</p>
+        <p>Use the durable inbox: both stores register the same mailbox root, you send a packed project packet, forward the plain-text delivery notice through any channel you already use, then pull/import/ack on the receiver. Local addresses are labels, not auth.</p>
       </div>
     </div>
     <div class="faq-item">
       <button class="faq-q" type="button" aria-expanded="false">
-        Is 3Notch a memory tool or vector database?
+        Does it work with Claude Code, Codex, and Cursor?
         <span class="faq-icon" aria-hidden="true">+</span>
       </button>
       <div class="faq-a">
-        <p>Neither. Memory tools help a single AI tool remember more. 3Notch makes working context <em>move</em> between tools. Checkpoints are plain Markdown files with structured frontmatter&mdash;no database, no embeddings, no cloud service. You can read, edit, and version them like any other file in your repo.</p>
+        <p>Yes. MCP for clients that support it; pack/import for everything else. Packets are Markdown on disk, not a proprietary memory store.</p>
       </div>
     </div>
     <div class="faq-item">
       <button class="faq-q" type="button" aria-expanded="false">
-        Is 3Notch free?
+        Is this a memory product or vector database?
         <span class="faq-icon" aria-hidden="true">+</span>
       </button>
       <div class="faq-a">
-        <p>Completely free, open-source software under the MIT license. No cloud service, no account, no telemetry, no paid tier. Everything runs locally on your machine.</p>
+        <p>No. Memory tools grow one vendor's context window. 3Notch moves selected working state across sessions and tools as files. No embeddings, no hosted index.</p>
+      </div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" type="button" aria-expanded="false">
+        Is it free?
+        <span class="faq-icon" aria-hidden="true">+</span>
+      </button>
+      <div class="faq-a">
+        <p>MIT. No SaaS tier, no account, no telemetry. Install from npm and run locally.</p>
       </div>
     </div>
   </div>
@@ -1172,9 +1197,9 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
   <div class="final-bg" aria-hidden="true"></div>
   <div class="w">
     <div class="final-inner">
-      <span class="eyebrow final-eyebrow">open source · MIT · works everywhere</span>
+      <span class="eyebrow final-eyebrow">open source · MIT · local by default</span>
       <h2 class="final-h">Stop rebuilding<br>context<span class="accent">.</span></h2>
-      <p class="final-sub">One command to install. Works with Claude, Codex, Cursor, and whatever you switch to next.</p>
+      <p class="final-sub">Install once. Use checkpoints when a session dies. Use packets when work has to move.</p>
 
       <div class="install-cmd" style="max-width:36rem;margin:0 auto 1.5rem;">
         <div class="install-cmd-text">
@@ -1190,12 +1215,12 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
       <div class="agent-prompt" style="margin-left:auto;margin-right:auto;text-align:left;">
         <div class="agent-prompt-head">
           <span class="agent-prompt-label">Paste this into your agent</span>
-          <button class="install-cmd-copy" type="button" data-copy="Run `npm install -g @3notch/cli`, then `notch --help`. Read the installed package README for client configuration before making changes." aria-label="Copy agent setup prompt">
+          <button class="install-cmd-copy" type="button" data-copy="Install @3notch/cli globally, run `notch onboard` in this repo, and set up continuation checkpoints if I use Claude Code. Use packets for handoffs across tools or repos. Read the package README before changing MCP config." aria-label="Copy agent setup prompt">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="0" ry="0"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             <span class="label">Copy prompt</span>
           </button>
         </div>
-        <div class="agent-prompt-body"><strong>Run <code>npm install -g @3notch/cli</code>, then <code>notch --help</code>.</strong> Read the installed package README for client configuration before making changes.</div>
+        <div class="agent-prompt-body"><strong>Install <code>@3notch/cli</code>, run <code>notch onboard</code> here, enable continuation checkpoints for Claude Code if needed.</strong> Use packets for cross-tool or cross-repo handoffs. Read the package README before changing MCP config.</div>
       </div>
 
       <div class="hero-actions" style="justify-content:center;margin-top:1.5rem;">
@@ -1220,8 +1245,8 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
           <svg class="footer-wm-mark" viewBox="0 0 80 80" width="16" height="16" fill="none" aria-hidden="true"><line x1="10" y1="22" x2="70" y2="22" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/><line x1="10" y1="40" x2="70" y2="40" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/><line x1="10" y1="58" x2="70" y2="58" stroke="#E04E2C" stroke-width="9" stroke-linecap="round"/></svg>
           <span class="footer-wm-text"><b>3</b>Notch</span>
         </div>
-        <p class="footer-tag">Save the working state your AI tools won't.</p>
-        <div class="footer-cmd">Local. Portable. Open source.</div>
+        <p class="footer-tag">Checkpoints and packets for AI working state.</p>
+        <div class="footer-cmd">Local files. No account. MIT.</div>
       </div>
 
       <div class="footer-col">
