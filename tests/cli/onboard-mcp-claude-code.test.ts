@@ -85,7 +85,7 @@ describe('notch onboard --mcp claude-code', () => {
       ]));
       expect(settings.hooks.StopFailure).toEqual([
         {
-          matcher: 'rate_limit',
+          matcher: 'rate_limit|overloaded|server_error|max_output_tokens|unknown',
           hooks: [{ type: 'command', command: 'notch hook claude-code' }],
         },
       ]);
@@ -156,6 +156,41 @@ describe('notch onboard --mcp claude-code', () => {
 
       expect(config.continuation.claudeCode.events).not.toContain('Stop');
       expect(settings.hooks.Stop).toBeUndefined();
+    });
+  });
+
+  it('rewrites a legacy rate_limit-only StopFailure matcher to the recoverable set on resync', async () => {
+    await withTempProject({}, async (project) => {
+      const first = await runCli([
+        'onboard', '--yes', '--mcp', 'claude-code', '--checkpoints', 'script',
+      ], { cwd: project.path });
+      expect(first.exitCode).toBe(0);
+
+      const settingsPath = path.join(project.path, '.claude/settings.local.json');
+      const settings = JSON.parse(await readFile(settingsPath, 'utf8')) as {
+        hooks: Record<string, Array<{ hooks: Array<{ type?: string; command: string }>; matcher?: string }>>;
+      };
+      settings.hooks.StopFailure = [{
+        matcher: 'rate_limit',
+        hooks: [{ type: 'command', command: 'notch hook claude-code' }],
+      }];
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, 'utf8');
+
+      const resynced = await runCli([
+        'onboard', '--yes', '--mcp', 'claude-code', '--checkpoints', 'script',
+      ], { cwd: project.path });
+      expect(resynced.exitCode).toBe(0);
+      expect(resynced.stdout).toContain('Configured Claude Code continuation hooks');
+
+      const next = JSON.parse(await readFile(settingsPath, 'utf8')) as {
+        hooks: Record<string, Array<{ hooks: Array<{ type?: string; command: string }>; matcher?: string }>>;
+      };
+      expect(next.hooks.StopFailure).toEqual([
+        {
+          matcher: 'rate_limit|overloaded|server_error|max_output_tokens|unknown',
+          hooks: [{ type: 'command', command: 'notch hook claude-code' }],
+        },
+      ]);
     });
   });
 

@@ -108,6 +108,98 @@ describe('continuation service', () => {
       expect(packets).toHaveLength(1);
       expect(packets[0]?.packet.tags).toContain('source-rate-limit');
       expect(packets[0]?.packet.summary).toContain('Finish verification');
+      expect(packets[0]?.packet.summary).toContain('API rate limit was reached');
+    });
+  });
+
+  it('writes model-down StopFailure fallbacks for overloaded, server_error, max_output_tokens, and unknown', async () => {
+    await withContinuationProject(async (projectPath) => {
+      const cases = [
+        {
+          session_id: 'stop-overloaded',
+          error: 'overloaded',
+          tag: 'source-overloaded',
+          phrase: 'API reported it was overloaded',
+          subject: 'Finish overloaded recovery',
+        },
+        {
+          session_id: 'stop-server-error',
+          error: 'server_error',
+          tag: 'source-server-error',
+          phrase: 'API returned a server error',
+          subject: 'Finish server-error recovery',
+        },
+        {
+          session_id: 'stop-max-output',
+          error: 'max_output_tokens',
+          tag: 'source-max-output',
+          phrase: 'max output length limit',
+          subject: 'Finish max-output recovery',
+        },
+        {
+          session_id: 'stop-unknown',
+          error: 'unknown',
+          tag: 'source-unknown',
+          phrase: 'unknown stop failure',
+          subject: 'Finish unknown recovery',
+        },
+      ] as const;
+
+      for (const testCase of cases) {
+        await runClaudeCodeHook(taskEvent(
+          projectPath,
+          'TaskCreated',
+          `task-${testCase.error}`,
+          testCase.subject,
+          testCase.session_id,
+        ));
+        const recovery = await runClaudeCodeHook({
+          session_id: testCase.session_id,
+          cwd: projectPath,
+          hook_event_name: 'StopFailure',
+          error: testCase.error,
+          last_assistant_message: `API Error: ${testCase.error}`,
+          transcript_path: '/does/not/exist',
+        });
+        expect(recovery.systemMessage).toContain('wrote unreviewed continuation');
+      }
+
+      const context = await loadConfig({ cwd: projectPath });
+      const packets = await listPackets(context, { direction: 'outbox' });
+      expect(packets).toHaveLength(cases.length);
+
+      for (const testCase of cases) {
+        const packet = packets.find((entry) => entry.packet.tags.includes(testCase.tag));
+        expect(packet, `missing packet for ${testCase.error}`).toBeDefined();
+        expect(packet?.packet.summary).toContain(testCase.phrase);
+        expect(packet?.packet.summary).toContain(testCase.subject);
+      }
+    });
+  });
+
+  it('skips non-recoverable StopFailure errors such as authentication and billing failures', async () => {
+    await withContinuationProject(async (projectPath) => {
+      for (const error of ['authentication_failed', 'billing_error'] as const) {
+        await runClaudeCodeHook(taskEvent(
+          projectPath,
+          'TaskCreated',
+          `task-${error}`,
+          `Work before ${error}`,
+          `session-${error}`,
+        ));
+        const result = await runClaudeCodeHook({
+          session_id: `session-${error}`,
+          cwd: projectPath,
+          hook_event_name: 'StopFailure',
+          error,
+          last_assistant_message: `API Error: ${error}`,
+          transcript_path: '/does/not/exist',
+        });
+        expect(result).toEqual({});
+      }
+
+      const context = await loadConfig({ cwd: projectPath });
+      expect(await listPackets(context, { direction: 'outbox' })).toEqual([]);
     });
   });
 
