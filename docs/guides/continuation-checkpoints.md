@@ -15,7 +15,7 @@ Modes:
 - `auto`: hook fallbacks plus automatic agent-drafted checkpoints at configured semantic triggers.
 - `off`: remove only the 3Notch-owned Claude hooks and disable the workflow.
 
-The default hook set uses `SessionStart`, `TaskCreated`, `TaskCompleted`, `PostCompact`, and `StopFailure:rate_limit`. Add `--checkpoint-stop` only if you accept a hook after every Claude response:
+The default hook set uses `SessionStart`, `TaskCreated`, `TaskCompleted`, `PostCompact`, and recoverable `StopFailure` handling (config token `StopFailure:rate_limit`). The Claude settings matcher covers `rate_limit`, `overloaded`, `server_error`, `max_output_tokens`, and `unknown` — the model-down cases where a deterministic fallback still helps. Auth and billing failures are excluded. Add `--checkpoint-stop` only if you accept a hook after every Claude response:
 
 ```bash
 notch onboard --yes --mcp claude-code --checkpoints prompt --checkpoint-stop
@@ -30,7 +30,7 @@ Claude task hooks accumulate task IDs, subjects, descriptions, and completion st
 A packet is written only at a recovery boundary:
 
 - `PostCompact` uses Claude's documented `compact_summary`.
-- `StopFailure:rate_limit` uses accumulated tasks and current Git state.
+- Recoverable `StopFailure` events (`rate_limit`, `overloaded`, `server_error`, `max_output_tokens`, `unknown`) use accumulated tasks and current Git state.
 - Optional `Stop` uses the final assistant message, accumulated tasks, and Git state, and deduplicates unchanged state.
 
 Fallback packets include branch, short commit, dirty state, and changed-file names. They never copy file contents or artifacts automatically. Every fallback is marked `unreviewed`, scanned before write, and linked to the previous checkpoint in the same stream with `supersedes`.
@@ -60,5 +60,6 @@ At the next session start, 3Notch offers the latest matching checkpoint once. It
 - `.notch/index/continuation/` is local derived state and gitignored.
 - Project checkpoints land in `.notch/outbox/` and may appear in Git; choose `private` sensitivity to use ignored `.notch/private/outbox/`.
 - Private mode intentionally adds `--include-private` to this project's 3Notch MCP server so the agent can list and load a checkpoint after you confirm. That server can read other private packets in the same local store through approved MCP calls.
-- A rate-limit fallback cannot recover reasoning that was never reflected in a task, Git state, compact summary, final assistant message, or prior curated checkpoint.
+- A model-down StopFailure fallback cannot recover reasoning that was never reflected in a task, Git state, compact summary, final assistant message, or prior curated checkpoint.
+- Existing projects with a legacy `StopFailure` matcher of only `rate_limit` should rerun `notch onboard --yes --mcp claude-code --checkpoints <mode>` so Claude Code wires the full recoverable matcher.
 - 3Notch never commits, pushes, imports, or transports a checkpoint automatically.

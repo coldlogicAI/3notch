@@ -71,7 +71,7 @@
     </div>
 
     <h1>Continuation checkpoints<span class="accent">.</span></h1>
-    <p class="docs-lede">Preserve enough selected project state to continue after a rate limit, context compaction, or intentional agent switch. Checkpoints are ordinary local packets—not transcripts or hidden model memory.</p>
+    <p class="docs-lede">Preserve enough selected project state to continue after a rate limit, model-down failure, context compaction, or intentional agent switch. Checkpoints are ordinary local packets—not transcripts or hidden model memory.</p>
 
     <h2>Enable Claude Code checkpoints</h2>
     <pre><code><span class="prompt">$</span> <span class="cmd">notch onboard</span> <span class="flag">--yes</span> <span class="flag">--mcp</span> <span class="arg">claude-code</span> <span class="flag">--checkpoints</span> <span class="arg">prompt</span></code></pre>
@@ -82,7 +82,7 @@
     <ul>
       <li><code>TaskCreated</code> and <code>TaskCompleted</code> aggregate structured task progress without creating one packet per checklist item.</li>
       <li><code>PostCompact</code> uses Claude Code's documented <code>compact_summary</code>.</li>
-      <li><code>StopFailure:rate_limit</code> uses accumulated tasks and Git state when recoverable work exists.</li>
+      <li>Recoverable <code>StopFailure</code> events (<code>rate_limit</code>, <code>overloaded</code>, <code>server_error</code>, <code>max_output_tokens</code>, <code>unknown</code>) use accumulated tasks and Git state when recoverable work exists. Auth and billing failures are excluded.</li>
       <li>Optional <code>Stop</code> uses the final assistant message and deduplicates unchanged state.</li>
     </ul>
     <p>Fallbacks include branch, short commit, dirty state, and changed-file names. They do not copy file contents or artifacts automatically.</p>

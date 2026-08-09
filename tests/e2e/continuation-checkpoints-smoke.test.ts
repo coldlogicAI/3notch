@@ -24,9 +24,14 @@ describe('continuation checkpoint e2e', () => {
       const settings = JSON.parse(await readFile(
         path.join(project.path, '.claude/settings.local.json'),
         'utf8',
-      )) as { hooks: Record<string, unknown> };
+      )) as { hooks: Record<string, Array<{ matcher?: string }>> };
       expect(Object.keys(settings.hooks)).toEqual(expect.arrayContaining([
         'SessionStart', 'TaskCreated', 'TaskCompleted', 'PostCompact', 'StopFailure',
+      ]));
+      expect(settings.hooks.StopFailure).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          matcher: 'rate_limit|overloaded|server_error|max_output_tokens|unknown',
+        }),
       ]));
 
       await execFileAsync('git', ['add', '.'], { cwd: project.path });

@@ -2,6 +2,10 @@ import { copyFile, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
 import { notchMcpServerDefinition } from './mcp-instructions.js';
+import {
+  isRecoverableStopFailureMatcher,
+  RECOVERABLE_STOP_FAILURE_MATCHER,
+} from '../core/continuation-service.js';
 import { atomicWriteFile } from '../core/store-service.js';
 import { NotchException } from '../types/errors.js';
 import type { ClaudeCodeContinuationEvent, NotchConfig } from '../types/records.js';
@@ -273,7 +277,10 @@ function ownedContinuationEvents(settings: ClaudeCodeSettings): ClaudeCodeContin
 }
 
 function normalizeHookEvent(event: string, matcher: unknown): ClaudeCodeContinuationEvent | undefined {
-  if (event === 'StopFailure' && matcher === 'rate_limit') {
+  // Accept the current recoverable matcher, the legacy rate_limit-only matcher,
+  // and any ordered subset/superset of the recoverable error codes so doctor and
+  // resync still recognize owned hooks after upgrades.
+  if (event === 'StopFailure' && isRecoverableStopFailureMatcher(matcher)) {
     return 'StopFailure:rate_limit';
   }
 
@@ -296,7 +303,7 @@ function normalizeHookEvent(event: string, matcher: unknown): ClaudeCodeContinua
 
 function hookTarget(event: ClaudeCodeContinuationEvent): { hookEvent: string; matcher?: string } {
   if (event === 'StopFailure:rate_limit') {
-    return { hookEvent: 'StopFailure', matcher: 'rate_limit' };
+    return { hookEvent: 'StopFailure', matcher: RECOVERABLE_STOP_FAILURE_MATCHER };
   }
 
   if (event === 'SessionStart') {

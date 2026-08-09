@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+- Claude Code continuation `StopFailure` hooks now match recoverable model-down failures (`rate_limit`, `overloaded`, `server_error`, `max_output_tokens`, `unknown`), not only rate limits. Auth and billing failures stay excluded. Re-run onboarding to rewrite legacy `rate_limit`-only matchers.
+
 ## [0.7.0] - 2026-08-08
 
 ### Added

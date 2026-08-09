@@ -71,6 +71,47 @@ const supportedEvents = new Set<ClaudeHookEvent>([
   'Stop',
 ]);
 
+/**
+ * StopFailure error codes that mean "the model/session ended through no fault of
+ * the work." Claude Code also emits auth/billing failures; those stay excluded so
+ * a misconfigured account does not flood the store with recovery packets.
+ *
+ * Config still uses the historical event token `StopFailure:rate_limit`; the
+ * Claude settings matcher and runtime gate cover this full recoverable set.
+ */
+export const RECOVERABLE_STOP_FAILURE_ERRORS = [
+  'rate_limit',
+  'overloaded',
+  'server_error',
+  'max_output_tokens',
+  'unknown',
+] as const;
+
+export type RecoverableStopFailureError = (typeof RECOVERABLE_STOP_FAILURE_ERRORS)[number];
+
+export const RECOVERABLE_STOP_FAILURE_MATCHER = RECOVERABLE_STOP_FAILURE_ERRORS.join('|');
+
+export function isRecoverableStopFailureError(
+  error: string | undefined,
+): error is RecoverableStopFailureError {
+  return typeof error === 'string'
+    && (RECOVERABLE_STOP_FAILURE_ERRORS as readonly string[]).includes(error);
+}
+
+export function isRecoverableStopFailureMatcher(matcher: unknown): boolean {
+  if (typeof matcher !== 'string' || matcher.length === 0) {
+    return false;
+  }
+
+  if (matcher === RECOVERABLE_STOP_FAILURE_MATCHER || matcher === 'rate_limit') {
+    return true;
+  }
+
+  const parts = matcher.split('|').filter((part) => part.length > 0);
+  return parts.length > 0
+    && parts.every((part) => (RECOVERABLE_STOP_FAILURE_ERRORS as readonly string[]).includes(part));
+}
+
 export async function runClaudeCodeHook(rawInput: unknown): Promise<ClaudeHookOutput> {
   try {
     const input = validateHookInput(rawInput);
@@ -174,7 +215,7 @@ function validateHookInput(value: unknown): ClaudeHookInput {
 
 function eventEnabled(events: string[], input: ClaudeHookInput): boolean {
   if (input.hook_event_name === 'StopFailure') {
-    return input.error === 'rate_limit' && events.includes('StopFailure:rate_limit');
+    return isRecoverableStopFailureError(input.error) && events.includes('StopFailure:rate_limit');
   }
 
   return events.includes(input.hook_event_name);
@@ -207,16 +248,17 @@ async function handleEvent(
         primarySummary: input.compact_summary.trim(),
         ...(input.trigger ? { trigger: input.trigger } : {}),
       });
-    case 'StopFailure':
+    case 'StopFailure': {
       state.interruptedAt = new Date().toISOString();
-      if (!hasMaterialRecoveryState(state, git)) {
+      if (!hasMaterialRecoveryState(state, git) || !isRecoverableStopFailureError(input.error)) {
         await writeSessionState(context, state);
         return {};
       }
       return await flushCheckpoint(context, state, git, stream, {
-        event: 'rate-limit',
-        primarySummary: 'Claude Code stopped because the API rate limit was reached. This fallback contains only structured task events and repository state captured before the failure.',
+        event: stopFailureSourceEvent(input.error),
+        primarySummary: stopFailurePrimarySummary(input.error),
       });
+    }
     case 'Stop': {
       const message = input.last_assistant_message?.trim();
       if (!message) {
@@ -336,12 +378,21 @@ function updateTask(
   state.activityAt = now;
 }
 
+type CheckpointSourceEvent =
+  | 'post-compact'
+  | 'stop'
+  | 'rate-limit'
+  | 'overloaded'
+  | 'server-error'
+  | 'max-output'
+  | 'unknown';
+
 async function flushCheckpoint(
   context: LoadedConfig,
   state: ContinuationSessionState,
   git: GitSnapshot,
   stream: string,
-  source: { event: 'post-compact' | 'rate-limit' | 'stop'; primarySummary: string; trigger?: string },
+  source: { event: CheckpointSourceEvent; primarySummary: string; trigger?: string },
 ): Promise<ClaudeHookOutput> {
   return await withCheckpointWriteLock(context, async () => {
     const fingerprint = recoveryFingerprint(state, git, source);
@@ -438,6 +489,27 @@ function renderTaskProgress(tasks: Record<string, ContinuationTask>): string {
 
 function continuationTitle(projectName: string, stream: string, event: string): string {
   return `Continuation: ${projectName}/${stream} (${event})`;
+}
+
+function stopFailureSourceEvent(error: RecoverableStopFailureError): CheckpointSourceEvent {
+  // Avoid embedding secret-scanner trigger words (e.g. "token") in titles/tags.
+  if (error === 'max_output_tokens') {
+    return 'max-output';
+  }
+
+  return error.replaceAll('_', '-') as CheckpointSourceEvent;
+}
+
+function stopFailurePrimarySummary(error: RecoverableStopFailureError): string {
+  const reason = {
+    rate_limit: 'the API rate limit was reached',
+    overloaded: 'the API reported it was overloaded',
+    server_error: 'the API returned a server error',
+    max_output_tokens: 'the model hit the max output length limit',
+    unknown: 'Claude Code reported an unknown stop failure',
+  }[error];
+
+  return `Claude Code stopped because ${reason}. This fallback contains only structured task events and repository state captured before the failure.`;
 }
 
 function recoveryFingerprint(
