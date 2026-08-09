@@ -70,7 +70,7 @@ Use durable inbox for asynchronous handoff after both stores have intentionally 
 - Call send_packet only for a packed project handoff the user wants delivered to a registered local: address. Never use it for private or seed packets.
 - Forward the returned delivery notice through the user's chosen agent or chat channel when another session needs to act on it.
 - Call list_inbox to discover pending deliveries.
-- Call get_inbox_delivery when the sender or receiver needs retained pulled, acknowledged, or rejected status for one delivery.
+- Call get_inbox_delivery when the sender or receiver needs pending, pulled, acknowledged, or rejected status for one delivery.
 - Call pull_inbox_packet without import to verify first, or with import=true to run normal 3Notch validation and import.
 - Call ack_inbox_delivery only after review, successful import, or an intentional skip. Acknowledgement retains packet bytes.
 - Treat local addresses as labels, not authenticated identities, and never claim the local adapter is encrypted or network-guaranteed.

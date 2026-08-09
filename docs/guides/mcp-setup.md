@@ -45,7 +45,7 @@ Read-only:
 - `get_packet`, `list_packets`
 - `get_status`, `check_store`, `run_doctor`
 - `list_inbox` — list pending or retained durable deliveries
-- `get_inbox_delivery` — read retained pulled, acknowledged, or rejected status for one delivery
+- `get_inbox_delivery` — read pending, pulled, acknowledged, or rejected status for one delivery
 
 Write tools (require client tool-permission grant):
 

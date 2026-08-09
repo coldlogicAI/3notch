@@ -527,8 +527,7 @@ function inboxActionOutputSchema(includeIdempotent: boolean): Record<string, unk
       state: { enum: ['pending', 'pulled', 'acked', 'rejected'] },
       packetPath: { type: 'string', minLength: 1 },
       importedPacketId: { type: 'string', minLength: 1 },
-      ...(includeIdempotent ? { idempotent: { type: 'boolean' } } : {}),
-      notice: { type: 'string', minLength: 1 },
+      ...(includeIdempotent ? { idempotent: { type: 'boolean' }, notice: { type: 'string', minLength: 1 } } : {}),
       nextAction: { type: 'string', minLength: 1 },
     },
   };
