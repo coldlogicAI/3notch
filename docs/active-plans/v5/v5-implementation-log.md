@@ -17,3 +17,12 @@
 
 - Fixed PR review regressions in durable-inbox recovery and enumeration: receiver size-policy failures stay retryable, legacy size rejections clear after successful revalidation, terminal rejections cannot return false-success resend results, and unmanaged sync-folder clutter no longer blocks listing while malformed managed delivery entries still fail closed.
 - Regression verification passed: lint, type-check, production build, 235 tests across 78 files, 23 e2e tests across 11 files, and the built CLI help smoke check.
+
+## 2026-08-09
+
+- **PR #9 (0.7.0):** delivery notices on `send` / `send_packet`; read-only `inbox status` / `get_inbox_delivery`; docs/prompt/schema/test updates. CI green; review nits fixed (status nextAction coverage, pending wording, notice only on send schemas).
+- **PR #7 already on main as 0.6.0 surface** (durable inbox). npm registry lagged at 0.5.0 until catch-up publish.
+- **npm publish lessons:** publish from intended checkout (`main` after pull); token temp-npmrc needs double-quoted `${NPM_TOKEN}`; write-2FA + security key means CLI OTP fails without TOTP or bypass-2FA granular token.
+- **0.7.0 tarball** initially cut without StopFailure widen (#14) due to stale branch; corrected with **0.7.1**.
+- Roadmap issues filed: #10 multi-machine recipes, #11 encryption, #12 authorship, #13 remote transport. #15 optional resume UX (structured offer / `notch resume`) — not blocking.
+- Release runbook + `release:check` / `release:status` landed; CI lint needs Node globals for `scripts/**`.

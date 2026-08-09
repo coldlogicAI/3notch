@@ -13,3 +13,8 @@
 - Added user, privacy, security, MCP, and agent-prompt documentation and synchronized the package/CLI version at `0.5.0`.
 - Final review hardened malformed-input handling, Stop removal, per-stream state isolation, concurrent checkpoint serialization and IDs, long branch names, high-volume predecessor lookup, ignored local settings/backups, task-description preservation, and private MCP resume access.
 - Verification passed: lint, type-check, build, 194 unit/integration tests, 20 e2e tests, built-CLI help/version/hook smoke, a packed tarball installation exercising onboarding plus real task/post-compaction stdin events, zero installed-package audit findings, and Claude Code `doctor` against the generated project configuration.
+
+## 2026-08-09
+
+- **PR #14 (0.7.1):** widened default StopFailure matcher and runtime gate to recoverable model-down errors: `rate_limit|overloaded|server_error|max_output_tokens|unknown`. Auth/billing failures still excluded. Legacy `rate_limit`-only matchers rewritten on onboard resync. Source tags avoid secret-scanner false positives (`max-output` not `max-output-tokens` in titles).
+- Resume UX remains chat confirmation only (no native Claude y/n UI). Optional follow-up tracked as **issue #15**.
