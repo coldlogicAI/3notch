@@ -41,6 +41,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Release surface check
+        run: npm run release:check
+
       - name: Test
         run: npm test
 

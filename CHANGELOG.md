@@ -6,8 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-08-09
+
+### Added
+- Release runbook (`docs/guides/release.md`) and `npm run release:check` / `release:status` to catch package, changelog, site, and npm-registry version drift before and after publish.
+
 ### Fixed
 - Claude Code continuation `StopFailure` hooks now match recoverable model-down failures (`rate_limit`, `overloaded`, `server_error`, `max_output_tokens`, `unknown`), not only rate limits. Auth and billing failures stay excluded. Re-run onboarding to rewrite legacy `rate_limit`-only matchers.
+- npm package contents now track `main` through the StopFailure fix (0.7.0 on the registry was cut from a pre-merge tree).
 
 ## [0.7.0] - 2026-08-08
 
