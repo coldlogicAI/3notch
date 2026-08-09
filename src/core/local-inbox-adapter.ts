@@ -27,6 +27,11 @@ export type PutLocalDeliveryResult = {
   packetPath: string;
 };
 
+export type ReadLocalDeliveryResult = {
+  delivery: InboxDelivery;
+  packetPath: string;
+};
+
 export type LockedLocalDelivery = {
   delivery: InboxDelivery;
   packet: Buffer;
@@ -46,6 +51,7 @@ export type LockedLocalDelivery = {
 export interface InboxTransportAdapter {
   initializeRecipient: (address: string) => Promise<void>;
   putDelivery: (address: string, input: PutLocalDeliveryInput) => Promise<PutLocalDeliveryResult>;
+  getDelivery: (address: string, deliveryId: string) => Promise<ReadLocalDeliveryResult>;
   listDeliveries: (address: string, options?: { includeAll?: boolean }) => Promise<InboxDelivery[]>;
   withDelivery: <T>(
     address: string,
@@ -270,6 +276,17 @@ export class LocalInboxAdapter implements InboxTransportAdapter {
         packetPath: path.join(deliveryPath, 'packet.notchpkt'),
       };
     });
+  }
+
+  async getDelivery(address: string, deliveryId: string): Promise<ReadLocalDeliveryResult> {
+    this.assertDeliveryId(deliveryId);
+    const recipientPath = await this.assertRecipient(address);
+    const deliveryPath = path.join(recipientPath, 'deliveries', deliveryId);
+
+    return {
+      delivery: await this.readDeliveryMetadata(deliveryPath),
+      packetPath: path.join(deliveryPath, 'packet.notchpkt'),
+    };
   }
 
   async listDeliveries(address: string, options: { includeAll?: boolean } = {}): Promise<InboxDelivery[]> {

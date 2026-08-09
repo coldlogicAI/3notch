@@ -234,6 +234,15 @@
         "includeAll": { "type": "boolean" }
       }
     },
+    "get_inbox_delivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deliveryId"],
+      "properties": {
+        "deliveryId": { "type": "string", "pattern": "^delivery_[a-f0-9]{24}$" },
+        "address": { "type": "string", "pattern": "^local:[a-z0-9](?:[a-z0-9._-]{0,62}[a-z0-9])?$" }
+      }
+    },
     "pull_inbox_packet": {
       "type": "object",
       "additionalProperties": false,

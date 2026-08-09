@@ -29,7 +29,7 @@ import {
 import { importPacketFolder } from './transfer-service.js';
 import { errorToNotchError, NotchException } from '../types/errors.js';
 import type { LoadedConfig } from './config-service.js';
-import type { InboxConfig, InboxDelivery, InboxResult } from '../types/inbox.js';
+import type { InboxConfig, InboxDelivery, InboxDeliveryStatusResult, InboxResult } from '../types/inbox.js';
 import type { NotchPacket, SourceTool } from '../types/records.js';
 
 const archiveOverheadBytes = 8 * 1024 * 1024;
@@ -59,6 +59,7 @@ export type InboxListResult = {
 
 export type InboxSendResult = InboxResult & {
   idempotent: boolean;
+  notice: string;
 };
 
 export async function initializeDurableInbox(
@@ -149,6 +150,8 @@ export async function sendInboxPacket(
       ...(stored.idempotent ? { reason: 'idempotent-retry' } : {}),
     });
 
+    const notice = deliveryNotice(stored.delivery);
+
     return {
       ok: true,
       deliveryId: stored.delivery.deliveryId,
@@ -157,7 +160,8 @@ export async function sendInboxPacket(
       state: stored.delivery.state,
       packetPath: stored.packetPath,
       idempotent: stored.idempotent,
-      nextAction: `Ask ${stored.delivery.to} to run notch inbox list, then pull and import ${stored.delivery.deliveryId}.`,
+      notice,
+      nextAction: `Send the delivery notice to ${stored.delivery.to}; status can be checked with notch inbox status ${stored.delivery.deliveryId} --at ${stored.delivery.to}.`,
     };
   } catch (error) {
     await auditFailure(context, author, 'inbox-send', error, {
@@ -187,6 +191,22 @@ export async function listInboxDeliveries(
     nextAction: deliveries.length > 0
       ? `Pull a delivery with notch inbox pull ${deliveries[0]?.deliveryId ?? '<delivery-id>'} --import.`
       : 'No matching deliveries. Wait for a sender or run with --all to include processed deliveries.',
+  };
+}
+
+export async function getInboxDeliveryStatus(
+  context: LoadedConfig,
+  input: { deliveryId: string; address?: string },
+): Promise<InboxDeliveryStatusResult> {
+  const config = await loadInboxConfig(context);
+  const address = input.address ?? config.address;
+  parseLocalInboxAddress(address);
+  const result = await new LocalInboxAdapter(config.root).getDelivery(address, input.deliveryId);
+
+  return {
+    ...inboxResult(result.delivery, result.packetPath, deliveryStatusNextAction(result.delivery)),
+    address,
+    delivery: result.delivery,
   };
 }
 
@@ -605,6 +625,37 @@ function inboxResult(delivery: InboxDelivery, packetPath: string, nextAction: st
     ...(delivery.importedPacketId ? { importedPacketId: delivery.importedPacketId } : {}),
     nextAction,
   };
+}
+
+function deliveryNotice(delivery: InboxDelivery): string {
+  return [
+    '3Notch delivery notice',
+    `from: ${delivery.from}`,
+    `to: ${delivery.to}`,
+    `delivery_id: ${delivery.deliveryId}`,
+    `packet_id: ${delivery.packetId}`,
+    `sha256: ${delivery.packetHash}`,
+    `receiver_action: run \`notch inbox pull ${delivery.deliveryId} --import\`, review the packet, then run \`notch inbox ack ${delivery.deliveryId}\``,
+    `sender_status: run \`notch inbox status ${delivery.deliveryId} --at ${delivery.to}\``,
+  ].join('\n');
+}
+
+function deliveryStatusNextAction(delivery: InboxDelivery): string {
+  if (delivery.state === 'pending') {
+    return `${delivery.to} has not pulled this delivery yet. Receiver should run notch inbox pull ${delivery.deliveryId} --import, review it, then run notch inbox ack ${delivery.deliveryId}.`;
+  }
+
+  if (delivery.state === 'pulled') {
+    return delivery.importedPacketId
+      ? `${delivery.to} imported ${delivery.importedPacketId}; wait for review or ask the receiver to acknowledge ${delivery.deliveryId}.`
+      : `${delivery.to} verified the archive but has not imported it; receiver should import or acknowledge the delivery intentionally.`;
+  }
+
+  if (delivery.state === 'acked') {
+    return `${delivery.to} acknowledged the delivery. Packet bytes remain retained for audit.`;
+  }
+
+  return `${delivery.to} rejected the delivery${delivery.errorCode ? ` with ${delivery.errorCode}` : ''}. Send a corrected packet with a new packet ID.`;
 }
 
 async function auditFailure(

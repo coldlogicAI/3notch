@@ -38,6 +38,8 @@ notch send <packet-id>.notchpkt --to local:review-agent
 
 Before a shared-mailbox write, 3Notch checks that the source is a regular `.notchpkt`, caps compressed and unpacked work, validates packet and artifact schemas, verifies artifact hashes, scans packet text and text-like artifacts, and blocks private or seed packets. The recipient must already be registered; a typo does not create a new mailbox.
 
+`notch send` also prints a plain-text delivery notice. Forward that notice through the user's chosen channel, such as Claude cross-session messaging, Slack, email, or a GitHub comment. The notice is only text; the receiving agent still has to run 3Notch commands under its own permissions.
+
 Retrying the same packet ID and exact bytes returns the existing active or completed delivery. Reusing a packet ID with different archive bytes fails. A terminally rejected delivery is never reported as a successful resend; correct the packet and create a new packet ID instead.
 
 ## Receive
@@ -70,6 +72,14 @@ notch inbox ack <delivery-id>
 
 Ack never deletes packet bytes. `notch inbox list` shows pending only; `notch inbox list --all` includes pulled, acknowledged, and rejected history.
 
+The sender can inspect retained state when it can read the same mailbox root:
+
+```bash
+notch inbox status <delivery-id> --at local:review-agent
+```
+
+This reports whether the delivery is still pending, was pulled, was acknowledged, or was rejected. The `--at` address selects which registered local inbox to inspect; without it, status checks the current store's own address.
+
 ## Reply
 
 Reply to the imported packet normally, then pack and send the reply to the original sender's address:
@@ -93,12 +103,13 @@ The local stdio MCP server exposes the same workflow:
 - `inbox_init`
 - `send_packet`
 - `list_inbox`
+- `get_inbox_delivery`
 - `pull_inbox_packet`
 - `ack_inbox_delivery`
 
 This is the neutral boundary for Claude, Codex, Grok, Cursor, ChatGPT, or any other MCP client that can run the 3Notch stdio server. Tools return small structured results with delivery ID, packet ID, byte hash, state, path, optional imported packet ID, and next action.
 
-`send_packet` is annotated as an externally visible write. List is read-only. Pull and ack mutate state; ack is non-destructive. Client approval and `.notch/config.json` write-tool policy still apply.
+`send_packet` is annotated as an externally visible write and returns the delivery notice. List and `get_inbox_delivery` are read-only. Pull and ack mutate state; ack is non-destructive. Client approval and `.notch/config.json` write-tool policy still apply.
 
 A future remote adapter can expose the same contracts over authenticated MCP Streamable HTTP. It does not need to add model-to-model calls, hosted identity, or vendor branches to this local core.
 

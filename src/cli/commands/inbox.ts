@@ -5,6 +5,7 @@ import { printInfo, printJson } from '../output.js';
 import { loadConfig } from '../../core/config-service.js';
 import {
   ackInboxDelivery,
+  getInboxDeliveryStatus,
   initializeDurableInbox,
   listInboxDeliveries,
   pullInboxDelivery,
@@ -24,6 +25,10 @@ type InboxListOptions = {
 type InboxPullOptions = {
   asReviewed?: boolean;
   import?: boolean;
+};
+
+type InboxStatusOptions = {
+  at?: string;
 };
 
 type SendOptions = {
@@ -58,6 +63,8 @@ export function registerInboxCommand(program: Command): void {
       printInfo(`To: ${options.to}`, context.output);
       printInfo(`SHA-256: ${result.packetHash}`, context.output);
       printInfo(`Next: ${result.nextAction}`, context.output);
+      printInfo('Notice:', context.output);
+      printInfo(result.notice, context.output);
     });
 
   const inbox = program.command('inbox').description('configure and process durable packet deliveries');
@@ -119,6 +126,41 @@ export function registerInboxCommand(program: Command): void {
           `${delivery.bytes} bytes`,
           delivery.createdAt,
         ].join('\t'), context.output);
+      }
+
+      printInfo(`Next: ${result.nextAction}`, context.output);
+    });
+
+  inbox
+    .command('status')
+    .description('read retained delivery state by ID')
+    .argument('<delivery-id>')
+    .option('--at <address>', 'registered local recipient address to inspect')
+    .action(async (deliveryId: string, options: InboxStatusOptions, command: Command) => {
+      const context = getCliContext(command);
+      const loaded = await loadCurrentConfig(context);
+      const result = await getInboxDeliveryStatus(loaded, {
+        deliveryId,
+        ...(options.at ? { address: options.at } : {}),
+      });
+
+      if (context.output.json) {
+        printJson(result);
+        return;
+      }
+
+      printInfo(`Delivery ${result.deliveryId} is ${result.state} at ${result.address}`, context.output);
+      printInfo(`From: ${result.delivery.from}`, context.output);
+      printInfo(`To: ${result.delivery.to}`, context.output);
+      printInfo(`Packet: ${result.packetId}`, context.output);
+      printInfo(`SHA-256: ${result.packetHash}`, context.output);
+
+      if (result.importedPacketId) {
+        printInfo(`Imported: ${result.importedPacketId}`, context.output);
+      }
+
+      if (result.delivery.errorCode) {
+        printInfo(`Error: ${result.delivery.errorCode}`, context.output);
       }
 
       printInfo(`Next: ${result.nextAction}`, context.output);

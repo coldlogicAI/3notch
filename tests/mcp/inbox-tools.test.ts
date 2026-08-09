@@ -38,15 +38,17 @@ describe('durable inbox MCP tools', () => {
           const send = await senderHarness.callTool('send_packet', {
             packetPath: packed.archivePath,
             to: 'local:receiver-model',
-          }) as { structuredContent: { deliveryId: string; packetHash: string } };
+          }) as { structuredContent: { deliveryId: string; notice: string; packetHash: string } };
           expect(send).toMatchObject({
             structuredContent: {
               deliveryId: expect.stringMatching(/^delivery_[a-f0-9]{24}$/u),
               packetHash: expect.stringMatching(/^[a-f0-9]{64}$/u),
               state: 'pending',
               idempotent: false,
+              notice: expect.stringContaining('3Notch delivery notice'),
             },
           });
+          expect(send.structuredContent.notice).toContain(`notch inbox pull ${send.structuredContent.deliveryId} --import`);
 
           await expect(receiverHarness.callTool('list_inbox')).resolves.toMatchObject({
             structuredContent: {
@@ -69,6 +71,18 @@ describe('durable inbox MCP tools', () => {
           })).resolves.toMatchObject({
             structuredContent: {
               deliveryId: send.structuredContent.deliveryId,
+              state: 'acked',
+            },
+          });
+          await expect(senderHarness.callTool('get_inbox_delivery', {
+            deliveryId: send.structuredContent.deliveryId,
+            address: 'local:receiver-model',
+          })).resolves.toMatchObject({
+            structuredContent: {
+              address: 'local:receiver-model',
+              deliveryId: send.structuredContent.deliveryId,
+              delivery: expect.objectContaining({ state: 'acked', importedPacketId: packed.packetId }),
+              nextAction: expect.stringContaining('acknowledged'),
               state: 'acked',
             },
           });
@@ -105,6 +119,15 @@ describe('durable inbox MCP tools', () => {
         });
         expect(tools.get('list_inbox')).toMatchObject({
           title: 'List durable inbox',
+          annotations: {
+            readOnlyHint: true,
+            destructiveHint: false,
+            openWorldHint: false,
+          },
+          outputSchema: expect.objectContaining({ type: 'object' }),
+        });
+        expect(tools.get('get_inbox_delivery')).toMatchObject({
+          title: 'Get inbox delivery',
           annotations: {
             readOnlyHint: true,
             destructiveHint: false,

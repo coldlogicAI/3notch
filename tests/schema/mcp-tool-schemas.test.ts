@@ -21,6 +21,7 @@ const expectedTools = [
   'inbox_init',
   'send_packet',
   'list_inbox',
+  'get_inbox_delivery',
   'pull_inbox_packet',
   'ack_inbox_delivery',
   'get_status',
@@ -63,10 +64,13 @@ describe('MCP tool input schemas', () => {
     const ajv = new Ajv2020({ strict: true });
     ajv.addSchema(sharedSchema);
     const validateSend = ajv.compile(getMcpToolInputSchema('send_packet'));
+    const validateStatus = ajv.compile(getMcpToolInputSchema('get_inbox_delivery'));
     const validatePull = ajv.compile(getMcpToolInputSchema('pull_inbox_packet'));
 
     expect(validateSend({ packetPath: '/tmp/packet.notchpkt', to: 'local:review-agent' })).toBe(true);
     expect(validateSend({ packetPath: '/tmp/packet.notchpkt', to: 'local:../review-agent' })).toBe(false);
+    expect(validateStatus({ deliveryId: 'delivery_aaaaaaaaaaaaaaaaaaaaaaaa', address: 'local:review-agent' })).toBe(true);
+    expect(validateStatus({ deliveryId: 'delivery_aaaaaaaaaaaaaaaaaaaaaaaa', address: 'local:../review-agent' })).toBe(false);
     expect(validatePull({ deliveryId: 'delivery_aaaaaaaaaaaaaaaaaaaaaaaa', import: true })).toBe(true);
     expect(validatePull({ deliveryId: '../../delivery', import: true })).toBe(false);
   });

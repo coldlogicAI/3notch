@@ -17,6 +17,7 @@ const v2Tools = [
   'inbox_init',
   'send_packet',
   'list_inbox',
+  'get_inbox_delivery',
   'pull_inbox_packet',
   'ack_inbox_delivery',
   'create_mark',

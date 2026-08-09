@@ -8,6 +8,7 @@ import { readAuditLog } from '../../src/core/audit-service.js';
 import { loadConfig } from '../../src/core/config-service.js';
 import {
   ackInboxDelivery,
+  getInboxDeliveryStatus,
   initializeDurableInbox,
   listInboxDeliveries,
   pullInboxDelivery,
@@ -41,6 +42,7 @@ describe('durable inbox service', () => {
         });
 
         expect(sent.idempotent).toBe(false);
+        expect(sent.notice).toContain(`notch inbox pull ${sent.deliveryId} --import`);
         expect(retry).toMatchObject({ deliveryId: sent.deliveryId, idempotent: true });
         expect(await listInboxDeliveries(receiverContext)).toMatchObject({
           deliveries: [expect.objectContaining({ deliveryId: sent.deliveryId, state: 'pending' })],
@@ -57,6 +59,16 @@ describe('durable inbox service', () => {
         expect(importRetry).toMatchObject({ importedPacketId: packed.packetId });
         expect(acked.state).toBe('acked');
         expect(ackRetry.state).toBe('acked');
+        expect(await getInboxDeliveryStatus(senderContext, {
+          deliveryId: sent.deliveryId,
+          address: 'local:receiver',
+        })).toMatchObject({
+          address: 'local:receiver',
+          deliveryId: sent.deliveryId,
+          delivery: expect.objectContaining({ state: 'acked', importedPacketId: packed.packetId }),
+          nextAction: expect.stringContaining('acknowledged'),
+          state: 'acked',
+        });
         expect(await readFile(acked.packetPath)).toEqual(packed.archive);
         expect((await listInboxDeliveries(receiverContext)).deliveries).toEqual([]);
         expect(await listInboxDeliveries(receiverContext, { includeAll: true })).toMatchObject({

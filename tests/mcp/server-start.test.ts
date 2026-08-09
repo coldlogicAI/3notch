@@ -32,6 +32,7 @@ describe('MCP server foundation', () => {
           'create_reply',
           'create_seed_packet',
           'get_brief',
+          'get_inbox_delivery',
           'get_packet',
           'get_status',
           'get_targeted_brief',
