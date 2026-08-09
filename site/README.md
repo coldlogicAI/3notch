@@ -41,7 +41,7 @@ npm run dev
 
 This uses `npx serve` (no install needed). Open the URL, edit `public/index.html`, refresh.
 
-**Do not open `public/index.html` via `file://`.** Root-absolute paths on docs pages (`/docs/...`, `/docs/docs.css`) only work when the site is served from a host root (`localhost:4321` or `3notch.dev`). Landing “Docs” links use relative `docs/` so a file open is less broken, but the docs tree still needs a real server.
+**Preview with `npm run dev`, not by opening HTML as a file.** The site uses root-absolute paths (`/docs/`, `/docs/docs.css`) so production and `serve` behave the same. `file://` will break those links.
 
 ---
 
