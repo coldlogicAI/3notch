@@ -3,36 +3,64 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>3Notch — Mark your trail.</title>
-<meta name="description" content="Local checkpoints and portable packets for AI coding sessions. Survive rate limits, model failures, and tool switches without rebuilding context. Open source.">
+<title>3Notch — Local AI checkpoints and portable handoff packets</title>
+<meta name="description" content="Open-source CLI and MCP server for local AI working-state checkpoints and portable packets. Recover after rate limits and model failures; hand off across Claude, Codex, Cursor, repos, and agents—no cloud account.">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+<meta name="author" content="coldlogic AI">
+<link rel="alternate" type="text/markdown" href="https://github.com/coldlogicAI/3notch/blob/main/README.md" title="Project README">
 
 <!-- Canonical & social -->
 <link rel="canonical" href="https://3notch.dev/">
-<meta property="og:title" content="3Notch — Mark your trail.">
-<meta property="og:description" content="Local checkpoints and portable packets for AI coding sessions. Survive rate limits, model failures, and tool switches without rebuilding context.">
+<meta property="og:site_name" content="3Notch">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="3Notch — Local AI checkpoints and portable handoff packets">
+<meta property="og:description" content="Recover after rate limits and model failures. Hand off context across tools, repos, and agents. Local files, MIT, no account.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://3notch.dev/">
 <meta property="og:image" content="https://3notch.dev/og-image.png?v=v0.7.1">
+<meta property="og:image:alt" content="3Notch — mark your trail. Local checkpoints for AI coding sessions.">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="3Notch — Mark your trail.">
-<meta name="twitter:description" content="Local checkpoints and portable packets for AI coding sessions. Survive rate limits, model failures, and tool switches without rebuilding context.">
+<meta name="twitter:title" content="3Notch — Local AI checkpoints and portable handoff packets">
+<meta name="twitter:description" content="Recover after rate limits and model failures. Hand off context across tools, repos, and agents. Local files, MIT, no account.">
 <meta name="twitter:image" content="https://3notch.dev/og-image.png?v=v0.7.1">
+<meta name="twitter:image:alt" content="3Notch — mark your trail. Local checkpoints for AI coding sessions.">
 <meta name="theme-color" content="#0B0A08">
 
-<!-- Structured data: Software + FAQ -->
+<!-- Structured data: WebSite + Software + FAQ (aligned with visible FAQ) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "3Notch",
+  "url": "https://3notch.dev/",
+  "description": "Local AI working-state checkpoints and portable handoff packets.",
+  "publisher": {
+    "@type": "Organization",
+    "name": "coldlogic AI",
+    "url": "https://github.com/coldlogicAI"
+  }
+}
+</script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "3Notch",
-  "description": "3Notch is an open-source CLI and MCP server for local AI working-state checkpoints and portable handoff packets. Use it when a session dies, a model fails, you switch tools, or you need async delivery between agents and repos—without a cloud account or hosted relay.",
+  "alternateName": ["@3notch/cli", "notch CLI"],
+  "description": "Open-source CLI and MCP server for local AI working-state checkpoints, portable .notchpkt handoff packets, and durable inbox delivery between stores. No cloud account or hosted relay.",
   "applicationCategory": "DeveloperApplication",
+  "applicationSubCategory": "DeveloperTools",
   "operatingSystem": "macOS, Windows, Linux",
   "url": "https://3notch.dev/",
   "downloadUrl": "https://www.npmjs.com/package/@3notch/cli",
+  "installUrl": "https://www.npmjs.com/package/@3notch/cli",
   "softwareVersion": "0.7.1",
+  "softwareHelp": {
+    "@type": "WebPage",
+    "url": "https://3notch.dev/docs/"
+  },
   "license": "https://opensource.org/licenses/MIT",
   "offers": {
     "@type": "Offer",
@@ -45,7 +73,27 @@
     "url": "https://github.com/coldlogicAI"
   },
   "codeRepository": "https://github.com/coldlogicAI/3notch",
-  "programmingLanguage": "TypeScript"
+  "programmingLanguage": "TypeScript",
+  "keywords": [
+    "AI coding checkpoints",
+    "Claude Code continuation",
+    "cross-tool AI handoff",
+    "portable context packets",
+    "MCP server",
+    "local-first agent memory",
+    "rate limit recovery"
+  ],
+  "sameAs": [
+    "https://github.com/coldlogicAI/3notch",
+    "https://www.npmjs.com/package/@3notch/cli"
+  ],
+  "featureList": [
+    "Continuation checkpoints for Claude Code session recovery",
+    "Portable Markdown packets and .notchpkt archives",
+    "Durable local inbox for async agent delivery",
+    "Secret scanning on write",
+    "Local stdio MCP server"
+  ]
 }
 </script>
 <script type="application/ld+json">
@@ -55,26 +103,26 @@
   "mainEntity": [
     {
       "@type": "Question",
-      "name": "How do I save context when switching AI models?",
+      "name": "How do I hand off work when I switch models or tools?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Write a packet (or continuation checkpoint) with the objective, what finished, what is blocked, and what is next. Import or resume it in the other tool. Install: npm install -g @3notch/cli"
+        "text": "Create a 3Notch packet with the objective, completed work, blockers, and next steps, plus files if needed. Import it in the other tool, or pack a .notchpkt and move it yourself. Install: npm install -g @3notch/cli"
       }
     },
     {
       "@type": "Question",
-      "name": "How do I recover context after an AI rate limit or session crash?",
+      "name": "What happens after a rate limit or model failure?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Enable continuation checkpoints for Claude Code. 3Notch writes a fallback when the session hits a rate limit, model-down failure, or compaction, then offers that checkpoint at the next session start for your approval."
+        "text": "With Claude Code continuation checkpoints enabled, 3Notch can write a fallback on rate limits, model-down failures, and compaction. The next session may offer that checkpoint once; you confirm in chat before the agent loads the packet."
       }
     },
     {
       "@type": "Question",
-      "name": "What is 3Notch?",
+      "name": "How do two agents hand off without a shared chat?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "A local CLI and MCP server for AI working-state checkpoints and portable handoff packets. Markdown on disk, no hosted service, no account. Works with Claude Code, Codex, Cursor, and other tools."
+        "text": "Use the durable inbox: both stores register the same mailbox root, send a packed project packet, forward the plain-text delivery notice, then pull, import, and ack. Local addresses are labels, not authenticated identity."
       }
     },
     {
@@ -82,7 +130,15 @@
       "name": "Does 3Notch work with Claude Code, Codex, and Cursor?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes. Use the MCP server where the client supports it, or pack and import .notchpkt archives. Packets are plain Markdown plus optional artifacts—any agent can read them."
+        "text": "Yes. Use the MCP server where the client supports it, or pack and import .notchpkt archives. Packets are Markdown on disk."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is 3Notch a memory product or vector database?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. 3Notch moves selected working state across sessions and tools as local files. No embeddings and no hosted index."
       }
     },
     {
@@ -90,7 +146,7 @@
       "name": "Is 3Notch free?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes. MIT license. No cloud product, no account, no telemetry. npm install -g @3notch/cli"
+        "text": "Yes. MIT license. No SaaS tier, no account, no telemetry. npm install -g @3notch/cli"
       }
     }
   ]
@@ -1027,7 +1083,7 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
 <span class="prompt">you</span> <span class="cmd">actually wait, let me check what we</span>
 <span class="prompt">you</span> <span class="cmd">committed vs what was in progress...</span>
 <span class="blank"></span>
-<span class="warn">40 minutes to get back to where you were.</span></pre>
+<span class="warn">~20 minutes to get back to where you were.</span></pre>
       </div>
     </div>
   </div>
@@ -1036,7 +1092,7 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
     <div class="feature-copy">
       <span class="eyebrow">With 3Notch</span>
       <h3 class="feature-head">Offer a checkpoint. You approve.</h3>
-      <p class="feature-desc">A fallback packet is already on disk: objective, tasks, git state. The next session can surface it once. Nothing loads into the agent until you say yes.</p>
+      <p class="feature-desc">A fallback packet is already on disk: objective, tasks, git state. The next session can surface it once in chat. Nothing loads into the agent until you confirm.</p>
     </div>
     <div class="feature-demo">
       <div class="term">
@@ -1044,16 +1100,17 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
           <span class="dot live"></span><span class="dot"></span><span class="dot"></span>
           <span class="title">new session &middot; 3notch</span>
         </div>
-        <pre class="term-body"><span class="key">3notch</span> <span class="cmd">Found checkpoint: auth-middleware-refactor</span>
+        <pre class="term-body"><span class="key">3notch</span> <span class="cmd">checkpoint available: auth-middleware-refactor</span>
 <span class="info">  objective: refactor auth middleware</span>
 <span class="info">  completed: token validation, route guards</span>
 <span class="info">  blocked: session store migration</span>
 <span class="info">  next: implement Redis session adapter</span>
 <span class="blank"></span>
-<span class="prompt">agent</span> <span class="cmd">Resume from this checkpoint? (y/n)</span>
-<span class="prompt">you</span> <span class="cmd">y</span>
+<span class="prompt">agent</span> <span class="cmd">Found a continuation for this stream.</span>
+<span class="prompt">agent</span> <span class="cmd">Want me to load it and continue from Redis?</span>
+<span class="prompt">you</span> <span class="cmd">yes, load it</span>
 <span class="blank"></span>
-<span class="ok">&#10003; Resuming. Picking up at Redis session adapter.</span><span class="cursor"></span></pre>
+<span class="ok">&#10003; Loading packet after your confirmation.</span><span class="cursor"></span></pre>
       </div>
     </div>
   </div>
