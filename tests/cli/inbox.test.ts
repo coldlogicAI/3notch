@@ -36,6 +36,7 @@ describe('notch durable inbox CLI', () => {
         ], { cwd: sender.path });
         const sent = JSON.parse(send.stdout) as {
           deliveryId: string;
+          notice: string;
           packetHash: string;
           packetId: string;
         };
@@ -45,6 +46,9 @@ describe('notch durable inbox CLI', () => {
           packetId: packed.packetId,
           packetHash: expect.stringMatching(/^[a-f0-9]{64}$/u),
         });
+        expect(sent.notice).toContain('3Notch delivery notice');
+        expect(sent.notice).toContain(`notch inbox pull ${sent.deliveryId} --import`);
+        expect(sent.notice).toContain(`notch inbox status ${sent.deliveryId} --at local:receiver-agent`);
 
         await writeFile(
           path.join(
@@ -77,6 +81,19 @@ describe('notch durable inbox CLI', () => {
         expect(ack.exitCode).toBe(0);
         expect(ack.stdout).toContain(`Acknowledged delivery ${sent.deliveryId}`);
         expect(ack.stdout).toContain('Packet bytes retained for audit.');
+        const senderStatus = await runCli(['--json', 'inbox', 'status', sent.deliveryId, '--at', 'local:receiver-agent'], {
+          cwd: sender.path,
+        });
+        expect(JSON.parse(senderStatus.stdout)).toMatchObject({
+          address: 'local:receiver-agent',
+          deliveryId: sent.deliveryId,
+          delivery: expect.objectContaining({ state: 'acked', importedPacketId: packed.packetId }),
+          state: 'acked',
+        });
+        const humanStatus = await runCli(['inbox', 'status', sent.deliveryId, '--at', 'local:receiver-agent'], {
+          cwd: sender.path,
+        });
+        expect(humanStatus.stdout).toContain(`Delivery ${sent.deliveryId} is acked at local:receiver-agent`);
         expect((await runCli(['--json', 'inbox', 'list'], { cwd: receiver.path })).stdout).toContain('"deliveries": []');
         expect(JSON.parse((await runCli(['--json', 'inbox', 'list', '--all'], { cwd: receiver.path })).stdout)).toMatchObject({
           deliveries: [expect.objectContaining({ state: 'acked', importedPacketId: packed.packetId })],
@@ -135,6 +152,7 @@ describe('notch durable inbox CLI', () => {
     expect(rootHelp.stdout).toContain('inbox');
     expect(inboxHelp.stdout).toContain('init');
     expect(inboxHelp.stdout).toContain('list');
+    expect(inboxHelp.stdout).toContain('status');
     expect(inboxHelp.stdout).toContain('pull');
     expect(inboxHelp.stdout).toContain('ack');
     expect(inboxHelp.stdout).not.toContain('delete');

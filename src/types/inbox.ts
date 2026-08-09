@@ -43,3 +43,8 @@ export type InboxResult = {
   importedPacketId?: string;
   nextAction: string;
 };
+
+export type InboxDeliveryStatusResult = InboxResult & {
+  address: string;
+  delivery: InboxDelivery;
+};

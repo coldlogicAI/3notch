@@ -95,6 +95,7 @@ notch inbox init --name review-agent --root /shared/3notch-mailbox
 # Pack and send from the source
 notch packet pack <packet-id>
 notch send <packet-id>.notchpkt --to local:review-agent
+notch inbox status <delivery-id> --at local:review-agent
 
 # Verify and import at the receiver
 notch inbox list
@@ -102,7 +103,7 @@ notch inbox pull <delivery-id> --import
 notch inbox ack <delivery-id>
 ```
 
-The local address is a routing label, not authenticated identity. Deliveries are hashed, validated, scanned, retained after ack, and traced locally. See [Durable inbox](docs/guides/durable-inbox.md).
+`notch send` prints an agent-readable delivery notice that can move through Claude cross-session messaging, Slack, email, or any other text channel. The local address is a routing label, not authenticated identity. Deliveries are hashed, validated, scanned, retained after ack, and traced locally. See [Durable inbox](docs/guides/durable-inbox.md).
 
 ### Browser-only chats (fallback)
 
@@ -144,7 +145,7 @@ notch packet import <file-or-folder>  import a packet into .notch/inbox/
 notch packet preview <id>           show what an agent will read
 notch packet pack <id>              produce a .notchpkt archive
 notch packet unpack <archive>       import a .notchpkt archive
-notch inbox init/list/pull/ack       configure and process durable deliveries
+notch inbox init/list/status/pull/ack  configure and process durable deliveries
 notch send <archive> --to <address>  send a packed project handoff
 notch packet list / show            list / inspect packets
 notch reply <id>                    typed reply to a packet
@@ -163,7 +164,7 @@ notch mcp serve                     local stdio MCP server
 
 `notch mcp serve` exposes these tools over local stdio:
 
-- Read-only: `get_brief`, `list_briefs`, `get_targeted_brief`, `get_packet`, `list_packets`, `list_inbox`, `get_status`, `check_store`, `run_doctor`
+- Read-only: `get_brief`, `list_briefs`, `get_targeted_brief`, `get_packet`, `list_packets`, `list_inbox`, `get_inbox_delivery`, `get_status`, `check_store`, `run_doctor`
 - Write: `create_brief`, `create_packet`, `create_mark`, `create_reply`, `create_seed_packet`, `import_packet`, `import_seed_packet`, `inbox_init`, `send_packet`, `pull_inbox_packet`, `ack_inbox_delivery`
 
 Private records under `.notch/private/` are hidden unless the server starts with `--include-private`. See [docs/guides/mcp-setup.md](docs/guides/mcp-setup.md) for client-specific setup.

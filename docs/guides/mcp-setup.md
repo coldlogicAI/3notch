@@ -45,6 +45,7 @@ Read-only:
 - `get_packet`, `list_packets`
 - `get_status`, `check_store`, `run_doctor`
 - `list_inbox` — list pending or retained durable deliveries
+- `get_inbox_delivery` — read pending, pulled, acknowledged, or rejected status for one delivery
 
 Write tools (require client tool-permission grant):
 
@@ -55,7 +56,7 @@ Write tools (require client tool-permission grant):
 - `create_seed_packet`
 - `import_packet`, `import_seed_packet`
 - `inbox_init` — register an explicit local mailbox root and address
-- `send_packet` — send an already-packed project packet to a registered `local:` address
+- `send_packet` — send an already-packed project packet to a registered `local:` address and return a delivery notice
 - `pull_inbox_packet` — verify and optionally import a delivery
 - `ack_inbox_delivery` — acknowledge without deleting retained bytes
 

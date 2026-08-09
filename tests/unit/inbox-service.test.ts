@@ -8,6 +8,7 @@ import { readAuditLog } from '../../src/core/audit-service.js';
 import { loadConfig } from '../../src/core/config-service.js';
 import {
   ackInboxDelivery,
+  getInboxDeliveryStatus,
   initializeDurableInbox,
   listInboxDeliveries,
   pullInboxDelivery,
@@ -41,22 +42,56 @@ describe('durable inbox service', () => {
         });
 
         expect(sent.idempotent).toBe(false);
+        expect(sent.notice).toContain(`notch inbox pull ${sent.deliveryId} --import`);
         expect(retry).toMatchObject({ deliveryId: sent.deliveryId, idempotent: true });
         expect(await listInboxDeliveries(receiverContext)).toMatchObject({
           deliveries: [expect.objectContaining({ deliveryId: sent.deliveryId, state: 'pending' })],
         });
+        expect(await getInboxDeliveryStatus(senderContext, {
+          deliveryId: sent.deliveryId,
+          address: 'local:receiver',
+        })).toMatchObject({
+          state: 'pending',
+          nextAction: expect.stringContaining('has not pulled this delivery yet'),
+        });
 
         const verified = await pullInboxDelivery(receiverContext, { deliveryId: sent.deliveryId });
+        expect(verified).toMatchObject({ state: 'pulled', packetId: packed.packetId });
+        expect(await getInboxDeliveryStatus(senderContext, {
+          deliveryId: sent.deliveryId,
+          address: 'local:receiver',
+        })).toMatchObject({
+          state: 'pulled',
+          nextAction: expect.stringContaining('verified the archive but has not imported it'),
+        });
+
         const imported = await pullInboxDelivery(receiverContext, { deliveryId: sent.deliveryId, import: true });
         const importRetry = await pullInboxDelivery(receiverContext, { deliveryId: sent.deliveryId, import: true });
-        const acked = await ackInboxDelivery(receiverContext, { deliveryId: sent.deliveryId });
-        const ackRetry = await ackInboxDelivery(receiverContext, { deliveryId: sent.deliveryId });
-
-        expect(verified).toMatchObject({ state: 'pulled', packetId: packed.packetId });
         expect(imported).toMatchObject({ state: 'pulled', importedPacketId: packed.packetId });
         expect(importRetry).toMatchObject({ importedPacketId: packed.packetId });
+        expect(await getInboxDeliveryStatus(senderContext, {
+          deliveryId: sent.deliveryId,
+          address: 'local:receiver',
+        })).toMatchObject({
+          state: 'pulled',
+          delivery: expect.objectContaining({ importedPacketId: packed.packetId }),
+          nextAction: expect.stringContaining(`imported ${packed.packetId}`),
+        });
+
+        const acked = await ackInboxDelivery(receiverContext, { deliveryId: sent.deliveryId });
+        const ackRetry = await ackInboxDelivery(receiverContext, { deliveryId: sent.deliveryId });
         expect(acked.state).toBe('acked');
         expect(ackRetry.state).toBe('acked');
+        expect(await getInboxDeliveryStatus(senderContext, {
+          deliveryId: sent.deliveryId,
+          address: 'local:receiver',
+        })).toMatchObject({
+          address: 'local:receiver',
+          deliveryId: sent.deliveryId,
+          delivery: expect.objectContaining({ state: 'acked', importedPacketId: packed.packetId }),
+          nextAction: expect.stringContaining('acknowledged'),
+          state: 'acked',
+        });
         expect(await readFile(acked.packetPath)).toEqual(packed.archive);
         expect((await listInboxDeliveries(receiverContext)).deliveries).toEqual([]);
         expect(await listInboxDeliveries(receiverContext, { includeAll: true })).toMatchObject({
@@ -318,6 +353,14 @@ describe('durable inbox service', () => {
         })).rejects.toMatchObject({ notchError: { code: 'NOTCH_INBOX_HASH_MISMATCH' } });
         expect(await listInboxDeliveries(receiverContext, { includeAll: true })).toMatchObject({
           deliveries: [expect.objectContaining({ state: 'rejected', errorCode: 'NOTCH_INBOX_HASH_MISMATCH' })],
+        });
+        expect(await getInboxDeliveryStatus(senderContext, {
+          deliveryId: sent.deliveryId,
+          address: 'local:receiver',
+        })).toMatchObject({
+          state: 'rejected',
+          delivery: expect.objectContaining({ errorCode: 'NOTCH_INBOX_HASH_MISMATCH' }),
+          nextAction: expect.stringContaining('NOTCH_INBOX_HASH_MISMATCH'),
         });
         expect(await readAuditLog(receiverContext.paths.logs)).toEqual(expect.arrayContaining([
           expect.objectContaining({

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-08
+
+### Added
+- `notch send` and MCP `send_packet` now return a plain-text delivery notice that can be forwarded through agent/chat channels.
+- `notch inbox status <delivery-id> [--at local:name]` and read-only MCP `get_inbox_delivery` expose retained delivery state for sender-side acknowledgement checks.
+
 ### Fixed
 - Receiver size-policy failures remain retryable after limits change, legacy size rejections can recover, and rejected deliveries no longer produce false-success resend results.
 - Durable inbox listing ignores unmanaged sync-folder clutter while continuing to reject malformed entries in the managed delivery-ID namespace.

@@ -10,7 +10,7 @@ import { createTargetedBrief, getProjectBrief, getTargetedBrief, listTargetedBri
 import { checkStore } from '../core/check-service.js';
 import { loadConfig } from '../core/config-service.js';
 import { runDoctor } from '../core/doctor-service.js';
-import { ackInboxDelivery, initializeDurableInbox, listInboxDeliveries, pullInboxDelivery, sendInboxPacket } from '../core/inbox-service.js';
+import { ackInboxDelivery, getInboxDeliveryStatus, initializeDurableInbox, listInboxDeliveries, pullInboxDelivery, sendInboxPacket } from '../core/inbox-service.js';
 import { createMark, createPacket, createReply, getPacket, listPackets } from '../core/packet-service.js';
 import { createSeedPacket, importSeedPacket } from '../core/seed-service.js';
 import { getStatus } from '../core/status-service.js';
@@ -77,6 +77,13 @@ const toolDefinitions: ToolDefinition[] = [
     outputSchema: inboxListOutputSchema(),
   },
   {
+    name: 'get_inbox_delivery',
+    title: 'Get inbox delivery',
+    description: 'Read retained delivery state by ID, optionally at another registered local: address in the same mailbox root, so the sender can see pulled, acknowledged, or rejected status.',
+    readOnly: true,
+    outputSchema: inboxStatusOutputSchema(),
+  },
+  {
     name: 'pull_inbox_packet',
     title: 'Pull inbox packet',
     description: 'Verify an async delivery by SHA-256 and existing packet/security checks; set import to true to import it through normal 3Notch validation. Import does not acknowledge or delete the retained delivery.',
@@ -103,7 +110,7 @@ export function createNotchMcpServer(options: NotchMcpServerOptions = {}): Serve
     { name: '3notch', version: VERSION },
     {
       capabilities: { tools: {} },
-      instructions: '3Notch exposes local, explicit, reviewable packets. For async handoff: create and pack a project packet, send_packet to a registered local: address, list_inbox at the receiver, pull_inbox_packet with import=true, review, then ack_inbox_delivery. Durable inbox labels are not authenticated identities; private/seed packets are blocked. 3Notch does not scrape chats, invoke other models, run shells, host a relay, or delete acknowledged packets.',
+      instructions: '3Notch exposes local, explicit, reviewable packets. For async handoff: create and pack a project packet, send_packet to a registered local: address, forward the returned delivery notice, list_inbox at the receiver, pull_inbox_packet with import=true, review, ack_inbox_delivery, and use get_inbox_delivery when the sender needs status. Durable inbox labels are not authenticated identities; private/seed packets are blocked. 3Notch does not scrape chats, invoke other models, run shells, host a relay, or delete acknowledged packets.',
     },
   );
 
@@ -350,6 +357,13 @@ async function executeTool(
     case 'list_inbox': {
       return await listInboxDeliveries(context, { includeAll: Boolean(args.includeAll) }) as unknown as Record<string, unknown>;
     }
+    case 'get_inbox_delivery': {
+      const address = stringArg(args.address);
+      return await getInboxDeliveryStatus(context, {
+        deliveryId: requiredString(args.deliveryId, 'deliveryId'),
+        ...(address ? { address } : {}),
+      }) as unknown as Record<string, unknown>;
+    }
     case 'pull_inbox_packet': {
       if (Boolean(args.asReviewed) && !args.import) {
         throw new NotchException({
@@ -502,7 +516,7 @@ function inboxActionOutputSchema(includeIdempotent: boolean): Record<string, unk
       'packetHash',
       'state',
       'packetPath',
-      ...(includeIdempotent ? ['idempotent'] : []),
+      ...(includeIdempotent ? ['idempotent', 'notice'] : []),
       'nextAction',
     ],
     properties: {
@@ -513,7 +527,7 @@ function inboxActionOutputSchema(includeIdempotent: boolean): Record<string, unk
       state: { enum: ['pending', 'pulled', 'acked', 'rejected'] },
       packetPath: { type: 'string', minLength: 1 },
       importedPacketId: { type: 'string', minLength: 1 },
-      ...(includeIdempotent ? { idempotent: { type: 'boolean' } } : {}),
+      ...(includeIdempotent ? { idempotent: { type: 'boolean' }, notice: { type: 'string', minLength: 1 } } : {}),
       nextAction: { type: 'string', minLength: 1 },
     },
   };
@@ -535,6 +549,26 @@ function inboxInitOutputSchema(): Record<string, unknown> {
   };
 }
 
+function inboxStatusOutputSchema(): Record<string, unknown> {
+  return {
+    type: 'object',
+    additionalProperties: false,
+    required: ['ok', 'address', 'deliveryId', 'packetId', 'packetHash', 'state', 'packetPath', 'delivery', 'nextAction'],
+    properties: {
+      ok: { const: true },
+      address: { type: 'string', pattern: '^local:' },
+      deliveryId: { type: 'string', pattern: '^delivery_[a-f0-9]{24}$' },
+      packetId: { type: 'string', minLength: 1 },
+      packetHash: { type: 'string', pattern: '^[a-f0-9]{64}$' },
+      state: { enum: ['pending', 'pulled', 'acked', 'rejected'] },
+      packetPath: { type: 'string', minLength: 1 },
+      importedPacketId: { type: 'string', minLength: 1 },
+      delivery: inboxDeliveryOutputSchema(),
+      nextAction: { type: 'string', minLength: 1 },
+    },
+  };
+}
+
 function inboxListOutputSchema(): Record<string, unknown> {
   return {
     type: 'object',
@@ -545,32 +579,36 @@ function inboxListOutputSchema(): Record<string, unknown> {
       address: { type: 'string', pattern: '^local:' },
       deliveries: {
         type: 'array',
-        items: {
-          type: 'object',
-          additionalProperties: false,
-          required: ['schemaVersion', 'deliveryId', 'transport', 'from', 'to', 'packetId', 'packetHash', 'bytes', 'state', 'createdAt', 'updatedAt'],
-          properties: {
-            schemaVersion: { const: '1.0.0' },
-            deliveryId: { type: 'string' },
-            transport: { const: 'local' },
-            from: { type: 'string' },
-            to: { type: 'string' },
-            packetId: { type: 'string' },
-            packetHash: { type: 'string' },
-            bytes: { type: 'integer' },
-            state: { enum: ['pending', 'pulled', 'acked', 'rejected'] },
-            createdAt: { type: 'string' },
-            updatedAt: { type: 'string' },
-            pulledAt: { type: 'string' },
-            ackedAt: { type: 'string' },
-            rejectedAt: { type: 'string' },
-            importedAt: { type: 'string' },
-            importedPacketId: { type: 'string' },
-            errorCode: { type: 'string' },
-          },
-        },
+        items: inboxDeliveryOutputSchema(),
       },
       nextAction: { type: 'string', minLength: 1 },
+    },
+  };
+}
+
+function inboxDeliveryOutputSchema(): Record<string, unknown> {
+  return {
+    type: 'object',
+    additionalProperties: false,
+    required: ['schemaVersion', 'deliveryId', 'transport', 'from', 'to', 'packetId', 'packetHash', 'bytes', 'state', 'createdAt', 'updatedAt'],
+    properties: {
+      schemaVersion: { const: '1.0.0' },
+      deliveryId: { type: 'string' },
+      transport: { const: 'local' },
+      from: { type: 'string' },
+      to: { type: 'string' },
+      packetId: { type: 'string' },
+      packetHash: { type: 'string' },
+      bytes: { type: 'integer' },
+      state: { enum: ['pending', 'pulled', 'acked', 'rejected'] },
+      createdAt: { type: 'string' },
+      updatedAt: { type: 'string' },
+      pulledAt: { type: 'string' },
+      ackedAt: { type: 'string' },
+      rejectedAt: { type: 'string' },
+      importedAt: { type: 'string' },
+      importedPacketId: { type: 'string' },
+      errorCode: { type: 'string' },
     },
   };
 }
