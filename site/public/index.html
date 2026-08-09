@@ -12,13 +12,13 @@
 <meta property="og:description" content="Your AI session died mid-task. 3Notch saves the working state so the next agent picks up where this one stopped. Local, portable, open source.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://3notch.dev/">
-<meta property="og:image" content="https://3notch.dev/og-image.png?v=v0.5.0">
+<meta property="og:image" content="https://3notch.dev/og-image.png?v=v0.7.1">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="3Notch — Mark your trail.">
 <meta name="twitter:description" content="Your AI session died mid-task. 3Notch saves the working state so the next agent picks up where this one stopped. Local, portable, open source.">
-<meta name="twitter:image" content="https://3notch.dev/og-image.png?v=v0.5.0">
+<meta name="twitter:image" content="https://3notch.dev/og-image.png?v=v0.7.1">
 <meta name="theme-color" content="#0B0A08">
 
 <!-- Structured data: Software + FAQ -->
@@ -27,12 +27,12 @@
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "3Notch",
-  "description": "3Notch is an open-source CLI tool that saves AI working state as local, portable checkpoints. When an AI coding session hits a rate limit, compacts its context window, or switches models, 3Notch preserves the current objective, completed work, decisions, blockers, and next steps so the next session can resume without starting over.",
+  "description": "3Notch is an open-source CLI tool that saves AI working state as local, portable checkpoints and packets. When a session hits a rate limit, the model goes down, the context window compacts, or you switch tools, 3Notch preserves the current objective, completed work, decisions, blockers, and next steps so the next session can resume without starting over.",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "macOS, Windows, Linux",
   "url": "https://3notch.dev/",
   "downloadUrl": "https://www.npmjs.com/package/@3notch/cli",
-  "softwareVersion": "0.7.0",
+  "softwareVersion": "0.7.1",
   "license": "https://opensource.org/licenses/MIT",
   "offers": {
     "@type": "Offer",
@@ -66,7 +66,7 @@
       "name": "How do I recover context after an AI rate limit or session crash?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "3Notch automatically saves working state when a session hits a rate limit or compacts its context window. When you start a new session, 3Notch offers the latest checkpoint for review and loads it after you approve, so you can resume in seconds instead of spending 30-40 minutes re-explaining your project."
+        "text": "With continuation checkpoints enabled, 3Notch saves working state when a session hits a rate limit, the model goes down (overloaded, server error, and related failures), or the context window compacts. When you start a new session, 3Notch offers the latest checkpoint for review and loads it after you approve."
       }
     },
     {
@@ -949,7 +949,7 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
     <div class="s-num">HOW IT WORKS</div>
     <div class="s-head-body">
       <h2 class="s-title">Session dies. Context <span class="accent">survives</span>.</h2>
-      <p class="s-sub">When a session hits a rate limit or compacts, 3Notch saves the working state automatically. When you start a new session, it offers to pick up where you left off.</p>
+      <p class="s-sub">When a session hits a rate limit, the model goes down, or context compacts, 3Notch can save the working state. When you start a new session, it offers to pick up where you left off.</p>
     </div>
   </div>
 
@@ -1022,7 +1022,7 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
     <article class="workflow-card">
       <div class="workflow-num">Session crashed</div>
       <h3 class="workflow-head">Rate limited. Compacted. Model went down.</h3>
-      <p class="workflow-desc">Doesn't matter why&mdash;3Notch already saved where you were. Your next session offers to pick up exactly where this one stopped.</p>
+      <p class="workflow-desc">Doesn't matter why&mdash;with checkpoints enabled, 3Notch already saved where you were. Your next session offers to pick up exactly where this one stopped.</p>
       <pre class="workflow-code"><span class="c">$</span> notch packet list
 <span class="m">  auth-refactor</span>  <span class="c">checkpoint</span>
   next: Redis session adapter
@@ -1131,7 +1131,7 @@ button { font: inherit; cursor: pointer; background: none; border: none; color: 
         <span class="faq-icon" aria-hidden="true">+</span>
       </button>
       <div class="faq-a">
-        <p>3Notch saves working state when a session hits a rate limit or compacts its context window. When you start a new session, 3Notch offers the latest checkpoint for review and loads it after you approve. You resume in seconds instead of spending 30&ndash;40 minutes re-explaining your project.</p>
+        <p>With continuation checkpoints enabled, 3Notch saves working state on rate limits, model-down failures, and context compaction. When you start a new session, it offers the latest checkpoint for review and loads it after you approve&mdash;seconds instead of re-explaining the project.</p>
       </div>
     </div>
     <div class="faq-item">
