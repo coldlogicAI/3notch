@@ -44,3 +44,11 @@ Desktop.ini
 .notch/index/
 .notch/logs/
 .notch/private/
+
+# Local playground stores (do not commit personal .notch roots)
+# Keep fixtures/ and intentional demo stores tracked separately.
+
+# Site local artifacts
+site/public/test-results/
+site/node_modules/
+site/.wrangler/

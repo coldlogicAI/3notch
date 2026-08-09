@@ -41,9 +41,14 @@ npm run dev
 
 This uses `npx serve` (no install needed). Open the URL, edit `public/index.html`, refresh.
 
+**Preview with `npm run dev`, not by opening HTML as a file.** The site uses root-absolute paths (`/docs/`, `/docs/docs.css`) so production and `serve` behave the same. `file://` will break those links.
+
 ---
 
 ## Deploy to Cloudflare Pages
+
+**Canonical path:** Wrangler → Cloudflare Pages project `3notch`.  
+There is no GitHub Pages workflow for this site in-repo. If you ever saw a GitHub deploy, it was one-off or external—not the maintained path.
 
 ### One-time setup
 
@@ -60,9 +65,10 @@ This uses `npx serve` (no install needed). Open the URL, edit `public/index.html
 
 ### Ship it
 
-From `site/`:
+From `site/` (after copy/version changes are on the branch you want live):
 
 ```bash
+cd site
 npm run deploy
 ```
 

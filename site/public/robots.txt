@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
 
+# Public marketing + docs only
+Disallow: /test-results/
+
 Sitemap: https://3notch.dev/sitemap.xml

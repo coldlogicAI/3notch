@@ -13,7 +13,7 @@ Task-shaped how-tos for the main flows.
 - [Targeted brief workflow](guides/targeted-brief-workflow.md) — scoped task briefs vs cross-boundary packets.
 - [MCP setup](guides/mcp-setup.md) — server flags, available tools, agent instruction packs.
 - [Continuation checkpoints](guides/continuation-checkpoints.md) — opt-in Claude task aggregation, compaction fallback, model-down StopFailure recovery, and resume confirmation.
-- [Release](guides/release.md) — version surfaces, manual npm publish (token + temp config), and release-check automation.
+- [Release](guides/release.md) — maintainer version surfaces, publish recipe, and release-check.
 
 ## Reference
 
