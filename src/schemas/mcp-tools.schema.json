@@ -6,7 +6,7 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "includeMarkdown": { "type": "boolean" }
+        "includeMarkdown": { "type": "boolean", "description": "When true, also return the brief's rendered Markdown alongside the parsed record. Default false." }
       }
     },
     "create_brief": {
@@ -14,41 +14,43 @@
       "additionalProperties": false,
       "required": ["title", "targetAgent", "goal", "scope", "exclusions", "designBasis", "priorReasoningSummary"],
       "properties": {
-        "actorName": { "type": "string", "minLength": 1 },
-        "title": { "type": "string", "minLength": 1 },
-        "targetAgent": { "type": "string", "minLength": 1 },
-        "goal": { "type": "string", "minLength": 1 },
+        "actorName": { "type": "string", "minLength": 1, "description": "Name recorded as the author of this write; defaults to the server's configured actor, or 'mcp-client'." },
+        "title": { "type": "string", "minLength": 1, "description": "Short human-readable title for the brief; also used to build the stored filename." },
+        "targetAgent": { "type": "string", "minLength": 1, "description": "Agent or role this brief is written for; slugified into the filename and matched exactly by the list_briefs targetAgent filter." },
+        "goal": { "type": "string", "minLength": 1, "description": "What the target agent should accomplish; rendered as the brief's goal section." },
         "scope": {
           "type": "object",
           "additionalProperties": false,
           "required": ["topics", "files"],
+          "description": "Boundaries of the work: in-scope topics, in-scope files, and an optional timeframe.",
           "properties": {
-            "topics": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-            "files": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-            "timeframe": { "type": "string", "minLength": 1 }
+            "topics": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "In-scope subject areas; rendered as the brief's relevant-background list." },
+            "files": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Project-relative paths in scope; each must resolve inside the project root or the call is rejected." },
+            "timeframe": { "type": "string", "minLength": 1, "description": "Optional free-text period the brief covers, in the user's own wording." }
           }
         },
-        "exclusions": { "type": "array", "items": { "type": "string" } },
+        "exclusions": { "type": "array", "items": { "type": "string" }, "description": "Out-of-scope items and known pitfalls; rendered as the brief's Known Pitfalls list." },
         "relevantFiles": {
           "type": "array",
-          "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLink" }
+          "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLink" },
+          "description": "Source links worth reading (kind: file, url, commit, issue, record, command, or repo); file links must resolve inside the project root."
         },
-        "designBasis": { "type": "string", "minLength": 1 },
-        "priorReasoningSummary": { "type": "string", "minLength": 1 },
-        "constraints": { "type": "array", "items": { "type": "string" } },
-        "recommendedNextSteps": { "type": "array", "items": { "type": "string" } },
-        "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags" }
+        "designBasis": { "type": "string", "minLength": 1, "description": "The reasoning and constraints the current design rests on, so the target agent does not relitigate settled ground." },
+        "priorReasoningSummary": { "type": "string", "minLength": 1, "description": "Condensed record of decisions already made and why, carried forward instead of raw conversation." },
+        "constraints": { "type": "array", "items": { "type": "string" }, "description": "Hard limits the target agent must respect; accepted for compatibility but not written into the record by the MCP server — put binding limits in designBasis or exclusions." },
+        "recommendedNextSteps": { "type": "array", "items": { "type": "string" }, "description": "Concrete next actions; rendered as the brief's Recommended Next Steps list." },
+        "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags", "description": "Lowercase slug tags (a-z, 0-9, hyphen) for later filtering; must be unique." }
       }
     },
     "list_briefs": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "targetAgent": { "type": "string", "minLength": 1 },
-        "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags" },
-        "status": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordStatus" },
-        "since": { "type": "string", "minLength": 1 },
-        "limit": { "type": "integer", "minimum": 1, "maximum": 50 }
+        "targetAgent": { "type": "string", "minLength": 1, "description": "Return only briefs whose targetAgent equals this value exactly." },
+        "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags", "description": "Return only briefs carrying every tag listed; tags are slug-matched." },
+        "status": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordStatus", "description": "Return only briefs in this lifecycle state: draft, active, or archived." },
+        "since": { "type": "string", "minLength": 1, "description": "ISO 8601 timestamp intended to bound results by creation time; accepted but not applied by the MCP server, which returns all matching briefs." },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 50, "description": "Maximum briefs to return (1-50). Results are newest-first, so a limit keeps the most recent; unset returns every match." }
       }
     },
     "get_targeted_brief": {
@@ -56,8 +58,8 @@
       "additionalProperties": false,
       "required": ["id"],
       "properties": {
-        "id": { "type": "string", "minLength": 1 },
-        "includeMarkdown": { "type": "boolean" }
+        "id": { "type": "string", "minLength": 1, "description": "Record ID or stored filename stem of the brief; must match exactly one brief or the call fails." },
+        "includeMarkdown": { "type": "boolean", "description": "When true, also return the brief's rendered Markdown alongside the parsed record. Default false." }
       }
     },
     "create_packet": {
@@ -65,41 +67,43 @@
       "additionalProperties": false,
       "required": ["title", "summary"],
       "properties": {
-        "actorName": { "type": "string", "minLength": 1 },
-        "title": { "type": "string", "minLength": 1 },
-        "purpose": { "enum": ["handoff", "seed"] },
-        "sensitivity": { "enum": ["project", "private"] },
-        "toAgent": { "type": "string", "minLength": 1 },
-        "toPerson": { "type": "string", "minLength": 1 },
-        "toRepo": { "type": "string", "minLength": 1 },
-        "task": { "type": "string", "minLength": 1 },
-        "summary": { "type": "string", "minLength": 1 },
-        "nextSteps": { "type": "string", "minLength": 1 },
-        "files": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-        "refs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "actorName": { "type": "string", "minLength": 1, "description": "Name recorded as the author of this write; defaults to the server's configured actor, or 'mcp-client'." },
+        "title": { "type": "string", "minLength": 1, "description": "Short human-readable title for the packet; also used to build the stored filename." },
+        "purpose": { "enum": ["handoff", "seed"], "description": "'handoff' (default) for work passed to someone else; 'seed' for private carried-forward context, which is always written to the private outbox." },
+        "sensitivity": { "enum": ["project", "private"], "description": "'project' (default) writes to .notch/outbox/; 'private' writes to .notch/private/outbox/ and hides the packet from listings unless the server runs with --include-private. Defaults to 'private' when purpose is 'seed'." },
+        "toAgent": { "type": "string", "minLength": 1, "description": "Intended recipient agent; routing intent recorded on the packet, not a delivery mechanism. A handoff packet needs at least one of toAgent, toPerson, or toRepo." },
+        "toPerson": { "type": "string", "minLength": 1, "description": "Intended recipient person; routing intent recorded on the packet. Satisfies the handoff recipient requirement." },
+        "toRepo": { "type": "string", "minLength": 1, "description": "Intended recipient repository; routing intent recorded on the packet. Satisfies the handoff recipient requirement." },
+        "task": { "type": "string", "minLength": 1, "description": "One-line statement of the task, rendered into the packet's included-context section." },
+        "summary": { "type": "string", "minLength": 1, "description": "The working state being handed off — what is done, decided, and blocked. A summary over 5000 characters with no source links or included records returns a NOTCH_SUMMARY_LARGE warning." },
+        "nextSteps": { "type": "string", "minLength": 1, "description": "What the receiving agent should do next; rendered as its own packet section." },
+        "files": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Project-relative file paths copied into the packet as artifacts, optionally suffixed with a purpose ('docs/plan.md:source'). Valid purposes are asset, source, reference, and output, plus common aliases such as logo, image, or screenshot." },
+        "refs": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Project-relative paths to reference without copying; each is recorded as a file source link." },
         "include": {
           "type": "array",
+          "description": "Existing 3Notch brief records to list as included context on the packet.",
           "items": {
             "type": "object",
             "additionalProperties": false,
             "required": ["id", "recordType", "title", "path"],
             "properties": {
-              "id": { "type": "string", "minLength": 1 },
-              "recordType": { "enum": ["project_brief", "brief"] },
-              "title": { "type": "string", "minLength": 1 },
-              "path": { "type": "string", "minLength": 1 },
-              "summary": { "type": "string", "minLength": 1 }
+              "id": { "type": "string", "minLength": 1, "description": "Record ID of the included brief." },
+              "recordType": { "enum": ["project_brief", "brief"], "description": "Kind of included record: the repo's default 'project_brief' or a targeted 'brief'." },
+              "title": { "type": "string", "minLength": 1, "description": "Title of the included record, shown in the packet's included-context list." },
+              "path": { "type": "string", "minLength": 1, "description": "Path of the included record inside the .notch store." },
+              "summary": { "type": "string", "minLength": 1, "description": "Optional note on why the record is included." }
             }
           }
         },
         "sourceLinks": {
           "type": "array",
-          "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLink" }
+          "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLink" },
+          "description": "Context links to record (kind: file, url, commit, issue, record, command, or repo); file links must resolve inside the project root and may not point inside the .notch store."
         },
-        "importNotes": { "type": "string", "minLength": 1 },
-        "outputPath": { "type": "string", "minLength": 1 },
-        "supersedes": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordId" },
-        "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags" }
+        "importNotes": { "type": "string", "minLength": 1, "description": "Guidance for whoever imports the packet; the body shows 'Review before use.' when omitted." },
+        "outputPath": { "type": "string", "minLength": 1, "description": "Project-relative path to write an extra copy of the packet Markdown to, in addition to the store copy." },
+        "supersedes": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordId", "description": "Record ID this packet replaces; check_store reports the edge as broken if the referenced record is not in the store." },
+        "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags", "description": "Lowercase slug tags (a-z, 0-9, hyphen) for later filtering; must be unique." }
       }
     },
     "import_packet": {
@@ -107,9 +111,9 @@
       "additionalProperties": false,
       "required": ["packetPath"],
       "properties": {
-        "actorName": { "type": "string", "minLength": 1 },
-        "packetPath": { "type": "string", "minLength": 1 },
-        "asReviewed": { "type": "boolean" }
+        "actorName": { "type": "string", "minLength": 1, "description": "Name recorded as the importer in the audit log; defaults to the server's configured actor, or 'mcp-client'." },
+        "packetPath": { "type": "string", "minLength": 1, "description": "Absolute path to a packet Markdown file or an unpacked packet folder; relative paths and symlinks are refused." },
+        "asReviewed": { "type": "boolean", "description": "When true, record the imported packet as reviewed instead of unreviewed. Default false." }
       }
     },
     "create_mark": {
@@ -117,15 +121,16 @@
       "additionalProperties": false,
       "required": ["summary"],
       "properties": {
-        "actorName": { "type": "string", "minLength": 1 },
-        "title": { "type": "string", "minLength": 1 },
-        "summary": { "type": "string", "minLength": 1 },
-        "supersedes": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordId" },
+        "actorName": { "type": "string", "minLength": 1, "description": "Name recorded as the author of this write; defaults to the server's configured actor, or 'mcp-client'." },
+        "title": { "type": "string", "minLength": 1, "description": "Short title for the mark; defaults to the first non-empty line of summary, truncated to 80 characters." },
+        "summary": { "type": "string", "minLength": 1, "description": "The note being captured; stored verbatim as the mark's summary." },
+        "supersedes": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordId", "description": "Record ID this mark replaces; check_store reports the edge as broken if the referenced record is not in the store." },
         "sourceLinks": {
           "type": "array",
-          "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLink" }
+          "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLink" },
+          "description": "Context links to attach (kind: file, url, commit, issue, record, command, or repo); file links must resolve inside the project root."
         },
-        "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags" }
+        "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags", "description": "Lowercase slug tags (a-z, 0-9, hyphen) for later filtering; must be unique." }
       }
     },
     "create_reply": {
@@ -133,37 +138,38 @@
       "additionalProperties": false,
       "required": ["parentId", "replyType", "summary"],
       "properties": {
-        "actorName": { "type": "string", "minLength": 1 },
-        "parentId": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordId" },
-        "replyType": { "enum": ["question", "clarification", "counter-decision", "objection", "confirmation"] },
-        "summary": { "type": "string", "minLength": 1 },
-        "title": { "type": "string", "minLength": 1 },
-        "toAgent": { "type": "string", "minLength": 1 },
-        "toPerson": { "type": "string", "minLength": 1 },
-        "toRepo": { "type": "string", "minLength": 1 },
-        "private": { "type": "boolean" },
-        "nextSteps": { "type": "string", "minLength": 1 },
-        "files": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-        "refs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "actorName": { "type": "string", "minLength": 1, "description": "Name recorded as the author of this write; defaults to the server's configured actor, or 'mcp-client'." },
+        "parentId": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/recordId", "description": "Record ID of the packet being replied to; must match exactly one record in the store, private records included." },
+        "replyType": { "enum": ["question", "clarification", "counter-decision", "objection", "confirmation"], "description": "What kind of response this is; recorded on the reply and used by readers to triage it." },
+        "summary": { "type": "string", "minLength": 1, "description": "The reply itself — the question, correction, or confirmation being sent back." },
+        "title": { "type": "string", "minLength": 1, "description": "Short title for the reply; defaults to 'Reply to <parent title>'." },
+        "toAgent": { "type": "string", "minLength": 1, "description": "Override the recipient agent; by default the reply inherits the parent packet's recipient." },
+        "toPerson": { "type": "string", "minLength": 1, "description": "Override the recipient person; by default the reply inherits the parent packet's recipient." },
+        "toRepo": { "type": "string", "minLength": 1, "description": "Override the recipient repository; when replying to a received packet this defaults to the parent's origin project." },
+        "private": { "type": "boolean", "description": "When true, write the reply into the private inbox instead of the outbox. Default false; replies to private or seed parents are private regardless." },
+        "nextSteps": { "type": "string", "minLength": 1, "description": "What the recipient should do next; rendered as its own section of the reply." },
+        "files": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Project-relative file paths copied into the reply as artifacts, optionally suffixed with a purpose ('diff.patch:source'). Valid purposes are asset, source, reference, and output, plus common aliases." },
+        "refs": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Project-relative paths to reference without copying; each is recorded as a file source link." },
         "sourceLinks": {
           "type": "array",
-          "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLink" }
+          "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLink" },
+          "description": "Context links to record (kind: file, url, commit, issue, record, command, or repo); file links must resolve inside the project root."
         },
-        "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags" }
+        "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags", "description": "Lowercase slug tags (a-z, 0-9, hyphen) for later filtering; must be unique." }
       }
     },
     "list_packets": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "direction": { "enum": ["inbox", "outbox", "both"] },
-        "includePrivate": { "type": "boolean" },
-        "purpose": { "enum": ["handoff", "seed"] },
-        "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags" },
-        "to": { "type": "string", "minLength": 1 },
-        "fromProject": { "type": "string", "minLength": 1 },
-        "since": { "type": "string", "minLength": 1 },
-        "limit": { "type": "integer", "minimum": 1, "maximum": 50 }
+        "direction": { "enum": ["inbox", "outbox", "both"], "description": "'inbox' for packets received here, 'outbox' for packets created here, 'both' (default)." },
+        "includePrivate": { "type": "boolean", "description": "Request private records too. Honoured only when the server was started with --include-private; otherwise results stay public and a NOTCH_PRIVATE_HIDDEN warning is returned. Default false." },
+        "purpose": { "enum": ["handoff", "seed"], "description": "Return only handoff packets or only seed packets." },
+        "tags": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/tags", "description": "Return only packets carrying every tag listed; tags are slug-matched." },
+        "to": { "type": "string", "minLength": 1, "description": "Recipient filter; accepted but not applied by the MCP server — filter the returned recipient fields yourself." },
+        "fromProject": { "type": "string", "minLength": 1, "description": "Origin-project filter; accepted but not applied by the MCP server — filter the returned origin fields yourself." },
+        "since": { "type": "string", "minLength": 1, "description": "ISO 8601 timestamp intended to bound results by creation time; accepted but not applied by the MCP server." },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 50, "description": "Maximum packets to return (1-50, default 50). Results are newest-first, so a limit keeps the most recent." }
       }
     },
     "get_packet": {
@@ -171,10 +177,10 @@
       "additionalProperties": false,
       "required": ["id"],
       "properties": {
-        "id": { "type": "string", "minLength": 1 },
-        "direction": { "enum": ["inbox", "outbox", "both"] },
-        "includePrivate": { "type": "boolean" },
-        "includeMarkdown": { "type": "boolean" }
+        "id": { "type": "string", "minLength": 1, "description": "Packet record ID or stored filename stem; must match exactly one packet or the call fails." },
+        "direction": { "enum": ["inbox", "outbox", "both"], "description": "Restrict the lookup to received packets, packets created here, or both (default)." },
+        "includePrivate": { "type": "boolean", "description": "Include private packets in the lookup. Honoured only when the server was started with --include-private. Default false." },
+        "includeMarkdown": { "type": "boolean", "description": "When true, also return the packet's rendered Markdown alongside the parsed record. Default false." }
       }
     },
     "create_seed_packet": {
@@ -182,19 +188,20 @@
       "additionalProperties": false,
       "required": ["title", "summary"],
       "properties": {
-        "actorName": { "type": "string", "minLength": 1 },
-        "title": { "type": "string", "minLength": 1 },
-        "sourceStorePath": { "type": "string", "minLength": 1 },
-        "summary": { "type": "string", "minLength": 1 },
-        "userPreferences": { "type": "array", "items": { "type": "string" } },
-        "workflowConventions": { "type": "array", "items": { "type": "string" } },
-        "lessons": { "type": "array", "items": { "type": "string" } },
-        "prompts": { "type": "array", "items": { "type": "string" } },
+        "actorName": { "type": "string", "minLength": 1, "description": "Name recorded as the author of this write; defaults to the server's configured actor, or 'mcp-client'." },
+        "title": { "type": "string", "minLength": 1, "description": "Short human-readable title for the seed packet; also used to build the stored filename." },
+        "sourceStorePath": { "type": "string", "minLength": 1, "description": "Path of the store the context came from; accepted but not recorded by the MCP server — name the source in summary instead." },
+        "summary": { "type": "string", "minLength": 1, "description": "The private context being carried forward; stored as the packet summary and repeated in the packet's User Preferences section." },
+        "userPreferences": { "type": "array", "items": { "type": "string" }, "description": "Preferences to carry forward; accepted but not recorded by the MCP server — fold them into summary." },
+        "workflowConventions": { "type": "array", "items": { "type": "string" }, "description": "Working conventions to carry forward; accepted but not recorded by the MCP server — fold them into summary." },
+        "lessons": { "type": "array", "items": { "type": "string" }, "description": "Lessons from prior work to carry forward; accepted but not recorded by the MCP server — fold them into summary." },
+        "prompts": { "type": "array", "items": { "type": "string" }, "description": "Reusable prompts to carry forward; accepted but not recorded by the MCP server — fold them into summary." },
         "sourceLinks": {
           "type": "array",
-          "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLink" }
+          "items": { "$ref": "https://3notch.dev/schemas/shared.schema.json#/$defs/sourceLink" },
+          "description": "Context links to attach (kind: file, url, commit, issue, record, command, or repo); file links must resolve inside the project root."
         },
-        "outputPath": { "type": "string", "minLength": 1 }
+        "outputPath": { "type": "string", "minLength": 1, "description": "Project-relative path to write an extra copy of the seed packet Markdown to, in addition to the store copy." }
       }
     },
     "import_seed_packet": {
@@ -202,9 +209,9 @@
       "additionalProperties": false,
       "required": ["packetPath"],
       "properties": {
-        "actorName": { "type": "string", "minLength": 1 },
-        "packetPath": { "type": "string", "minLength": 1 },
-        "asReviewed": { "type": "boolean" }
+        "actorName": { "type": "string", "minLength": 1, "description": "Name recorded as the importer in the audit log; defaults to the server's configured actor, or 'mcp-client'." },
+        "packetPath": { "type": "string", "minLength": 1, "description": "Absolute path to a seed packet Markdown file or unpacked packet folder; relative paths and symlinks are refused, and the packet must have purpose: seed." },
+        "asReviewed": { "type": "boolean", "description": "When true, record the imported seed packet as reviewed instead of unreviewed. Default false." }
       }
     },
     "inbox_init": {
@@ -212,9 +219,9 @@
       "additionalProperties": false,
       "required": ["name", "root"],
       "properties": {
-        "actorName": { "type": "string", "minLength": 1 },
-        "name": { "type": "string", "minLength": 1, "maxLength": 128 },
-        "root": { "type": "string", "minLength": 1 }
+        "actorName": { "type": "string", "minLength": 1, "description": "Name recorded as the author of this write; defaults to the server's configured actor, or 'mcp-client'." },
+        "name": { "type": "string", "minLength": 1, "maxLength": 128, "description": "Mailbox label for this store; it becomes the local: address senders use. A routing label chosen by the user, not an authenticated identity." },
+        "root": { "type": "string", "minLength": 1, "description": "Absolute path to the shared mailbox directory both sides register; relative paths are refused." }
       }
     },
     "send_packet": {
@@ -222,16 +229,16 @@
       "additionalProperties": false,
       "required": ["packetPath", "to"],
       "properties": {
-        "actorName": { "type": "string", "minLength": 1 },
-        "packetPath": { "type": "string", "minLength": 1 },
-        "to": { "type": "string", "pattern": "^local:[a-z0-9](?:[a-z0-9._-]{0,62}[a-z0-9])?$" }
+        "actorName": { "type": "string", "minLength": 1, "description": "Name recorded as the sender in the audit log; defaults to the server's configured actor, or 'mcp-client'." },
+        "packetPath": { "type": "string", "minLength": 1, "description": "Absolute path to the .notchpkt archive produced by notch packet pack; other file types and symlinks are refused." },
+        "to": { "type": "string", "pattern": "^local:[a-z0-9](?:[a-z0-9._-]{0,62}[a-z0-9])?$", "description": "Destination address in the form local:<name>, registered by the receiving store on the same mailbox root." }
       }
     },
     "list_inbox": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "includeAll": { "type": "boolean" }
+        "includeAll": { "type": "boolean", "description": "When true, include pulled, acknowledged, and rejected deliveries as well as pending ones. Default false (pending only)." }
       }
     },
     "get_inbox_delivery": {
@@ -239,8 +246,8 @@
       "additionalProperties": false,
       "required": ["deliveryId"],
       "properties": {
-        "deliveryId": { "type": "string", "pattern": "^delivery_[a-f0-9]{24}$" },
-        "address": { "type": "string", "pattern": "^local:[a-z0-9](?:[a-z0-9._-]{0,62}[a-z0-9])?$" }
+        "deliveryId": { "type": "string", "pattern": "^delivery_[a-f0-9]{24}$", "description": "Delivery identifier from send_packet or list_inbox, formatted 'delivery_' followed by 24 hex characters." },
+        "address": { "type": "string", "pattern": "^local:[a-z0-9](?:[a-z0-9._-]{0,62}[a-z0-9])?$", "description": "Registered local: address to read the delivery from, in the same mailbox root. Defaults to this store's own address; a sender passes the recipient's address to see status." }
       }
     },
     "pull_inbox_packet": {
@@ -248,10 +255,10 @@
       "additionalProperties": false,
       "required": ["deliveryId"],
       "properties": {
-        "actorName": { "type": "string", "minLength": 1 },
-        "deliveryId": { "type": "string", "pattern": "^delivery_[a-f0-9]{24}$" },
-        "import": { "type": "boolean" },
-        "asReviewed": { "type": "boolean" }
+        "actorName": { "type": "string", "minLength": 1, "description": "Name recorded as the puller in the audit log; defaults to the server's configured actor, or 'mcp-client'." },
+        "deliveryId": { "type": "string", "pattern": "^delivery_[a-f0-9]{24}$", "description": "Delivery identifier from list_inbox, formatted 'delivery_' followed by 24 hex characters." },
+        "import": { "type": "boolean", "description": "When true, import the verified packet into this store through normal validation. Default false, which verifies the delivery without writing a record." },
+        "asReviewed": { "type": "boolean", "description": "Mark the imported packet as reviewed rather than unreviewed. Requires import=true, otherwise the call fails with NOTCH_INBOX_IMPORT_REQUIRED. Default false." }
       }
     },
     "ack_inbox_delivery": {
@@ -259,15 +266,15 @@
       "additionalProperties": false,
       "required": ["deliveryId"],
       "properties": {
-        "actorName": { "type": "string", "minLength": 1 },
-        "deliveryId": { "type": "string", "pattern": "^delivery_[a-f0-9]{24}$" }
+        "actorName": { "type": "string", "minLength": 1, "description": "Name recorded as the acknowledger in the audit log; defaults to the server's configured actor, or 'mcp-client'." },
+        "deliveryId": { "type": "string", "pattern": "^delivery_[a-f0-9]{24}$", "description": "Delivery identifier from list_inbox or get_inbox_delivery, formatted 'delivery_' followed by 24 hex characters." }
       }
     },
     "get_status": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "includeWarnings": { "type": "boolean" }
+        "includeWarnings": { "type": "boolean", "description": "Accepted but not applied — config validation warnings are always included in the response." }
       }
     },
     "check_store": {
@@ -279,8 +286,8 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "strict": { "type": "boolean" },
-        "fixDerivedState": { "type": "boolean" }
+        "strict": { "type": "boolean", "description": "When true, escalate warnings — missing .notch/.gitignore entries and Claude Code hook drift — to errors. Default false." },
+        "fixDerivedState": { "type": "boolean", "description": "When true, create missing store directories, add the required .notch/.gitignore entries, and rebuild the derived index. The only mutating option here; refused when the server runs in read-only mode. Default false." }
       }
     }
   },

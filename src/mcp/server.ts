@@ -42,17 +42,67 @@ type ToolDefinition = {
 
 const toolDefinitions: ToolDefinition[] = [
   { name: 'get_brief', description: 'Read the default project brief.', readOnly: true },
-  { name: 'create_brief', description: 'Create a targeted brief from explicit input.', readOnly: false },
-  { name: 'list_briefs', description: 'List targeted briefs.', readOnly: true },
-  { name: 'get_targeted_brief', description: 'Read a targeted brief by ID or slug.', readOnly: true },
-  { name: 'create_packet', description: 'Create a packet from explicitly supplied context.', readOnly: false },
-  { name: 'create_mark', description: 'Create a self-addressed private packet from explicit input.', readOnly: false },
-  { name: 'create_reply', description: 'Create a typed packet reply to an existing record.', readOnly: false },
-  { name: 'import_packet', description: 'Import an explicit packet file into the current store.', readOnly: false },
-  { name: 'list_packets', description: 'List inbox and outbox packets.', readOnly: true },
+  {
+    name: 'create_brief',
+    title: 'Create targeted brief',
+    description: 'Use when the user wants a scoped task written down for another agent or session: this writes a new brief Markdown record under .notch/briefs/ from the fields you supply and returns the record with its path. It stores only what you pass — it never reads chat history — and it refuses scope files outside the project root or content the secret scanner flags.',
+    readOnly: false,
+  },
+  {
+    name: 'list_briefs',
+    title: 'List targeted briefs',
+    description: 'List targeted briefs in this store, newest first, to find a brief ID before reading one with get_targeted_brief. Returns brief metadata only, never the rendered Markdown; targetAgent and status filters match exactly, a tag filter requires every listed tag, and all matches are returned unless limit is set.',
+    readOnly: true,
+  },
+  {
+    name: 'get_targeted_brief',
+    title: 'Get targeted brief',
+    description: 'Read one targeted brief in full by record ID or stored filename stem, usually after list_briefs narrows the candidates. Set includeMarkdown to also get the rendered Markdown; the call fails rather than guessing when the identifier matches no brief or more than one.',
+    readOnly: true,
+  },
+  {
+    name: 'create_packet',
+    title: 'Create handoff packet',
+    description: 'Use to capture the current working state as a portable packet another session, tool, or repo can import: it writes a Markdown record to the store outbox, copies any listed files in as artifacts, and returns the packet with its path. Handoff packets require at least one recipient field, content is secret-scanned before it is written, and creating a packet transmits nothing — packing and sending are separate steps.',
+    readOnly: false,
+  },
+  {
+    name: 'create_mark',
+    title: 'Create private mark',
+    description: 'Use for a self-addressed capture — a preference, decision, or note the user wants to persist for later sessions with no recipient. This writes a private seed packet straight into .notch/private/inbox/; it is never sent anywhere and stays hidden from packet listings unless the server runs with --include-private.',
+    readOnly: false,
+  },
+  {
+    name: 'create_reply',
+    title: 'Reply to a record',
+    description: 'Use to answer a specific packet — question, clarification, counter-decision, objection, or confirmation — instead of editing it; the reply is written as a new packet linked back to the parent, and the parent is never modified. parentId must match exactly one record in the store, and the reply is written privately whenever the parent is private or seed, or private is set.',
+    readOnly: false,
+  },
+  {
+    name: 'import_packet',
+    title: 'Import packet file',
+    description: 'Use when the user hands over a packet file or unpacked packet folder from another repo, tool, or machine and wants it in this store. Requires an absolute path and refuses symlinks, verifies bundled artifact hashes and any referenced records, secret-scans the content, routes private or seed packets to .notch/private/inbox/, and refuses a packet ID already present in that destination rather than overwriting it.',
+    readOnly: false,
+  },
+  {
+    name: 'list_packets',
+    title: 'List packets',
+    description: 'List packets in this store, newest first, to find an ID before reading one with get_packet; returns metadata and on-disk paths, never packet bodies. Defaults to both directions and at most 50 results; private records stay hidden unless the server was started with --include-private, and asking for them without it returns a NOTCH_PRIVATE_HIDDEN warning instead of failing.',
+    readOnly: true,
+  },
   { name: 'get_packet', description: 'Read a packet by ID or slug.', readOnly: true },
-  { name: 'create_seed_packet', description: 'Create a private seed packet from explicit input.', readOnly: false },
-  { name: 'import_seed_packet', description: 'Import an explicit private seed packet file.', readOnly: false },
+  {
+    name: 'create_seed_packet',
+    title: 'Create private seed packet',
+    description: 'Use when the user wants durable private context — preferences, conventions, lessons — captured for a future session rather than handed to someone else. This writes a purpose: seed, sensitivity: private packet to .notch/private/outbox/ from the title and summary you supply, and it stays local and unimported until someone runs import_seed_packet.',
+    readOnly: false,
+  },
+  {
+    name: 'import_seed_packet',
+    title: 'Import private seed packet',
+    description: 'Use when the user points at a seed packet file they have already reviewed and wants that carried-forward private context in this store. Requires an absolute path and refuses symlinks, accepts only packets with purpose: seed, always imports into .notch/private/inbox/, and refuses a packet ID already present rather than overwriting it.',
+    readOnly: false,
+  },
   {
     name: 'inbox_init',
     title: 'Initialize durable inbox',
@@ -97,9 +147,24 @@ const toolDefinitions: ToolDefinition[] = [
     readOnly: false,
     outputSchema: inboxActionOutputSchema(false),
   },
-  { name: 'get_status', description: 'Return 3Notch project status.', readOnly: true },
-  { name: 'check_store', description: 'Return deterministic corpus integrity findings.', readOnly: true },
-  { name: 'run_doctor', description: 'Run 3Notch store diagnostics.', readOnly: true },
+  {
+    name: 'get_status',
+    title: 'Get project status',
+    description: 'Read first for orientation in a repo that uses 3Notch: returns the project name, store path, counts of briefs and inbox, outbox and private seed packets, the five newest inbox packets, up to ten briefs newest-first, and any config validation warnings. Counts and short summaries only — private seed packets are counted but their contents are never returned.',
+    readOnly: true,
+  },
+  {
+    name: 'check_store',
+    title: 'Check corpus integrity',
+    description: 'Use after imports or before trusting a supersedes or reply chain: reports broken supersedes and replyTo references, self-references and supersedes cycles as errors, and competing supersedes forks as warnings, each with recovery text. Deterministic and read-only — it never repairs records, and it covers private records only when the server runs with --include-private. Use run_doctor for directory, secret, and audit-log checks.',
+    readOnly: true,
+  },
+  {
+    name: 'run_doctor',
+    title: 'Run store diagnostics',
+    description: 'Run when 3Notch behaves oddly or before trusting a store: checks required directories, .notch/.gitignore coverage of the private, index, and log paths, symlinks, invalid or duplicate records, secrets inside records, audit-log corruption, and Claude Code continuation hook drift. Read-only apart from fixDerivedState, which is refused when the server runs in read-only mode.',
+    readOnly: true,
+  },
 ];
 
 const ajv = new Ajv2020({ allErrors: true, strict: true });
