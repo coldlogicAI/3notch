@@ -8,6 +8,7 @@
 [![npm](https://img.shields.io/npm/v/@3notch/cli?style=flat-square)](https://www.npmjs.com/package/@3notch/cli)
 [![Node](https://img.shields.io/node/v/@3notch/cli?style=flat-square)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
+[![3notch MCP server](https://glama.ai/mcp/servers/coldlogicAI/3notch/badges/score.svg)](https://glama.ai/mcp/servers/coldlogicAI/3notch)
 
 A Claude Code session dies mid-run — rate limit, crash, compaction, laptop sleep — or you're moving a task from Claude Code to Codex, Cursor, or ChatGPT. The code is still in git. The objective, decisions, and next steps often are not. The next session rebuilds that state from scratch.
 
