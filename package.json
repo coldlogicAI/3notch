@@ -31,7 +31,7 @@
     "node": ">=20"
   },
   "bin": {
-    "notch": "./dist/cli/index.js"
+    "notch": "dist/cli/index.js"
   },
   "files": [
     "dist",
