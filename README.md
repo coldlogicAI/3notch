@@ -9,7 +9,7 @@
 [![Node](https://img.shields.io/node/v/@3notch/cli?style=flat-square)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 
-Rate limits, model failures, context compaction, tool switches — the code is still in git. The objective, decisions, and next steps often are not. The next session rebuilds that state from scratch.
+A Claude Code session dies mid-run — rate limit, crash, compaction, laptop sleep — or you're moving a task from Claude Code to Codex, Cursor, or ChatGPT. The code is still in git. The objective, decisions, and next steps often are not. The next session rebuilds that state from scratch.
 
 3Notch is a **local CLI and MCP server** for:
 
@@ -18,6 +18,18 @@ Rate limits, model failures, context compaction, tool switches — the code is s
 - **Durable inbox** — async delivery between stores that share a mailbox root
 
 No cloud service. No account. No telemetry. Records stay on disk as Markdown (and optional artifacts) under `.notch/`.
+
+---
+
+## Why this layer exists
+
+Every major vendor ships transcript persistence and memory files. None ship durable **working state**:
+
+- **Claude Code** auto-saves transcripts and takes file checkpoints — but checkpoints are session-scoped undo, gone when the session ends.
+- **OpenAI's Agents SDK** serializes `RunState` — at planned human-approval pauses, not arbitrary failures.
+- **Gemini and Grok** persist conversations server-side. A transcript is a diary, not a manifest.
+
+Recovering from a transcript means re-reading a conversation and re-interpreting what happened. The vendors' own guidance converges on the fix: combine native persistence with handoff files and checkpoint strategies. 3Notch is that layer — local, vendor-neutral, yours.
 
 ---
 
