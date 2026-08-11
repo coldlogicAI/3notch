@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-08-11
+
+### Changed
+- Rewrote all 21 MCP tool descriptions with usage guidance and behavioral notes (what each tool writes, returns, and refuses); added descriptions to all 104 input-schema parameters.
+
+### Fixed
+- Normalized the `bin` path in `package.json` so npm publish keeps the `notch` binary in the published manifest (npm 11 drops `./`-prefixed bin values instead of normalizing them).
+
 ## [0.7.1] - 2026-08-09
 
 ### Added
