@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-09-07
+
 ### Added
 - `notch save` / `notch resume` and MCP `save_working_state` / `resume_working_state` persist and load working state for agentic loops without a human confirm step.
 - Claude Code SessionStart injects the latest continuation body into `additionalContext`.
