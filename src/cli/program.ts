@@ -12,6 +12,8 @@ import { registerOnboardCommand } from './commands/onboard.js';
 import { registerPacketCommand } from './commands/packet.js';
 import { registerPromptCommand } from './commands/prompt.js';
 import { registerReplyCommand } from './commands/reply.js';
+import { registerResumeCommand } from './commands/resume.js';
+import { registerSaveCommand } from './commands/save.js';
 import { registerScanCommand } from './commands/scan.js';
 import { registerSeedCommand } from './commands/seed.js';
 import { registerStatusCommand } from './commands/status.js';
@@ -19,7 +21,7 @@ import { registerStatusCommand } from './commands/status.js';
 export function createProgram(): Command {
   const program = new Command()
     .name('notch')
-    .description('Local-first private context packets across repos and AI tools.')
+    .description('Local-first working-state checkpoints and portable context packets.')
     .version(VERSION, '-v, --version', 'print the 3Notch version')
     .option('--cwd <path>', 'run 3Notch as if started from another project directory')
     .option('--store <path>', 'use a specific .notch store path')
@@ -35,6 +37,8 @@ export function createProgram(): Command {
       `
 Examples:
   $ notch onboard --yes
+  $ notch save --summary "Auth validation done" --next-steps "Implement session store"
+  $ notch resume
   $ notch prompt --client claude-code
   $ notch mark --summary "Remember this project decision"
   $ notch reply <id> --type question --summary "Can you clarify this?"
@@ -51,6 +55,8 @@ Examples:
     );
 
   registerOnboardCommand(program);
+  registerSaveCommand(program);
+  registerResumeCommand(program);
   registerPromptCommand(program);
   registerMarkCommand(program);
   registerReplyCommand(program);

@@ -87,8 +87,10 @@
     </ul>
     <p>Fallbacks include branch, short commit, dirty state, and changed-file names. They do not copy file contents or artifacts automatically.</p>
 
-    <h2>Resume safely</h2>
-    <p>At the next session start, 3Notch offers the latest matching checkpoint once. The agent must not load the packet body until you confirm. Every automatic or agent-authored checkpoint is <code>unreviewed</code> and targets <code>next-agent</code>.</p>
+    <h2>Agent save and resume</h2>
+    <pre><code><span class="prompt">$</span> <span class="cmd">notch save</span> <span class="flag">--summary</span> <span class="arg">"Auth validation done"</span> <span class="flag">--next-steps</span> <span class="arg">"Implement session store"</span>
+<span class="prompt">$</span> <span class="cmd">notch resume</span></code></pre>
+    <p>No confirmation prompt. Codex, Grok, and Cursor should run those two commands; there is no 3Notch daemon. Claude Code SessionStart injects the latest checkpoint body so the next agent continues without calling <code>get_packet</code> after a human yes. Private packets stay hidden unless <code>--include-private</code> is set.</p>
     <p>Streams resolve from an explicit override, the current Git branch, a detached commit, or <code>default</code>. Each new checkpoint explicitly supersedes the latest checkpoint in that stream.</p>
 
     <h2>Privacy boundary</h2>

@@ -11,6 +11,7 @@ import { checkStore } from '../core/check-service.js';
 import { loadConfig } from '../core/config-service.js';
 import { runDoctor } from '../core/doctor-service.js';
 import { ackInboxDelivery, getInboxDeliveryStatus, initializeDurableInbox, listInboxDeliveries, pullInboxDelivery, sendInboxPacket } from '../core/inbox-service.js';
+import { resumeWorkingState, saveWorkingState } from '../core/continuation-service.js';
 import { createMark, createPacket, createReply, getPacket, listPackets } from '../core/packet-service.js';
 import { createSeedPacket, importSeedPacket } from '../core/seed-service.js';
 import { getStatus } from '../core/status-service.js';
@@ -91,6 +92,18 @@ const toolDefinitions: ToolDefinition[] = [
     readOnly: true,
   },
   { name: 'get_packet', description: 'Read a packet by ID or slug.', readOnly: true },
+  {
+    name: 'save_working_state',
+    title: 'Save working state',
+    description: 'Use at wrap-up to persist this session so another agent can continue without a human: writes a continuation packet from the current Git snapshot plus the optional summary and nextSteps you supply. Secret-scanned before write. Does not ask for confirmation.',
+    readOnly: false,
+  },
+  {
+    name: 'resume_working_state',
+    title: 'Resume working state',
+    description: 'Use at session start to load the latest continuation for this store and continue immediately. Returns the checkpoint body; no confirmation step. Empty store returns checkpoint null. Private packets stay hidden unless the server was started with --include-private.',
+    readOnly: true,
+  },
   {
     name: 'create_seed_packet',
     title: 'Create private seed packet',
@@ -175,7 +188,7 @@ export function createNotchMcpServer(options: NotchMcpServerOptions = {}): Serve
     { name: '3notch', version: VERSION },
     {
       capabilities: { tools: {} },
-      instructions: '3Notch exposes local, explicit, reviewable packets. For async handoff: create and pack a project packet, send_packet to a registered local: address, forward the returned delivery notice, list_inbox at the receiver, pull_inbox_packet with import=true, review, ack_inbox_delivery, and use get_inbox_delivery when the sender needs status. Durable inbox labels are not authenticated identities; private/seed packets are blocked. 3Notch does not scrape chats, invoke other models, run shells, host a relay, or delete acknowledged packets.',
+      instructions: '3Notch exposes local, explicit, reviewable packets. Wrap-up: save_working_state. Session start: resume_working_state — continue from the returned body, do not ask the user to confirm loading it. For async handoff: create and pack a project packet, send_packet to a registered local: address, forward the returned delivery notice, list_inbox at the receiver, pull_inbox_packet with import=true, review, ack_inbox_delivery, and use get_inbox_delivery when the sender needs status. Durable inbox labels are not authenticated identities; private/seed packets are blocked. 3Notch does not scrape chats, invoke other models, run shells, host a relay, or delete acknowledged packets.',
     },
   );
 
@@ -470,6 +483,28 @@ async function executeTool(
         fix: Boolean(args.fixDerivedState),
         strict: Boolean(args.strict),
       }) as unknown as Record<string, unknown>;
+    }
+    case 'save_working_state': {
+      return await saveWorkingState(context, {
+        actor: mcpActorName(args, options),
+        mcp: true,
+        ...(stringArg(args.nextSteps) ? { nextSteps: stringArg(args.nextSteps) } : {}),
+        private: Boolean(args.private),
+        sourceTool: 'notch-mcp',
+        ...(stringArg(args.summary) ? { summary: stringArg(args.summary) } : {}),
+      }) as unknown as Record<string, unknown>;
+    }
+    case 'resume_working_state': {
+      const includePrivateRequested = Boolean(args.includePrivate);
+      const result = await resumeWorkingState(context, {
+        includePrivate: includePrivateRequested && Boolean(options.includePrivate),
+      });
+      return {
+        ...result,
+        warnings: includePrivateRequested && !options.includePrivate
+          ? [{ code: 'NOTCH_PRIVATE_HIDDEN', message: 'Private packets require --include-private.', severity: 'warn' }]
+          : [],
+      };
     }
   }
 

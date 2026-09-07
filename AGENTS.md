@@ -2,7 +2,7 @@
 
 ## Purpose
 
-3Notch is a local-first CLI and MCP server for moving project context across boundaries that built-in AI tooling cannot cross — across repos, across AI work surfaces, web chats, and into new projects. V3 is the current shipped surface: packet transfer with artifact bundles, private context seeding, targeted briefs, self-addressed marks, typed packet replies, web-chat stdin intake, relationship indexing, deterministic corpus checks, and `.notchpkt` pack/unpack for cross-machine transport. Supporting commands: `onboard`, `status`, `doctor`, `mcp serve`.
+3Notch is a local-first CLI and MCP server for automated agentic workflows: agents save and resume working state without a human in the loop, and they move selected context across repos, AI work surfaces, web chats, and new projects. V3 remains the packet-transfer surface. Same-repo continuity is in scope: wrap-up is `notch save`, session start is `notch resume`. Cross-boundary packets stay; they are not the only loop. Supporting commands: `onboard`, `status`, `doctor`, `mcp serve`.
 
 ## Read First
 
@@ -32,6 +32,8 @@ During an active implementation run, append concise progress entries to the acti
 
 CLI commands:
 - `notch onboard`
+- `notch save`
+- `notch resume`
 - `notch mark`
 - `notch reply <id>`
 - `notch brief`, `notch brief create`, `notch brief list`, `notch brief show <id>`
@@ -50,6 +52,7 @@ CLI commands:
 MCP tools:
 - `get_brief`, `create_brief`, `list_briefs`, `get_targeted_brief`
 - `create_packet`, `import_packet`, `list_packets`, `get_packet`
+- `save_working_state`, `resume_working_state`
 - `create_seed_packet`, `import_seed_packet`
 - `create_mark`, `create_reply`, `check_store`
 - `get_status`, `run_doctor`
@@ -57,7 +60,7 @@ MCP tools:
 
 ## Deferred (do not implement)
 
-These are deliberately out of scope. Same-repo same-tool continuity is solved by CLAUDE.md, native tool memory, and `git commit`. 3Notch's wedge is cross-boundary transport.
+These are deliberately out of scope. Cross-boundary packets stay; they are not the only loop. Same-repo agent save/resume is in scope — do not defer it to git or CLAUDE.md.
 
 - `notch pass`, MCP `create_pass`/`get_latest_pass`/`get_recent_passes`
 - `notch decision *`, MCP `record_decision`/`get_decisions`
@@ -70,7 +73,8 @@ A regression-guard test (`tests/unit/no-deferred-commands.test.ts`) prevents acc
 ## Boundaries
 
 - When the user presents a product idea or asks "is this the right path?", discuss and pressure-test it before changing specs, plans, or repo files.
-- Treat cross-repo packets, cross-tool handoff, and private context seeding as the core product loops.
+- Treat same-repo agent save/resume, cross-repo packets, cross-tool handoff, and private context seeding as the core product loops.
+- Wrap-up is `notch save`; session start is `notch resume`. Do not ask a human to confirm loading a continuation in the happy path. Codex, Grok, and Cursor should run those two commands. Do not invent a daemon.
 - No telemetry, cloud sync, hosted service, dashboard, vector database, or SQLite/native DB.
 - Durable inbox remains a dependency-free local filesystem spool. Do not turn it into chat, a daemon, hosted identity, background sync, or model invocation.
 - Do not build hidden chat or project scraping. MCP tools write selected or summarized context the user or agent explicitly supplies during a session.

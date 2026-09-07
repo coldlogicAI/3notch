@@ -26,6 +26,8 @@ const expectedTools = [
   'ack_inbox_delivery',
   'get_status',
   'run_doctor',
+  'save_working_state',
+  'resume_working_state',
 ];
 
 describe('MCP tool input schemas', () => {
@@ -43,6 +45,18 @@ describe('MCP tool input schemas', () => {
     expect(validate({ limit: 50 })).toBe(true);
     expect(validate({ limit: 51 })).toBe(false);
     expect(validate({ limit: 0 })).toBe(false);
+  });
+
+  it('accepts empty save_working_state and resume_working_state arguments', () => {
+    const ajv = new Ajv2020({ strict: true });
+    ajv.addSchema(sharedSchema);
+    const validateSave = ajv.compile(getMcpToolInputSchema('save_working_state'));
+    const validateResume = ajv.compile(getMcpToolInputSchema('resume_working_state'));
+
+    expect(validateSave({})).toBe(true);
+    expect(validateSave({ summary: 'Wrap-up.', nextSteps: 'Continue.' })).toBe(true);
+    expect(validateResume({})).toBe(true);
+    expect(validateResume({ includePrivate: true })).toBe(true);
   });
 
   it('accepts packet tags and supersedes fields', () => {
