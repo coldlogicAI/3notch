@@ -284,6 +284,15 @@ describe('continuation service', () => {
       const visible = await resumeWorkingState(context, { includePrivate: true });
       expect(visible.checkpoint?.packet.id).toBe(saved.packet.id);
       expect(visible.checkpoint?.markdown).toContain('Private working state for this store.');
+
+      const start = await runClaudeCodeHook({
+        session_id: 'session-private-default',
+        cwd: projectPath,
+        hook_event_name: 'SessionStart',
+        source: 'startup',
+        transcript_path: '/never-read.jsonl',
+      });
+      expect(JSON.stringify(start)).not.toContain('Private working state for this store.');
     });
   });
 

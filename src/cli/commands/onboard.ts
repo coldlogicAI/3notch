@@ -487,7 +487,7 @@ This project uses 3Notch for explicit, reviewable context handoffs between AI to
 
 ## Continuation Checkpoints
 
-Claude Code checkpoints are opt-in through \`notch onboard --mcp claude-code --checkpoints <mode>\`. Script hooks aggregate structured task events and repository state without reading session transcripts. \`prompt\` asks before an agent drafts a semantic checkpoint; \`auto\` drafts it automatically. On resume, 3Notch offers a matching checkpoint but never loads it without user confirmation.
+Claude Code checkpoints are opt-in through \`notch onboard --mcp claude-code --checkpoints <mode>\`. Script hooks aggregate structured task events and repository state without reading session transcripts. \`prompt\` asks before an agent drafts a semantic checkpoint; \`auto\` drafts it automatically. On SessionStart, 3Notch injects the latest matching continuation into additionalContext with no human confirm. Private continuations load only when continuation.sensitivity is private (or \`notch resume --include-private\` / MCP \`--include-private\`).
 
 ## Boundaries
 

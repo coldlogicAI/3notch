@@ -377,10 +377,6 @@ async function handleSessionStart(
   const agentPolicy = renderAgentCheckpointPolicy(context, stream);
   const latest = await loadLatestStreamCheckpoint(context, stream);
 
-  if (latest) {
-    state.offeredCheckpointId = latest.packet.id;
-  }
-
   await writeSessionState(context, state);
 
   if (!latest) {
@@ -617,7 +613,7 @@ function hasMaterialRecoveryState(state: ContinuationSessionState, git: GitSnaps
 async function latestStreamCheckpoint(
   context: LoadedConfig,
   stream: string,
-  includePrivate = true,
+  includePrivate = false,
 ): Promise<ListedContinuation | undefined> {
   const packets = await listPackets(context, {
     includePrivate,
@@ -632,7 +628,8 @@ async function loadLatestStreamCheckpoint(
   context: LoadedConfig,
   stream: string,
 ): Promise<(ListedContinuation & { markdown: string }) | undefined> {
-  const latest = await latestStreamCheckpoint(context, stream, true);
+  const includePrivate = context.config.continuation?.sensitivity === 'private';
+  const latest = await latestStreamCheckpoint(context, stream, includePrivate);
 
   if (!latest) {
     return undefined;
@@ -648,19 +645,7 @@ async function findLatestContinuation(
   context: LoadedConfig,
   options: { includePrivate: boolean; stream: string },
 ): Promise<ListedContinuation | undefined> {
-  const streamMatch = await latestStreamCheckpoint(context, options.stream, options.includePrivate);
-
-  if (streamMatch) {
-    return streamMatch;
-  }
-
-  const any = await listPackets(context, {
-    includePrivate: options.includePrivate,
-    limit: 1,
-    tags: ['continuation'],
-  });
-
-  return any[0];
+  return latestStreamCheckpoint(context, options.stream, options.includePrivate);
 }
 
 function renderSaveSummary(primary: string | undefined, git: GitSnapshot): string {
