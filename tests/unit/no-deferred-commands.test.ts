@@ -32,6 +32,8 @@ describe('deferred surface guard', () => {
       'src/cli/commands/packet.ts',
       'src/cli/commands/prompt.ts',
       'src/cli/commands/reply.ts',
+      'src/cli/commands/resume.ts',
+      'src/cli/commands/save.ts',
       'src/cli/commands/scan.ts',
       'src/cli/commands/seed.ts',
       'src/cli/commands/status.ts',

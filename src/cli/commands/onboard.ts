@@ -416,6 +416,7 @@ function defaultConfig(projectName: string, projectRoot: string): NotchConfig {
         'send_packet',
         'pull_inbox_packet',
         'ack_inbox_delivery',
+        'save_working_state',
       ],
     },
   };

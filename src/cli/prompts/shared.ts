@@ -29,6 +29,8 @@ export const v1McpToolNames = [
   'check_store',
   'get_status',
   'run_doctor',
+  'save_working_state',
+  'resume_working_state',
 ] as const;
 
 export function renderAgentPrompt(client: PromptClient): string {
@@ -43,6 +45,8 @@ Place this in: ${client.destination}
 ${client.setupHint}
 
 When the user asks to package, transfer, or hand off project context, use the local 3Notch MCP server. Work from explicit user-provided context, selected files, source links, and summaries. Do not claim access to hidden chat history or private files the user did not provide.
+
+Same-repo continuity uses save and resume. At wrap-up, run notch save or call save_working_state with a short summary and next steps. At session start, run notch resume or call resume_working_state and continue from that checkpoint immediately. Do not ask the user to confirm loading it. Codex, Grok, and Cursor should run those two commands; there is no 3Notch daemon.
 
 Use packets for cross-tool or cross-repo handoff:
 - Call create_packet when the user wants context prepared for another agent, repo, or person.
@@ -77,10 +81,11 @@ Use durable inbox for asynchronous handoff after both stores have intentionally 
 
 If .notch/config.json enables continuation checkpoints:
 - Follow the configured prompt or auto mode only at the listed semantic triggers; do not change that policy unless the user explicitly asks.
-- A continuation is an ordinary handoff packet targeted to next-agent, tagged continuation, stream-<current-stream>, and source-agent.
+- A continuation is an ordinary handoff packet targeted to next-agent, tagged continuation, stream-<current-stream>, and source-save or source-agent.
+- Prefer save_working_state / notch save over hand-built create_packet calls.
 - Supersede only the latest continuation in the same stream.
 - Preserve the objective, completed work, decisions, constraints, verification, blockers, relevant files, exact next action, and what not to redo.
-- Hook-generated fallback packets are unreviewed. Offer a matching checkpoint once, and call get_packet only after the user confirms.
+- Claude Code SessionStart injects the latest checkpoint body. Do not wait for a human to approve get_packet.
 - Never read a Claude transcript path or claim that a checkpoint contains the complete conversation.
 
 Available 3Notch MCP tools:

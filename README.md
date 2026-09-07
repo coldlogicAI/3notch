@@ -49,14 +49,17 @@ Agent prompt (optional):
 
 ## Common flows
 
-### Resume after a failed session
+### Save and resume working state
 
-With [continuation checkpoints](docs/guides/continuation-checkpoints.md) enabled for Claude Code, 3Notch can write a fallback from task state and git when the session hits a rate limit, model-down failure, or compaction. The next session may offer that checkpoint once; you approve before it is loaded.
+Wrap-up: `notch save`. Session start: `notch resume`. No confirmation prompt. Codex, Grok, and Cursor should run those two commands; there is no 3Notch daemon.
 
 ```bash
-notch packet list
-notch packet preview <id>
+notch save --summary "Auth validation done" --next-steps "Implement session store"
+notch resume
+notch resume --json
 ```
+
+Claude Code SessionStart injects the latest checkpoint body so the next agent can continue without calling `get_packet` after a human yes. Private packets stay hidden unless you pass `--include-private`. See [Continuation checkpoints](docs/guides/continuation-checkpoints.md).
 
 ### Hand off between tools
 
@@ -133,6 +136,8 @@ Targeting fields (`--to-agent`, `--to-repo`) are intent metadata. Bytes move via
 
 ```text
 notch onboard                         initialize .notch/ and MCP setup
+notch save                            write a continuation from git snapshot + summary
+notch resume                          print the latest continuation (no prompt)
 notch packet create                   create a packet (--file, --ref, --next-steps)
 notch packet import <path>            import into .notch/inbox/
 notch packet preview <id>             show what an agent will read
@@ -160,8 +165,8 @@ notch mcp serve                        local stdio MCP server
 
 | | Tools |
 | --- | --- |
-| **Read** | `get_brief`, `list_briefs`, `get_targeted_brief`, `get_packet`, `list_packets`, `list_inbox`, `get_inbox_delivery`, `get_status`, `check_store`, `run_doctor` |
-| **Write** | `create_brief`, `create_packet`, `create_mark`, `create_reply`, `create_seed_packet`, `import_packet`, `import_seed_packet`, `inbox_init`, `send_packet`, `pull_inbox_packet`, `ack_inbox_delivery` |
+| **Read** | `get_brief`, `list_briefs`, `get_targeted_brief`, `get_packet`, `list_packets`, `resume_working_state`, `list_inbox`, `get_inbox_delivery`, `get_status`, `check_store`, `run_doctor` |
+| **Write** | `create_brief`, `create_packet`, `save_working_state`, `create_mark`, `create_reply`, `create_seed_packet`, `import_packet`, `import_seed_packet`, `inbox_init`, `send_packet`, `pull_inbox_packet`, `ack_inbox_delivery` |
 
 Private records under `.notch/private/` stay hidden unless the server starts with `--include-private`. Client setup: [docs/guides/mcp-setup.md](docs/guides/mcp-setup.md).
 

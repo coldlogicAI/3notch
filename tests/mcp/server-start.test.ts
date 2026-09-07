@@ -43,7 +43,9 @@ describe('MCP server foundation', () => {
           'list_inbox',
           'list_packets',
           'pull_inbox_packet',
+          'resume_working_state',
           'run_doctor',
+          'save_working_state',
           'send_packet',
         ].sort());
         expect(tools).not.toContain('create_pass');

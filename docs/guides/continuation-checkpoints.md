@@ -2,6 +2,25 @@
 
 Continuation checkpoints preserve enough selected project state to resume after a rate limit, context compaction, or an intentional agent switch. They are ordinary immutable packets, not transcripts or hidden memory.
 
+## Agent save and resume
+
+Wrap-up:
+
+```bash
+notch save --summary "Auth validation done" --next-steps "Implement session store"
+```
+
+Session start:
+
+```bash
+notch resume
+notch resume --json
+```
+
+No confirmation prompt. Empty store is a quiet success; `--json` returns `"checkpoint": null`. Codex, Grok, and Cursor should run those two commands. There is no 3Notch daemon. Claude Code SessionStart puts the latest checkpoint body in `additionalContext` so the next agent continues without calling `get_packet` after a human yes.
+
+`--summary` and `--next-steps` are optional (stdin is accepted). Secret scan still blocks dirty writes. Private packets stay hidden from `notch resume` and MCP `resume_working_state` unless `--include-private` is set.
+
 ## Enable Claude Code Checkpoints
 
 ```bash
@@ -49,9 +68,9 @@ The default triggers are a meaningful milestone, an intentional agent/model swit
 
 ## Streams and Resume
 
-The stream is the configured override, current Git branch, detached commit, or `default` for a non-Git project. Continuations use tags such as `continuation`, `stream-feature-auth`, and `source-post-compact`.
+The stream is the configured override, current Git branch, detached commit, or `default` for a non-Git project. Continuations use tags such as `continuation`, `stream-feature-auth`, and `source-save` or `source-post-compact`.
 
-At the next session start, 3Notch offers the latest matching checkpoint once. It supplies only packet metadata. Claude must not call `get_packet` or load the packet body until you confirm.
+`notch save` / `save_working_state` write a continuation tagged for the current stream and supersede the latest same-stream checkpoint. `notch resume` / `resume_working_state` print the latest continuation for this store. Claude Code SessionStart injects that body automatically.
 
 ## Privacy Boundary
 
@@ -59,7 +78,7 @@ At the next session start, 3Notch offers the latest matching checkpoint once. It
 - Onboarding adds `.claude/settings.local.json` to the project `.gitignore`; backups are kept under ignored `.notch/index/` state.
 - `.notch/index/continuation/` is local derived state and gitignored.
 - Project checkpoints land in `.notch/outbox/` and may appear in Git; choose `private` sensitivity to use ignored `.notch/private/outbox/`.
-- Private mode intentionally adds `--include-private` to this project's 3Notch MCP server so the agent can list and load a checkpoint after you confirm. That server can read other private packets in the same local store through approved MCP calls.
+- Private mode intentionally adds `--include-private` to this project's 3Notch MCP server so `resume_working_state` can return a private checkpoint. That server can read other private packets in the same local store through approved MCP calls.
 - A model-down StopFailure fallback cannot recover reasoning that was never reflected in a task, Git state, compact summary, final assistant message, or prior curated checkpoint.
 - Existing projects with a legacy `StopFailure` matcher of only `rate_limit` should rerun `notch onboard --yes --mcp claude-code --checkpoints <mode>` so Claude Code wires the full recoverable matcher.
 - 3Notch never commits, pushes, imports, or transports a checkpoint automatically.

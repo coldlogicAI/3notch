@@ -289,6 +289,23 @@
         "strict": { "type": "boolean", "description": "When true, escalate warnings — missing .notch/.gitignore entries and Claude Code hook drift — to errors. Default false." },
         "fixDerivedState": { "type": "boolean", "description": "When true, create missing store directories, add the required .notch/.gitignore entries, and rebuild the derived index. The only mutating option here; refused when the server runs in read-only mode. Default false." }
       }
+    },
+    "save_working_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "actorName": { "type": "string", "minLength": 1, "description": "Name recorded as the author of this write; defaults to the server's configured actor, or 'mcp-client'." },
+        "summary": { "type": "string", "minLength": 1, "description": "Working-state summary to persist. When omitted, the packet is built from the current Git snapshot (branch, commit, dirty files)." },
+        "nextSteps": { "type": "string", "minLength": 1, "description": "What the next agent should do after loading this checkpoint." },
+        "private": { "type": "boolean", "description": "When true, write a private continuation packet. Default false; also private when continuation.sensitivity is private." }
+      }
+    },
+    "resume_working_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "includePrivate": { "type": "boolean", "description": "Include private continuation packets. Honoured only when the server was started with --include-private; otherwise the latest visible checkpoint is returned and a NOTCH_PRIVATE_HIDDEN warning is added. Default false." }
+      }
     }
   },
   "type": "object",

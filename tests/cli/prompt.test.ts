@@ -25,6 +25,8 @@ const v2Tools = [
   'check_store',
   'get_status',
   'run_doctor',
+  'save_working_state',
+  'resume_working_state',
 ];
 const deferredSurface = ['pass', 'conflict', 'stale'];
 

@@ -86,13 +86,17 @@ describe('continuation checkpoint e2e', () => {
       });
       const resumeOutput = JSON.parse(resume.stdout) as {
         hookSpecificOutput?: { additionalContext?: string };
+        systemMessage?: string;
       };
-      expect(resumeOutput.hookSpecificOutput?.additionalContext).toContain('Do not call get_packet');
-      expect(resume.stdout).not.toContain('Core implementation is complete');
+      expect(resumeOutput.hookSpecificOutput?.additionalContext).toContain('Core implementation is complete');
+      expect(resumeOutput.hookSpecificOutput?.additionalContext).toContain('Do not ask the user to confirm loading it');
+      expect(resumeOutput.hookSpecificOutput?.additionalContext).not.toContain('Do not call get_packet');
+      expect(resumeOutput.systemMessage).toContain('loaded continuation');
+      expect(resume.stdout).not.toContain('/not-readable.jsonl');
     });
   });
 
-  it('wires private MCP access and supports confirmation-gated private resume', async () => {
+  it('wires private MCP access and injects private checkpoint bodies on SessionStart', async () => {
     await withTempProject({ git: true, prefix: 'ncp-' }, async (project) => {
       await execFileAsync('git', ['checkout', '-b', 'main'], { cwd: project.path });
       await runCli([
@@ -141,8 +145,9 @@ describe('continuation checkpoint e2e', () => {
           transcript_path: '/never-read.jsonl',
         }),
       });
-      expect(offer.stdout).toContain('includePrivate true');
-      expect(offer.stdout).not.toContain('Private recovery state.');
+      expect(offer.stdout).toContain('Private recovery state.');
+      expect(offer.stdout).toContain('Do not ask the user to confirm loading it');
+      expect(offer.stdout).not.toContain('includePrivate true');
 
       const harness = await createMcpHarness(createNotchMcpServer({
         cwd: project.path,
@@ -157,11 +162,12 @@ describe('continuation checkpoint e2e', () => {
         expect(listed.structuredContent.packets).toHaveLength(1);
         expect(listed.structuredContent.packets[0]?.packet.sensitivity).toBe('private');
 
-        await expect(harness.callTool('get_packet', {
-          id: listed.structuredContent.packets[0]?.packet.id,
+        await expect(harness.callTool('resume_working_state', {
           includePrivate: true,
         })).resolves.toMatchObject({
-          structuredContent: { packet: { summary: expect.stringContaining('Private recovery state.') } },
+          structuredContent: {
+            checkpoint: { packet: { id: listed.structuredContent.packets[0]?.packet.id } },
+          },
         });
       } finally {
         await harness.close();

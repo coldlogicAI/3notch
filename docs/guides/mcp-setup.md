@@ -42,7 +42,7 @@ notch mcp serve --default-actor "Claude Desktop"
 Read-only:
 
 - `get_brief`, `list_briefs`, `get_targeted_brief`
-- `get_packet`, `list_packets`
+- `get_packet`, `list_packets`, `resume_working_state`
 - `get_status`, `check_store`, `run_doctor`
 - `list_inbox` — list pending or retained durable deliveries
 - `get_inbox_delivery` — read pending, pulled, acknowledged, or rejected status for one delivery
@@ -51,6 +51,7 @@ Write tools (require client tool-permission grant):
 
 - `create_brief`
 - `create_packet` (accepts `files`, `refs`, `nextSteps`, `tags`, and `supersedes`)
+- `save_working_state` — wrap-up continuation from git snapshot plus optional summary/nextSteps
 - `create_mark` — self-addressed private capture
 - `create_reply` — typed packet reply
 - `create_seed_packet`

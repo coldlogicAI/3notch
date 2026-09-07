@@ -4,7 +4,7 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
 
-import { resolveContinuationStream, runClaudeCodeHook } from '../../src/core/continuation-service.js';
+import { resolveContinuationStream, resumeWorkingState, runClaudeCodeHook, saveWorkingState } from '../../src/core/continuation-service.js';
 import { checkStore } from '../../src/core/check-service.js';
 import { loadConfig } from '../../src/core/config-service.js';
 import { listPackets } from '../../src/core/packet-service.js';
@@ -203,7 +203,7 @@ describe('continuation service', () => {
     });
   });
 
-  it('offers a matching checkpoint once without loading its content', async () => {
+  it('injects the matching checkpoint body on SessionStart without waiting for confirmation', async () => {
     await withContinuationProject(async (projectPath) => {
       await runClaudeCodeHook({
         session_id: 'writer',
@@ -218,24 +218,79 @@ describe('continuation service', () => {
         cwd: projectPath,
         hook_event_name: 'SessionStart',
         source: 'startup',
+        transcript_path: '/unreadable/transcript.jsonl',
       });
       const second = await runClaudeCodeHook({
         session_id: 'reader',
         cwd: projectPath,
         hook_event_name: 'SessionStart',
         source: 'resume',
+        transcript_path: '/unreadable/transcript.jsonl',
       });
       const compact = await runClaudeCodeHook({
         session_id: 'reader',
         cwd: projectPath,
         hook_event_name: 'SessionStart',
         source: 'compact',
+        transcript_path: '/unreadable/transcript.jsonl',
       });
 
-      expect(first.hookSpecificOutput?.additionalContext).toContain('Offer it to the user once');
-      expect(JSON.stringify(first)).not.toContain('Sensitive-to-this-test');
-      expect(second).toEqual({});
-      expect(compact).toEqual({});
+      expect(first.hookSpecificOutput?.additionalContext).toContain('Sensitive-to-this-test continuation details.');
+      expect(first.hookSpecificOutput?.additionalContext).toContain('Do not ask the user to confirm loading it');
+      expect(first.hookSpecificOutput?.additionalContext).not.toContain('Offer it to the user once');
+      expect(first.systemMessage).toContain('loaded continuation');
+      expect(JSON.stringify(first)).not.toContain('transcript.jsonl');
+      expect(second.hookSpecificOutput?.additionalContext).toContain('Sensitive-to-this-test continuation details.');
+      expect(compact.hookSpecificOutput?.additionalContext).toContain('Sensitive-to-this-test continuation details.');
+    });
+  });
+
+  it('saves a continuation from git snapshot and resume returns it without prompting', async () => {
+    await withContinuationProject(async (projectPath) => {
+      await writeFile(path.join(projectPath, 'working.ts'), 'export const wip = true;\n');
+      const context = await loadConfig({ cwd: projectPath });
+      const saved = await saveWorkingState(context, {
+        nextSteps: 'Finish the working-state tests.',
+        summary: 'Auth validation is done; session store is next.',
+      });
+
+      expect(saved.packet.tags).toEqual(expect.arrayContaining([
+        'continuation',
+        'stream-main',
+        'source-save',
+      ]));
+      expect(saved.packet.summary).toContain('Auth validation is done');
+      expect(saved.packet.summary).toContain('working.ts');
+      expect(saved.packet.nextSteps).toBe('Finish the working-state tests.');
+      expect(saved.stream).toBe('main');
+
+      const resumed = await resumeWorkingState(context);
+      expect(resumed.checkpoint?.packet.id).toBe(saved.packet.id);
+      expect(resumed.checkpoint?.markdown).toContain('Auth validation is done');
+      expect(resumed.checkpoint?.markdown).toContain('Finish the working-state tests.');
+    });
+  });
+
+  it('hides private continuations from resume unless includePrivate is set', async () => {
+    await withContinuationProject(async (projectPath) => {
+      const context = await loadConfig({ cwd: projectPath });
+      const saved = await saveWorkingState(context, {
+        private: true,
+        summary: 'Private working state for this store.',
+      });
+
+      expect(saved.packet.sensitivity).toBe('private');
+      expect(await resumeWorkingState(context)).toMatchObject({ checkpoint: null, stream: 'main' });
+      const visible = await resumeWorkingState(context, { includePrivate: true });
+      expect(visible.checkpoint?.packet.id).toBe(saved.packet.id);
+      expect(visible.checkpoint?.markdown).toContain('Private working state for this store.');
+    });
+  });
+
+  it('returns none when the store has no continuation', async () => {
+    await withContinuationProject(async (projectPath) => {
+      const context = await loadConfig({ cwd: projectPath });
+      expect(await resumeWorkingState(context)).toEqual({ checkpoint: null, stream: 'main' });
     });
   });
 

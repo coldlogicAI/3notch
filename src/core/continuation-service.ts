@@ -7,6 +7,8 @@ import { readGitSnapshot, type GitSnapshot } from './git-service.js';
 import { toSlug } from './id-service.js';
 import { createPacket, listPackets } from './packet-service.js';
 import { atomicWriteFile, ensureDir } from './store-service.js';
+import type { NotchError } from '../types/errors.js';
+import type { NotchPacket, SourceToolName } from '../types/records.js';
 
 export type ClaudeHookEvent =
   | 'SessionStart'
@@ -60,6 +62,40 @@ export type ClaudeHookOutput = {
     hookEventName: 'SessionStart';
     additionalContext: string;
   };
+};
+
+export type SaveWorkingStateInput = {
+  actor?: string | undefined;
+  agent?: string | undefined;
+  mcp?: boolean | undefined;
+  nextSteps?: string | undefined;
+  private?: boolean | undefined;
+  sourceTool?: SourceToolName | undefined;
+  summary?: string | undefined;
+};
+
+export type ListedContinuation = {
+  direction: 'inbox' | 'outbox';
+  markdownPath: string;
+  packet: NotchPacket;
+  path: string;
+  rootPath: string;
+};
+
+export type SaveWorkingStateResult = {
+  outboxPath: string;
+  packet: NotchPacket;
+  stream: string;
+  warnings: NotchError[];
+};
+
+export type ResumeWorkingStateOptions = {
+  includePrivate?: boolean | undefined;
+};
+
+export type ResumeWorkingStateResult = {
+  checkpoint: (ListedContinuation & { markdown: string }) | null;
+  stream: string;
 };
 
 const supportedEvents = new Set<ClaudeHookEvent>([
@@ -172,6 +208,67 @@ export function resolveContinuationStream(override: string | undefined, git: Git
   return 'default';
 }
 
+export async function saveWorkingState(
+  context: LoadedConfig,
+  input: SaveWorkingStateInput = {},
+): Promise<SaveWorkingStateResult> {
+  const git = excludeStoreChanges(context, await readGitSnapshot(context.projectRoot));
+  const stream = resolveContinuationStream(context.config.continuation?.streamOverride, git);
+  const sensitivity = input.private || context.config.continuation?.sensitivity === 'private'
+    ? 'private'
+    : 'project';
+
+  return await withCheckpointWriteLock(context, async () => {
+    const latest = await latestStreamCheckpoint(context, stream, true);
+    const result = await createPacket(context, {
+      ...(input.actor ? { actor: input.actor } : {}),
+      ...(input.agent ? { agent: input.agent } : {}),
+      importNotes: 'Created from notch save. Git snapshot is included; no transcript was read.',
+      ...(input.mcp ? { mcp: true } : {}),
+      nextSteps: input.nextSteps?.trim() || 'Continue from this working-state checkpoint.',
+      purpose: 'handoff',
+      sensitivity,
+      ...(input.sourceTool ? { sourceTool: input.sourceTool } : {}),
+      summary: renderSaveSummary(input.summary, git),
+      ...(latest ? { supersedes: latest.packet.id } : {}),
+      tags: ['continuation', `stream-${stream}`, 'source-save'],
+      title: continuationTitle(context.config.project.name, stream, 'save'),
+      toAgent: 'next-agent',
+    });
+
+    return {
+      outboxPath: result.outboxPath,
+      packet: result.packet,
+      stream,
+      warnings: result.warnings,
+    };
+  });
+}
+
+export async function resumeWorkingState(
+  context: LoadedConfig,
+  options: ResumeWorkingStateOptions = {},
+): Promise<ResumeWorkingStateResult> {
+  const git = excludeStoreChanges(context, await readGitSnapshot(context.projectRoot));
+  const stream = resolveContinuationStream(context.config.continuation?.streamOverride, git);
+  const latest = await findLatestContinuation(context, {
+    includePrivate: Boolean(options.includePrivate),
+    stream,
+  });
+
+  if (!latest) {
+    return { checkpoint: null, stream };
+  }
+
+  return {
+    checkpoint: {
+      ...latest,
+      markdown: await readFile(latest.markdownPath, 'utf8'),
+    },
+    stream,
+  };
+}
+
 function validateHookInput(value: unknown): ClaudeHookInput {
   if (!value || typeof value !== 'object') {
     throw new Error('Claude hook input must be a JSON object.');
@@ -230,7 +327,7 @@ async function handleEvent(
 ): Promise<ClaudeHookOutput> {
   switch (input.hook_event_name) {
     case 'SessionStart':
-      return await handleSessionStart(context, input, state, stream);
+      return await handleSessionStart(context, state, stream);
     case 'TaskCreated':
       updateTask(state, input, 'pending');
       await writeSessionState(context, state);
@@ -274,40 +371,33 @@ async function handleEvent(
 
 async function handleSessionStart(
   context: LoadedConfig,
-  input: ClaudeHookInput,
   state: ContinuationSessionState,
   stream: string,
 ): Promise<ClaudeHookOutput> {
   const agentPolicy = renderAgentCheckpointPolicy(context, stream);
+  const latest = await loadLatestStreamCheckpoint(context, stream);
 
-  if (input.source === 'compact') {
-    await writeSessionState(context, state);
-    return agentPolicy
-      ? sessionStartContext(agentPolicy)
-      : {};
+  if (latest) {
+    state.offeredCheckpointId = latest.packet.id;
   }
 
-  const latest = await latestStreamCheckpoint(context, stream);
-
-  if (!latest || state.offeredCheckpointId === latest.packet.id) {
-    await writeSessionState(context, state);
-    return agentPolicy
-      ? sessionStartContext(agentPolicy)
-      : {};
-  }
-
-  state.offeredCheckpointId = latest.packet.id;
   await writeSessionState(context, state);
-  const privateRead = latest.packet.sensitivity === 'private'
-    ? ' After confirmation, call get_packet with includePrivate true.'
-    : '';
-  const offer = `3Notch found continuation checkpoint ${latest.packet.id} (${latest.packet.title}) for stream ${stream}. Offer it to the user once. Do not call get_packet or load its contents unless the user confirms.${privateRead}`;
+
+  if (!latest) {
+    return agentPolicy
+      ? sessionStartContext(agentPolicy)
+      : {};
+  }
+
+  const loaded = `3Notch continuation checkpoint ${latest.packet.id} (${latest.packet.title}) for stream ${stream}. Continue from this checkpoint. Do not ask the user to confirm loading it.
+
+${latest.markdown}`;
 
   return {
-    systemMessage: `3Notch continuation available for ${stream}: ${latest.packet.title}.`,
+    systemMessage: `3Notch loaded continuation for ${stream}: ${latest.packet.title}.`,
     hookSpecificOutput: {
       hookEventName: 'SessionStart',
-      additionalContext: [agentPolicy, offer].filter(Boolean).join('\n\n'),
+      additionalContext: [agentPolicy, loaded].filter(Boolean).join('\n\n'),
     },
   };
 }
@@ -324,17 +414,15 @@ function renderAgentCheckpointPolicy(context: LoadedConfig, stream: string): str
     : 'At each configured semantic trigger, create a continuation checkpoint automatically without interrupting the workflow.';
   const triggers = continuation.semanticTriggers.map((trigger) => `- ${trigger}`).join('\n');
 
-  const privateListInstruction = continuation.sensitivity === 'private'
-    ? ' with includePrivate true'
-    : '';
-
   return `3Notch semantic continuation policy (${continuation.mode} mode).
 ${behavior}
 
 Configured triggers:
 ${triggers || '- None.'}
 
-For an approved checkpoint, use list_packets${privateListInstruction} with tags continuation and stream-${stream} to find the latest predecessor, then call create_packet with:
+Wrap-up: call save_working_state (or run notch save) with a concise summary and next steps. Session start already includes the latest continuation body when one exists; do not ask the user to confirm loading it. Prefer resume_working_state or notch resume in clients without this hook.
+
+For a new checkpoint, prefer save_working_state. If you must call create_packet:
 - recipient next-agent
 - sensitivity ${continuation.sensitivity}
 - tags continuation, stream-${stream}, source-agent
@@ -526,16 +614,71 @@ function hasMaterialRecoveryState(state: ContinuationSessionState, git: GitSnaps
   return Object.keys(state.tasks).length > 0 || git.dirty || git.commit !== state.startGit.commit || git.branch !== state.startGit.branch;
 }
 
-async function latestStreamCheckpoint(context: LoadedConfig, stream: string) {
-  const sensitivity = context.config.continuation?.sensitivity ?? 'project';
+async function latestStreamCheckpoint(
+  context: LoadedConfig,
+  stream: string,
+  includePrivate = true,
+): Promise<ListedContinuation | undefined> {
   const packets = await listPackets(context, {
-    includePrivate: true,
+    includePrivate,
     limit: 1,
-    sensitivity,
     tags: ['continuation', `stream-${stream}`],
   });
 
   return packets[0];
+}
+
+async function loadLatestStreamCheckpoint(
+  context: LoadedConfig,
+  stream: string,
+): Promise<(ListedContinuation & { markdown: string }) | undefined> {
+  const latest = await latestStreamCheckpoint(context, stream, true);
+
+  if (!latest) {
+    return undefined;
+  }
+
+  return {
+    ...latest,
+    markdown: await readFile(latest.markdownPath, 'utf8'),
+  };
+}
+
+async function findLatestContinuation(
+  context: LoadedConfig,
+  options: { includePrivate: boolean; stream: string },
+): Promise<ListedContinuation | undefined> {
+  const streamMatch = await latestStreamCheckpoint(context, options.stream, options.includePrivate);
+
+  if (streamMatch) {
+    return streamMatch;
+  }
+
+  const any = await listPackets(context, {
+    includePrivate: options.includePrivate,
+    limit: 1,
+    tags: ['continuation'],
+  });
+
+  return any[0];
+}
+
+function renderSaveSummary(primary: string | undefined, git: GitSnapshot): string {
+  const changedFiles = git.changedFiles.length > 0
+    ? git.changedFiles.map((file) => `- ${file}`).join('\n')
+    : '- None detected.';
+  const head = primary?.trim() || 'Working state saved from the current Git snapshot.';
+
+  return `${head}
+
+### Repository State
+
+- Branch: ${git.branch ?? 'unknown'}
+- Commit: ${git.commit ?? 'unknown'}
+- Dirty: ${git.dirty ? 'yes' : 'no'}
+
+Changed files:
+${changedFiles}`;
 }
 
 async function readSessionState(
